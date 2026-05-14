@@ -1,145 +1,207 @@
 # Parallel Aho–Corasick Research Laboratory
 
-A modular C laboratory for designing, plugging in, and rigorously
-benchmarking parallel implementations of the **Aho–Corasick** multi-pattern
-search algorithm against a sequential baseline. Targets multi-core CPUs in
-shared memory, using the **POSIX Threads** API for the first parallel
-variant.
+Laboratório modular em C para projetar, plugar e avaliar
+implementações paralelas do algoritmo **Aho–Corasick** de
+correspondência multi-padrão contra um baseline sequencial. O alvo é
+**CPUs multi-core em memória compartilhada**, e a primeira variante
+paralela usa a API **POSIX Threads (Pthreads)**.
 
-## Layout
+O projeto serve como base experimental de um TCC orientado a
+**detecção de intrusão (IDS)**: o dicionário de padrões vem de regras
+reais (Snort/Suricata) e o corpus é grande o suficiente (multi-GiB)
+para que o tempo total seja dominado pela fase de varredura, não por
+I/O ou pelo custo de criação de threads.
+
+> Para o material conceitual completo (arquitetura, decisões de
+> projeto, fluxos e diagramas), veja [`docs/`](docs/). Para um
+> arranque rápido como agente do repositório, veja
+> [`CLAUDE.md`](CLAUDE.md).
+
+## Objetivos do laboratório
+
+- **Implementar** uma versão paralela da fase de busca (matching) do
+  Aho–Corasick, maximizando o throughput em arquivos grandes.
+- **Comparar** essa variante de forma justa contra um baseline
+  sequencial, em correção (1:1) e em métricas alinhadas com a
+  literatura (throughput em MiB/s ou Gbps; speedup vs. nº de threads).
+- **Servir de plataforma** para futuras variantes (SIMD, lock-free,
+  NUMA-aware, etc.), sem reescrever a infraestrutura.
+
+## Estratégia de paralelização
+
+A implementação é dividida em **duas fases bem separadas no tempo**.
+
+### 1. Construção do autômato (sequencial — master thread)
+
+O master constrói trie, função goto determinística, função de falha e
+função de saída a partir do dicionário de padrões. Depois dessa fase,
+o autômato torna-se **estritamente read-only**: nenhuma thread o
+modifica durante a busca, o que dispensa locks na fase paralela.
+
+### 2. Fase de busca (paralela — pool de threads)
+
+- **Particionamento de dados (chunking)**: o buffer de texto é dividido
+  logicamente em chunks de tamanho fixo.
+- **Overlap nas fronteiras**: chunks adjacentes têm uma margem de
+  sobreposição de `max_pattern_length - 1` bytes (warm-up do DFA),
+  garantindo que um padrão que atravessa fronteira é detectado por
+  exatamente um worker, sem perdas nem duplicatas.
+- **Execução concorrente**: cada worker percorre seu chunk usando o
+  **mesmo autômato compartilhado por ponteiro**, sem sincronização.
+- **Listas thread-local de matches**: cada worker grava em uma lista
+  privada para evitar contenção. Logs/arquivos compartilhados são
+  proibidos durante a varredura.
+- **Merge sequencial**: após o `pthread_join`, o master concatena as
+  listas locais em um resultado unificado.
+
+Detalhamento e argumento formal de correção em
+[`docs/architecture/parallelism.md`](docs/architecture/parallelism.md).
+
+## Layout do repositório
 
 ```
-include/             # public headers (automaton, match list, searcher API,
-                     # benchmark harness)
-src/                 # core (automaton + match list + bench + registry)
-src/searchers/       # one file per searcher implementation; plug-in slot
-                     # for new variants
-tests/               # correctness test (every searcher must agree with the
-                     # sequential baseline)
-scripts/             # benchmark sweeps
+include/             Cabeçalhos públicos (autômato, lista de matches,
+                     API de searcher, harness de benchmark)
+src/                 Núcleo (build + match + bench + registry + CLI)
+src/searchers/       Uma implementação por arquivo — plug-in slot
+tests/               Suite de correção (todo searcher concorda com
+                     o baseline sequencial)
+scripts/             Sweeps de benchmark e preparação de dados
+data/                Datasets gerados (gitignored, recriados via scripts)
+docs/                Documentação detalhada
+  architecture/      Visão de sistema, autômato, paralelismo, harness
+  searchers/         Uma página por searcher registrado
 ```
-
-## Architecture
-
-### 1. Automaton construction (sequential, master thread)
-
-`ac_automaton_build()` builds the trie, the failure function, and a
-**deterministic transition table** `goto_tbl[state * 256 + byte]` so each
-scan step is a single indexed load. Output reporting uses a per-state
-`own_out_head` chain plus a `dict_suffix` link to the nearest
-output-bearing ancestor, giving O(1)+|reported| work per character.
-
-After `ac_automaton_build()` returns the structure is **strictly
-read-only**: the goto table, output arena, and pattern storage are never
-written again. Multiple threads share the automaton by pointer with no
-locks.
-
-### 2. Pluggable searcher interface
-
-Every implementation exposes one `ac_searcher_t`:
-
-```c
-typedef struct ac_searcher {
-    const char *name;
-    const char *description;
-    int (*search)(const ac_automaton_t *aut,
-                  const char *text, size_t text_len,
-                  const ac_searcher_config_t *cfg,
-                  ac_match_list_t *out_matches,
-                  ac_thread_metric_t **out_thread_metrics,
-                  size_t *out_num_thread_metrics);
-} ac_searcher_t;
-```
-
-To add a new variant, drop a new file in `src/searchers/` and register
-yourself from a constructor:
-
-```c
-static const ac_searcher_t k_my_searcher = {
-    .name = "my_variant", .description = "...", .search = my_search,
-};
-__attribute__((constructor))
-static void my_register(void) { ac_searcher_register(&k_my_searcher); }
-```
-
-The `Makefile` picks up the file automatically.
-
-### 3. Searchers shipped
-
-| Name              | Description                                                                  |
-|-------------------|------------------------------------------------------------------------------|
-| `sequential`      | Single-threaded baseline reference                                           |
-| `pthread_chunked` | Pthreads, fixed-size chunks with `(max_pattern_len-1)` overlap, thread-local match lists, read-only shared automaton |
-
-`pthread_chunked` partitions the input into **N core ranges**, one per
-worker. Worker *i* actually scans `[core_start_i - overlap, core_end_i)`;
-the leading `overlap = max_pattern_len - 1` bytes are warm-up so that the
-DFA state at `core_start_i` agrees with a global scan, and any pattern
-straddling a chunk boundary is detected by exactly one worker. Matches
-ending in the warm-up region belong to the previous worker and are
-dropped. Each worker writes into a **thread-local `ac_match_list_t`**;
-the master merges them after `pthread_join`.
-
-### 4. Benchmarking
-
-`benchmark.h` provides:
-
-- `bench_now_ns()` — `CLOCK_MONOTONIC` nanosecond timestamps.
-- `bench_marker_t` — simple start/end markers for ad-hoc phases.
-- `bench_run()` — warm-up + N iterations, captures min/mean/max wall
-  time, throughput in MiB/s, and match counts.
-- `--per-thread` CLI flag to print per-worker time, bytes, and matches.
 
 ## Build
 
-```sh
-make            # release (-O3 -march=native)
-make debug      # asserts on, -O0
-make asan       # AddressSanitizer + UBSan
-make tsan       # ThreadSanitizer (data-race verifier for parallel scans)
-make test       # run correctness suite (every searcher vs. baseline)
-make bench      # synthetic sweep across thread counts
+| Alvo            | O que faz                                                                |
+|-----------------|---------------------------------------------------------------------------|
+| `make`          | Release (`-O3 -march=native`)                                            |
+| `make debug`    | Debug (`-O0 -g3`, asserts ligados)                                       |
+| `make asan`     | AddressSanitizer + UBSan                                                 |
+| `make tsan`     | ThreadSanitizer (valida ausência de data races na fase paralela)        |
+| `make test`     | Suíte de correção: cada searcher vs. baseline em vários `nthreads`      |
+| `make bench`    | Sweep sintético (`scripts/run_benchmarks.sh`)                            |
+
+Requisitos: compilador C11, pthreads, POSIX 2008.
+
+## CLI: `build/aclab`
+
+O binário recebe um dicionário de padrões, um arquivo de entrada e
+um conjunto de opções (searcher, nº de threads, warmup, iterações).
+Arquivos grandes (≥ 64 MiB) são abertos via `mmap` com
+`MAP_POPULATE` + `madvise(MADV_SEQUENTIAL)` para tirar I/O e page
+faults da janela cronometrada.
+
+Para listar os searchers registrados em uma build:
+
+```text
+./build/aclab --list
 ```
 
-Requires a C11 compiler, pthreads, POSIX 2008.
+Para a referência completa de flags:
 
-## Quick start
-
-```sh
-make
-./build/aclab --list                           # show registered searchers
-./build/aclab --patterns tests/data/patterns_small.txt \
-              --input    /path/to/large.txt \
-              --searcher pthread_chunked \
-              --threads  8 \
-              --warmup 1 --iters 5 \
-              --per-thread
+```text
+./build/aclab --help
 ```
 
-Omit `--searcher` to sweep every registered searcher in one run.
+## Searchers atualmente disponíveis
 
-## Verifying parallel correctness
+| Nome              | Descrição                                                                  |
+|-------------------|------------------------------------------------------------------------------|
+| `sequential`      | Baseline single-thread. Referência de correção e desempenho.                |
+| `pthread_chunked` | Pthreads + chunks com overlap `max_pattern_len - 1`; matches thread-local. |
 
-`make test` builds an independent test binary that:
+Documentação por searcher em [`docs/searchers/`](docs/searchers/).
 
-1. Constructs the automaton from a battery of pattern sets.
-2. Computes the baseline match set with `sequential`.
-3. Runs **every other registered searcher** at thread counts
-   `{1,2,3,4,7,8}` over inputs explicitly designed to put matches on
-   every chunk boundary.
-4. Sorts both lists and compares element-wise. Any divergence fails.
+## Correção da fase paralela
 
-Combine with `make tsan` to verify there are no data races on the
-read-only automaton or on the per-thread match lists.
+`make test` constrói um binário independente que:
 
-## Adding the next parallel variant
+1. Constrói o autômato a partir de uma bateria de dicionários.
+2. Calcula o conjunto baseline de matches com `sequential`.
+3. Roda **todos** os outros searchers registrados com contagens de
+   thread `{1, 2, 3, 4, 7, 8}` sobre inputs deliberadamente desenhados
+   para colocar matches em **todas** as fronteiras possíveis de chunk.
+4. Ordena e compara as duas listas elemento a elemento. Qualquer
+   divergência reprova o teste.
 
-The expected workflow:
+Para reforçar a verificação, combine com `make tsan`: o
+ThreadSanitizer aponta qualquer escrita acidental no autômato (que é
+puramente read-only) ou acesso cruzado às listas locais de matches.
 
-1. Drop `src/searchers/<your_variant>.c`.
-2. Implement the searcher and register it from `__attribute__((constructor))`.
-3. `make test` — must agree with the baseline.
-4. `make bench` — compare throughput.
-5. (Optional) `make tsan` — verify no races.
+## Adicionando uma nova variante paralela
 
-No other file needs to change.
+1. Crie `src/searchers/<nome>.c`.
+2. Implemente a função `search(...)` (assinatura em
+   [`include/ac_searcher.h`](include/ac_searcher.h)).
+3. Registre o searcher via `__attribute__((constructor))` chamando
+   `ac_searcher_register(...)`.
+4. `make` — o `Makefile` pega o novo arquivo por wildcard.
+5. `make test` — sua implementação **precisa** concordar com
+   `sequential` em todas as configurações de teste.
+6. (Recomendado) `make tsan` para validar ausência de races.
+7. `make bench` para medir e comparar throughput.
+
+Nenhum outro arquivo precisa mudar — o registry descobre seu searcher
+no momento em que o binário é carregado. Detalhes do contrato e
+exemplos extensos em [`docs/searchers/README.md`](docs/searchers/README.md).
+
+## Restrições inegociáveis do projeto
+
+Essas restrições derivam tanto da literatura quanto do contrato
+interno do laboratório, e qualquer searcher novo precisa respeitá-las:
+
+- **Zero locks no caminho quente**. As threads de busca operam sobre o
+  autômato compartilhado em modo estritamente read-only. Locks/atomics
+  no loop de varredura são proibidos.
+- **Thread-local storage para matches**. Matches são coletados em
+  estruturas isoladas pré-alocadas por thread, seguidas de um merge
+  sequencial pelo master após o `pthread_join`.
+- **Overlap = `max_pattern_length - 1`**. Reduzir esse valor arrisca
+  perda de matches em fronteira; aumentar gasta CPU à toa.
+
+## Métricas e modo de avaliação
+
+O harness foi pensado para gerar números **comparáveis com a
+literatura** sobre matching para IDS:
+
+- **Throughput** medido apenas sobre a fase paralela de busca
+  (`bench_run`); construção do autômato, mapeamento de arquivos e
+  merge final ficam fora do número reportado.
+- **Speedup** levantado variando o nº de workers de 1 até o nº de
+  cores lógicos disponíveis (`Tempo(1) / Tempo(N)`).
+- **Footprint do autômato** reportado por execução (`num_states`,
+  `KiB`), para que se possa relacionar performance com pressão de
+  cache.
+
+O detalhamento de cada métrica e como interpretá-las está em
+[`docs/architecture/benchmark-harness.md`](docs/architecture/benchmark-harness.md).
+
+## Datasets
+
+Para resultados representativos use os datasets canônicos do TCC:
+
+- **Padrões**: Snort 3 Community Rules → `data/patterns_snort.txt`.
+- **Corpus**: Enron Email Dataset (~1.4 GiB) → `data/enron_corpus.txt`.
+
+Origem, scripts e tamanhos detalhados em
+[`docs/architecture/datasets.md`](docs/architecture/datasets.md) e em
+[`data/README.md`](data/README.md). Reprodução com:
+
+```text
+./scripts/prepare_datasets.sh
+./scripts/run_snort_enron_benchmarks.sh
+```
+
+## Documentação adicional
+
+- [`CLAUDE.md`](CLAUDE.md) — guia rápido para agentes (Claude e afins).
+- [`docs/architecture/overview.md`](docs/architecture/overview.md) —
+  visão de sistema com diagramas.
+- [`docs/architecture/automaton.md`](docs/architecture/automaton.md) —
+  layout interno do autômato e construção.
+- [`docs/architecture/parallelism.md`](docs/architecture/parallelism.md)
+  — modelo de paralelismo e argumento de correção.
+- [`docs/searchers/`](docs/searchers/) — documentação por searcher.

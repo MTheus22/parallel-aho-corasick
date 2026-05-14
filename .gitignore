@@ -1,1 +1,53 @@
+# Build artifacts
+build/
+*.o
+*.d
+*.a
+*.so
+*.dSYM/
+
+# Sanitizer / debugger outputs
+core
+core.*
+vgcore.*
+*.gcno
+*.gcda
+*.gcov
+
+# Profiling output (perf, gprof, vtune, callgrind)
+perf.data*
+gmon.out
+callgrind.out.*
+*.qdrep
+*.qdstrm
+
+# Raw downloaded data files (recreated by scripts/)
+rules/
+*.rules
+*.tar.gz
+*.tar.bz2
+*.xml.bz2
 data/*
+
+# Keep this README and the hand-crafted pattern lists versioned
+!data/README.md
+!data/patterns_en.txt
+!data/patterns_code.txt
+!data/patterns_et.txt
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.DS_Store
+
+# Language server / clangd
+.cache/
+.clangd/
+compile_commands.json
+
+# Python bytecode (scripts/)
+__pycache__/
+*.pyc

@@ -49,10 +49,16 @@ docs/                Documentação detalhada (arquitetura + searchers).
 
 ## Searchers atualmente registrados
 
-| Nome              | Descrição                                                              |
-|-------------------|------------------------------------------------------------------------|
-| `sequential`      | Baseline single-thread. Referência de correção.                        |
-| `pthread_chunked` | Pthreads + chunking com overlap `max_pattern_len-1`; matches thread-local. |
+| Nome                  | Descrição                                                                       |
+|-----------------------|----------------------------------------------------------------------------------|
+| `sequential`          | Baseline single-thread. Referência de correção.                                 |
+| `pthread_chunked`     | Pthreads + chunking com overlap `max_pattern_len-1`; matches thread-local.      |
+| `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
+| `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
+| `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico (4N tarefas).                  |
+| `pthread_block_cyclic`| Distribuição round-robin estática de blocos de 1 MiB.                            |
+| `pthread_affinity`    | v2 + pinning ingênuo `i % nproc` via `pthread_setaffinity_np`.                  |
+| `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
 
 Documentação por searcher: `docs/searchers/<nome>.md`.
 
@@ -138,6 +144,16 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
 - `docs/architecture/datasets.md` — origem e preparação dos datasets.
 - `docs/searchers/sequential.md` — baseline, passo a passo.
 - `docs/searchers/pthread_chunked.md` — paralelo por chunks com overlap.
+- `docs/searchers/pthread_chunked_v2.md` — split-loop + cache-pad.
+- `docs/searchers/pthread_chunked_v3.md` — topology-aware affinity +
+  freq-weighted chunks.
+- `docs/searchers/pthread_dynamic.md` — dispatch dinâmico atômico.
+- `docs/searchers/pthread_block_cyclic.md` — distribuição cíclica
+  estática de blocos.
+- `docs/searchers/pthread_affinity.md` — pinning via
+  `pthread_setaffinity_np`.
+- `docs/searchers/pthread_prefetch.md` — software prefetch do stream
+  de texto.
 
 ## Coisas que provavelmente NÃO devem mudar sem discussão
 

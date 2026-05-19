@@ -108,10 +108,16 @@ Para a referência completa de flags:
 
 ## Searchers atualmente disponíveis
 
-| Nome              | Descrição                                                                  |
-|-------------------|------------------------------------------------------------------------------|
-| `sequential`      | Baseline single-thread. Referência de correção e desempenho.                |
-| `pthread_chunked` | Pthreads + chunks com overlap `max_pattern_len - 1`; matches thread-local. |
+| Nome                  | Descrição                                                                       |
+|-----------------------|----------------------------------------------------------------------------------|
+| `sequential`          | Baseline single-thread. Referência de correção e desempenho.                    |
+| `pthread_chunked`     | Pthreads + chunks com overlap `max_pattern_len - 1`; matches thread-local.      |
+| `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
+| `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
+| `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico.                               |
+| `pthread_block_cyclic`| Distribuição round-robin estática de blocos de 1 MiB.                            |
+| `pthread_affinity`    | v2 + pinning ingênuo `i % nproc` via `pthread_setaffinity_np`.                  |
+| `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
 
 Documentação por searcher em [`docs/searchers/`](docs/searchers/).
 

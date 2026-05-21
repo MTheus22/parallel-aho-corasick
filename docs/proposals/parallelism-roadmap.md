@@ -97,7 +97,7 @@ warnings on `make tsan`.
 
 ## 2 · The five proposed ideas
 
-> **Next idea to implement: idea 3 (δ² multi-step transitions).**
+> **Next idea to implement: idea 2 (SIMD gather DFA traversal).**
 > Order rationale in §3. When the agent finishes idea N, this line
 > is rewritten to point to N's successor (or to "all ideas
 > implemented" if done).
@@ -106,7 +106,7 @@ warnings on `make tsan`.
 |----|---------------------------------------------------|----------------|--------------------------|-------|-------------------------------------|
 | 1  | Pattern sharding (dictionary-level parallelism)   | Search         | [`idea_1.md`](idea_1.md) | 5th   | Not implemented                     |
 | 2  | SIMD gather DFA traversal                         | Search         | [`idea_2.md`](idea_2.md) | 4th   | Not implemented                     |
-| 3  | Multi-step (k-byte) transition tables — δᵏ        | Search         | [`idea_3.md`](idea_3.md) | 3rd   | Not implemented                     |
+| 3  | Multi-step (k-byte) transition tables — δᵏ        | Search         | [`idea_3.md`](idea_3.md) | 3rd   | ✅ Implemented 2026-05-21 (5353383) |
 | 4  | Parallel BFS construction of fail/goto/dict_suffix| Build          | [`idea_4.md`](idea_4.md) | 2nd   | ✅ Implemented 2026-05-21 (82c0f10) |
 | 5  | Eager dict_suffix flattening (flat output table)  | Build + Search | [`idea_5.md`](idea_5.md) | 1st   | ✅ Implemented 2026-05-20 (e78045c) |
 

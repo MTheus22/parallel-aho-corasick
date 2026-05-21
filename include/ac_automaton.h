@@ -53,6 +53,29 @@ typedef struct ac_automaton {
     /* Cached scalars. */
     int32_t            max_pattern_len;
     int32_t            min_pattern_len;
+
+    /* ---- Idea 5: eager dict_suffix flattening ------------------------
+     * Per-state flat arena of pattern_ids that AC would emit on arrival
+     * at state s (own outputs first, then the dict_suffix ancestor
+     * chain in ancestor order -- same multiset and same order as the
+     * (own_out_head, dict_suffix, outputs) chain walk). Populated at
+     * the end of ac_automaton_build(); strictly read-only thereafter,
+     * just like every other field on this struct.
+     *
+     * Searchers that read this layout (sequential_flat,
+     * pthread_chunked_flat, ...) replace two levels of dependent
+     * pointer chases with one contiguous linear scan over flat_pids.
+     * Chain-walking searchers ignore these fields and keep working
+     * unchanged; both layouts are kept in the struct so the
+     * dissertation can A/B them on the same automaton.
+     *
+     *   flat_pids[ flat_offset[s] .. flat_offset[s] + flat_count[s] )
+     *     == { pid emitted by sequential AC on arrival at state s }
+     */
+    int32_t           *flat_offset;     /* size: num_states           */
+    int32_t           *flat_count;      /* size: num_states           */
+    int32_t           *flat_pids;       /* size: total_flat_pids      */
+    int32_t            total_flat_pids;
 } ac_automaton_t;
 
 /* Construct from an array of (pattern, length) pairs. Patterns may be

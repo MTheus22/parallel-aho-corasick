@@ -150,6 +150,18 @@ Ao final, o scaffold (`raw_child`, `fail`) é liberado. Resta apenas:
 - `outputs` (read-only).
 - `patterns` (read-only).
 
+### Etapa 3: pass extra da idea 5 — flat output table
+
+Após a BFS, um pass adicional (`O(Σ chain_length(s))`, em prática
+linear em `num_outputs`) precomputa, para cada estado, o multiset de
+`pattern_id`s que o chain walk emitiria, e o materializa em uma
+arena densa `flat_pids` indexada por `(flat_offset[s], flat_count[s])`.
+Os campos antigos (`own_out_head`, `dict_suffix`, `outputs`)
+permanecem inalterados — searchers chain-walking continuam
+funcionando — mas variantes que adotam o layout pulam dois níveis
+de pointer-chasing por match. Detalhes do pass e do layout em
+[`flat-outputs.md`](flat-outputs.md).
+
 ## Custo da construção
 
 Para `M` padrões com `L` caracteres no total e alfabeto fixo

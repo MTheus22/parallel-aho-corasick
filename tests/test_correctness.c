@@ -135,6 +135,20 @@ int main(void)
         free(text);
     }
 
+    /* ---- Case 6: deep dict_suffix chain (idea 5 stress test) ---------
+     * Each pattern is a 1-byte left-extension of the previous, so the
+     * terminal of the longest pattern has a dict_suffix chain of depth
+     * 5. Arriving at it emits 5 pids in one step. Exercises both
+     * layouts (chain-walk and flat) under maximum chain depth -- any
+     * ordering or ownership bug in the flat-output build pass shows
+     * up here as a divergence vs. `sequential`. */
+    {
+        const char *pats[] = {"a", "ba", "cba", "dcba", "edcba"};
+        char *text = make_repeated("xxedcbaxx", 200);
+        all_ok &= run_case("dict_chain", pats, 5, text, strlen(text));
+        free(text);
+    }
+
     /* ---- Case 5: large text, many patterns --------------------------- */
     {
         const char *pats[] = {

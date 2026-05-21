@@ -211,7 +211,79 @@ int ac_automaton_build(ac_automaton_t *aut,
                                        (size_t)aut->num_outputs * sizeof(*p));
         if (p) aut->outputs = p;
     }
+
+    /* ---- Idea 5: build flat output table ------------------------------
+     * For every state s, materialise a contiguous run of pattern_ids
+     * equivalent to the (own_out_head, dict_suffix, outputs) chain
+     * walk. Done in two passes: pass 1 counts per state (to compute
+     * offsets and total size); pass 2 fills flat_pids. Ordering
+     * matches the chain walk exactly (own first, then ancestors), so
+     * chain-walking and flat-reading searchers produce match lists
+     * that are bytewise identical under ac_match_list_sort.
+     *
+     * Cost is O(sum chain_length(s)) -- in practice ~num_outputs --
+     * which is a single-digit percent of the BFS cost on the
+     * dictionaries shipped under data/. Read-only after this pass,
+     * so it satisfies the "automaton is immutable during search"
+     * invariant the same way goto_tbl does. */
+    {
+        int32_t n = aut->num_states;
+        aut->flat_offset = malloc((size_t)n * sizeof(int32_t));
+        aut->flat_count  = malloc((size_t)n * sizeof(int32_t));
+        if (!aut->flat_offset || !aut->flat_count) {
+            rc = AC_E_NOMEM;
+            goto fail_post;
+        }
+
+        int32_t total = 0;
+        for (int32_t s = 0; s < n; s++) {
+            int32_t l = (aut->own_out_head[s] != AC_NIL) ? s : aut->dict_suffix[s];
+            int32_t c = 0;
+            while (l != AC_NIL) {
+                for (int32_t o = aut->own_out_head[l]; o != AC_NIL; o = aut->outputs[o].next) c++;
+                l = aut->dict_suffix[l];
+            }
+            aut->flat_offset[s] = total;
+            aut->flat_count[s]  = c;
+            /* Defensive overflow guard: in pathological dictionaries
+             * (every state is dict_suffix-reachable from every other)
+             * the sum could theoretically exceed INT32_MAX. Bail out
+             * rather than silently wrap. */
+            if (c > 0 && total > INT32_MAX - c) {
+                rc = AC_E_NOMEM;
+                goto fail_post;
+            }
+            total += c;
+        }
+
+        if (total > 0) {
+            aut->flat_pids = malloc((size_t)total * sizeof(int32_t));
+            if (!aut->flat_pids) { rc = AC_E_NOMEM; goto fail_post; }
+        }
+        aut->total_flat_pids = total;
+
+        for (int32_t s = 0; s < n; s++) {
+            if (aut->flat_count[s] == 0) continue;
+            int32_t l = (aut->own_out_head[s] != AC_NIL) ? s : aut->dict_suffix[s];
+            int32_t pos = aut->flat_offset[s];
+            while (l != AC_NIL) {
+                for (int32_t o = aut->own_out_head[l]; o != AC_NIL; o = aut->outputs[o].next) {
+                    aut->flat_pids[pos++] = aut->outputs[o].pattern_id;
+                }
+                l = aut->dict_suffix[l];
+            }
+        }
+    }
+
     return AC_OK;
+
+fail_post:
+    /* Build succeeded up to the chain walk but the flat-output pass
+     * could not allocate. Tear down the entire automaton (we cannot
+     * partially expose a struct whose readers may assume the new
+     * fields are valid). */
+    ac_automaton_destroy(aut);
+    return rc;
 
 fail:
     free(b.raw_child);
@@ -227,6 +299,9 @@ void ac_automaton_destroy(ac_automaton_t *aut)
     free(aut->own_out_head);
     free(aut->dict_suffix);
     free(aut->outputs);
+    free(aut->flat_offset);
+    free(aut->flat_count);
+    free(aut->flat_pids);
     if (aut->patterns) {
         for (int32_t i = 0; i < aut->num_patterns; i++) free(aut->patterns[i].text);
         free(aut->patterns);
@@ -241,6 +316,8 @@ size_t ac_automaton_memory_bytes(const ac_automaton_t *aut)
     bytes += n * AC_ALPHABET_SIZE * sizeof(int32_t);  /* goto_tbl */
     bytes += n * sizeof(int32_t) * 2;                 /* own_out_head + dict_suffix */
     bytes += (size_t)aut->num_outputs * sizeof(ac_output_entry_t);
+    bytes += n * sizeof(int32_t) * 2;                 /* flat_offset + flat_count */
+    bytes += (size_t)aut->total_flat_pids * sizeof(int32_t);  /* flat_pids */
     for (int32_t i = 0; i < aut->num_patterns; i++) bytes += (size_t)aut->patterns[i].length;
     bytes += (size_t)aut->num_patterns * sizeof(ac_pattern_t);
     return bytes;

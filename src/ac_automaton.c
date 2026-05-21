@@ -1,6 +1,8 @@
 #include "ac_automaton.h"
 
 #include <assert.h>
+#include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -282,6 +284,362 @@ fail_post:
      * could not allocate. Tear down the entire automaton (we cannot
      * partially expose a struct whose readers may assume the new
      * fields are valid). */
+    ac_automaton_destroy(aut);
+    return rc;
+
+fail:
+    free(b.raw_child);
+    free(b.fail);
+    ac_automaton_destroy(aut);
+    return rc;
+}
+
+/* ---- Idea 4: parallel BFS construction --------------------------------
+ * Level-synchronous parallel BFS. At depth d, every state's update reads
+ * only data from states at depth <= d - 1 (the textbook AC invariant
+ * `depth(fail[u]) < depth(u)`), so the depth-d frontier is embarrassingly
+ * parallel once depth d-1 is finalised. We spawn `num_threads` workers
+ * per level, each handling a contiguous slice of the current frontier;
+ * they append real children to a shared next-level frontier via
+ * `atomic_fetch_add` to reserve slots. `pthread_join` at the end of each
+ * level is the inter-level barrier and also the synchronization edge
+ * that makes the previous level's writes visible to the next level.
+ *
+ * Race analysis (see also docs/architecture/parallel-build.md):
+ *   - distinct u's at the same level => distinct goto_tbl rows written
+ *     (no write-write race);
+ *   - distinct u's => distinct real children, so fail[v] writes are also
+ *     to disjoint slots (no race);
+ *   - frontier_next slots are reserved via atomic_fetch_add, so writes
+ *     land in distinct indices;
+ *   - cross-level reads of goto_tbl[fail[u]][c] and dict_suffix[fail[u]]
+ *     are happens-before via pthread_create / pthread_join.
+ *
+ * Hot-loop atomics are still forbidden (search invariant 2); the
+ * atomic_fetch_add here fires once per real-child discovery during the
+ * build phase, never on a per-byte path. */
+
+typedef struct {
+    int              thread_id;
+    int              nthreads;
+    /* All pointers below alias storage owned by the master thread.
+     * Each worker writes only to disjoint slices: goto_tbl rows and
+     * dict_suffix entries indexed by its slice of frontier_curr, and
+     * fail entries of those states' real children. */
+    const int32_t   *AC_RESTRICT raw_child;
+    int32_t         *AC_RESTRICT fail;
+    int32_t         *AC_RESTRICT goto_tbl;
+    const int32_t   *AC_RESTRICT own_out_head;
+    int32_t         *AC_RESTRICT dict_suffix;
+    const int32_t   *AC_RESTRICT frontier_curr;
+    int32_t                       curr_count;
+    int32_t         *AC_RESTRICT frontier_next;
+    atomic_int                   *next_count;
+} bfs_level_worker_t;
+
+/* Per-state body shared by the master's small-level path and the
+ * worker's slice loop. Fills dict_suffix[u], propagates goto_tbl[u, *],
+ * discovers real children and appends them to frontier_next. */
+AC_INLINE void bfs_process_state(int32_t u,
+                                        const int32_t *AC_RESTRICT raw_child,
+                                        int32_t *AC_RESTRICT fail,
+                                        int32_t *AC_RESTRICT goto_tbl,
+                                        const int32_t *AC_RESTRICT own_out_head,
+                                        int32_t *AC_RESTRICT dict_suffix,
+                                        int32_t *AC_RESTRICT frontier_next,
+                                        atomic_int *next_count)
+{
+    int32_t f = fail[u];
+
+    /* dict_suffix[u]: nearest ancestor in fail chain with own outputs.
+     * Both rhs values are finalised at depth(fail[u]) < depth(u). */
+    if (own_out_head[f] != AC_NIL) {
+        dict_suffix[u] = f;
+    } else {
+        dict_suffix[u] = dict_suffix[f];
+    }
+
+    /* goto_tbl row for u. Same propagation as the sequential BFS. */
+    for (int c = 0; c < AC_ALPHABET_SIZE; c++) {
+        int32_t v = raw_child[(size_t)u * AC_ALPHABET_SIZE + c];
+        if (v == AC_NIL) {
+            goto_tbl[(size_t)u * AC_ALPHABET_SIZE + c] =
+                goto_tbl[(size_t)f * AC_ALPHABET_SIZE + c];
+        } else {
+            goto_tbl[(size_t)u * AC_ALPHABET_SIZE + c] = v;
+            fail[v] = goto_tbl[(size_t)f * AC_ALPHABET_SIZE + c];
+            /* Relaxed is fine: the synchronisation edge for the read
+             * of next_count comes from pthread_join after the level
+             * ends, not from the increments themselves. */
+            int32_t slot = atomic_fetch_add_explicit(next_count, 1,
+                                                     memory_order_relaxed);
+            frontier_next[slot] = v;
+        }
+    }
+}
+
+static void *bfs_level_worker(void *arg)
+{
+    bfs_level_worker_t *w = arg;
+    int32_t T   = w->nthreads;
+    int32_t tid = w->thread_id;
+    int32_t n   = w->curr_count;
+
+    /* Static block partition. ((tid + 1) * n) / T - (tid * n) / T is
+     * the canonical balanced split that handles non-divisible n. */
+    int32_t start = (int32_t)(((int64_t)tid       * n) / T);
+    int32_t end   = (int32_t)(((int64_t)(tid + 1) * n) / T);
+
+    for (int32_t idx = start; idx < end; idx++) {
+        bfs_process_state(w->frontier_curr[idx],
+                          w->raw_child, w->fail, w->goto_tbl,
+                          w->own_out_head, w->dict_suffix,
+                          w->frontier_next, w->next_count);
+    }
+    return NULL;
+}
+
+int ac_automaton_build_par(ac_automaton_t *aut,
+                           const char *const *patterns,
+                           const size_t *lengths,
+                           size_t num_patterns,
+                           int num_threads)
+{
+    if (!aut || (num_patterns > 0 && (!patterns || !lengths))) return AC_E_INVAL;
+
+    /* Degenerate cases: a single thread (or fewer) is exactly the
+     * sequential build. Delegate verbatim so the no-parallelism path
+     * is character-identical to a build with AC_BUILD_PARALLEL unset. */
+    if (num_threads <= 1) {
+        return ac_automaton_build(aut, patterns, lengths, num_patterns);
+    }
+
+    memset(aut, 0, sizeof(*aut));
+    aut->min_pattern_len = 0;
+
+    ac_build_t b = (ac_build_t){0};
+    int rc;
+
+    /* State 0 = root */
+    int s0 = alloc_state(aut, &b);
+    if (s0 < 0) { rc = s0; goto fail; }
+    assert(s0 == 0);
+
+    /* Pattern copy + trie insertion. Single-threaded by design (cost
+     * is O(total_pattern_length), typically <= 5 % of build; see
+     * idea_4.md "Out of scope" for the cost/complexity argument). */
+    if (num_patterns > 0) {
+        aut->patterns = calloc(num_patterns, sizeof(ac_pattern_t));
+        if (!aut->patterns) { rc = AC_E_NOMEM; goto fail; }
+    }
+    aut->num_patterns = (int32_t)num_patterns;
+
+    int32_t out_cap = 0;
+    int32_t max_len = 0;
+    int32_t min_len = 0;
+
+    for (size_t i = 0; i < num_patterns; i++) {
+        size_t L = lengths[i];
+        if (L == 0) { rc = AC_E_PATTERN_EMPTY; goto fail; }
+        char *buf = malloc(L);
+        if (!buf) { rc = AC_E_NOMEM; goto fail; }
+        memcpy(buf, patterns[i], L);
+        aut->patterns[i].text = buf;
+        aut->patterns[i].length = (int32_t)L;
+        if ((int32_t)L > max_len) max_len = (int32_t)L;
+        if (i == 0 || (int32_t)L < min_len) min_len = (int32_t)L;
+
+        int32_t state = 0;
+        for (size_t j = 0; j < L; j++) {
+            uint8_t c = (uint8_t)buf[j];
+            int32_t *slot = &b.raw_child[(size_t)state * AC_ALPHABET_SIZE + c];
+            if (*slot == AC_NIL) {
+                int ns = alloc_state(aut, &b);
+                if (ns < 0) { rc = ns; goto fail; }
+                slot = &b.raw_child[(size_t)state * AC_ALPHABET_SIZE + c];
+                *slot = ns;
+            }
+            state = *slot;
+        }
+        rc = push_output(aut, &out_cap, state, (int32_t)i);
+        if (rc != AC_OK) goto fail;
+    }
+    aut->max_pattern_len = max_len;
+    aut->min_pattern_len = min_len;
+
+    /* ---- Parallel BFS --------------------------------------------------- */
+    int32_t *frontier_curr = malloc((size_t)aut->num_states * sizeof(int32_t));
+    int32_t *frontier_next = malloc((size_t)aut->num_states * sizeof(int32_t));
+    if (!frontier_curr || !frontier_next) {
+        free(frontier_curr); free(frontier_next);
+        rc = AC_E_NOMEM; goto fail;
+    }
+    int32_t curr_count = 0;
+
+    /* Root row: same as sequential. Seeds the depth-1 frontier. */
+    for (int c = 0; c < AC_ALPHABET_SIZE; c++) {
+        int32_t v = b.raw_child[c];
+        if (v == AC_NIL) {
+            aut->goto_tbl[c] = 0;
+        } else {
+            aut->goto_tbl[c] = v;
+            b.fail[v] = 0;
+            frontier_curr[curr_count++] = v;
+        }
+    }
+
+    /* Per-level guard: levels with fewer than MIN_PAR_LEVEL states are
+     * faster to process sequentially in the master thread than to fan
+     * out -- pthread_create overhead (~20-50 us per thread) dominates
+     * for tiny frontiers (256-byte rows × a few states is microseconds
+     * of compute). Trie depths for production IDS dictionaries are
+     * shallow at top (a few branches per byte) and balloon mid-depth;
+     * the guard makes parallel kick in exactly where it pays off. */
+    enum { MIN_PAR_LEVEL = 64 };
+
+    pthread_t          *tids    = malloc((size_t)num_threads * sizeof(*tids));
+    bfs_level_worker_t *workers = malloc((size_t)num_threads * sizeof(*workers));
+    if (!tids || !workers) {
+        free(tids); free(workers);
+        free(frontier_curr); free(frontier_next);
+        rc = AC_E_NOMEM; goto fail;
+    }
+
+    while (curr_count > 0) {
+        atomic_int next_count;
+        atomic_init(&next_count, 0);
+
+        if (curr_count < MIN_PAR_LEVEL) {
+            /* Shallow level: master does the work, no pthread fan-out. */
+            for (int32_t idx = 0; idx < curr_count; idx++) {
+                bfs_process_state(frontier_curr[idx],
+                                  b.raw_child, b.fail, aut->goto_tbl,
+                                  aut->own_out_head, aut->dict_suffix,
+                                  frontier_next, &next_count);
+            }
+        } else {
+            /* Wide level: spawn num_threads workers, each on a slice. */
+            for (int t = 0; t < num_threads; t++) {
+                workers[t] = (bfs_level_worker_t){
+                    .thread_id     = t,
+                    .nthreads      = num_threads,
+                    .raw_child     = b.raw_child,
+                    .fail          = b.fail,
+                    .goto_tbl      = aut->goto_tbl,
+                    .own_out_head  = aut->own_out_head,
+                    .dict_suffix   = aut->dict_suffix,
+                    .frontier_curr = frontier_curr,
+                    .curr_count    = curr_count,
+                    .frontier_next = frontier_next,
+                    .next_count    = &next_count,
+                };
+            }
+            int spawned = 0;
+            for (int t = 0; t < num_threads; t++) {
+                int err = pthread_create(&tids[t], NULL, bfs_level_worker, &workers[t]);
+                if (err != 0) {
+                    /* Spawn failure: join what we have, then bail.
+                     * We do not retry sequentially here -- a system
+                     * that cannot create threads cannot be trusted to
+                     * finish the build either. */
+                    for (int j = 0; j < t; j++) pthread_join(tids[j], NULL);
+                    free(tids); free(workers);
+                    free(frontier_curr); free(frontier_next);
+                    rc = AC_E_THREAD; goto fail;
+                }
+                spawned = t + 1;
+            }
+            for (int t = 0; t < spawned; t++) pthread_join(tids[t], NULL);
+        }
+
+        /* Swap frontiers; the just-finalised level becomes the buffer
+         * we'll overwrite next iteration. */
+        int32_t *tmp  = frontier_curr;
+        frontier_curr = frontier_next;
+        frontier_next = tmp;
+        /* Acquire so the master sees all atomic increments. (Relaxed
+         * would also work because pthread_join already provides the
+         * happens-before, but explicit acquire reads cost nothing
+         * and document the intent.) */
+        curr_count = (int32_t)atomic_load_explicit(&next_count,
+                                                    memory_order_acquire);
+    }
+
+    free(tids);
+    free(workers);
+    free(frontier_curr);
+    free(frontier_next);
+    free(b.raw_child);
+    free(b.fail);
+
+    /* ---- Epilogue: trim + flat output table ----------------------------
+     * Identical to the sequential build path (kept in sync by code review
+     * -- the loop's invariants forbid replacing ac_automaton_build's
+     * body, so the same logic is duplicated here intentionally). */
+    if (aut->num_states < b.capacity) {
+        int32_t n = aut->num_states;
+        int32_t *go = realloc(aut->goto_tbl,
+                              (size_t)n * AC_ALPHABET_SIZE * sizeof(int32_t));
+        if (go) aut->goto_tbl = go;
+        int32_t *own = realloc(aut->own_out_head, (size_t)n * sizeof(int32_t));
+        if (own) aut->own_out_head = own;
+        int32_t *ds = realloc(aut->dict_suffix, (size_t)n * sizeof(int32_t));
+        if (ds) aut->dict_suffix = ds;
+    }
+    if (aut->num_outputs > 0) {
+        ac_output_entry_t *p = realloc(aut->outputs,
+                                       (size_t)aut->num_outputs * sizeof(*p));
+        if (p) aut->outputs = p;
+    }
+
+    {
+        int32_t n = aut->num_states;
+        aut->flat_offset = malloc((size_t)n * sizeof(int32_t));
+        aut->flat_count  = malloc((size_t)n * sizeof(int32_t));
+        if (!aut->flat_offset || !aut->flat_count) {
+            rc = AC_E_NOMEM;
+            goto fail_post_par;
+        }
+
+        int32_t total = 0;
+        for (int32_t s = 0; s < n; s++) {
+            int32_t l = (aut->own_out_head[s] != AC_NIL) ? s : aut->dict_suffix[s];
+            int32_t c = 0;
+            while (l != AC_NIL) {
+                for (int32_t o = aut->own_out_head[l]; o != AC_NIL; o = aut->outputs[o].next) c++;
+                l = aut->dict_suffix[l];
+            }
+            aut->flat_offset[s] = total;
+            aut->flat_count[s]  = c;
+            if (c > 0 && total > INT32_MAX - c) {
+                rc = AC_E_NOMEM;
+                goto fail_post_par;
+            }
+            total += c;
+        }
+
+        if (total > 0) {
+            aut->flat_pids = malloc((size_t)total * sizeof(int32_t));
+            if (!aut->flat_pids) { rc = AC_E_NOMEM; goto fail_post_par; }
+        }
+        aut->total_flat_pids = total;
+
+        for (int32_t s = 0; s < n; s++) {
+            if (aut->flat_count[s] == 0) continue;
+            int32_t l = (aut->own_out_head[s] != AC_NIL) ? s : aut->dict_suffix[s];
+            int32_t pos = aut->flat_offset[s];
+            while (l != AC_NIL) {
+                for (int32_t o = aut->own_out_head[l]; o != AC_NIL; o = aut->outputs[o].next) {
+                    aut->flat_pids[pos++] = aut->outputs[o].pattern_id;
+                }
+                l = aut->dict_suffix[l];
+            }
+        }
+    }
+
+    return AC_OK;
+
+fail_post_par:
     ac_automaton_destroy(aut);
     return rc;
 

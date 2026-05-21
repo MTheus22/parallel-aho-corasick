@@ -86,6 +86,25 @@ int  ac_automaton_build(ac_automaton_t *aut,
                         const size_t *lengths,
                         size_t num_patterns);
 
+/* Parallel-build alternative to ac_automaton_build: trie insertion
+ * stays sequential (it is small), but the BFS that computes
+ * fail/goto_tbl/dict_suffix runs level-synchronously across
+ * `num_threads` worker threads. The produced ac_automaton_t is
+ * byte-identical to the one returned by ac_automaton_build under all
+ * patterns/threads combinations exercised by tests/test_correctness.c.
+ *
+ *   num_threads <= 1  delegates to ac_automaton_build verbatim, so the
+ *                     degenerate path is exactly the sequential build.
+ *
+ * Idea 4 from docs/proposals/idea_4.md; see also
+ * docs/architecture/parallel-build.md. Selected at the CLI by setting
+ * the AC_BUILD_PARALLEL=1 environment variable. */
+int  ac_automaton_build_par(ac_automaton_t *aut,
+                            const char *const *patterns,
+                            const size_t *lengths,
+                            size_t num_patterns,
+                            int num_threads);
+
 void ac_automaton_destroy(ac_automaton_t *aut);
 
 /* Single deterministic transition step. Inlined for hot loops. */

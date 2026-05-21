@@ -237,11 +237,35 @@ int main(int argc, char **argv)
         }
     }
 
-    /* ---- Phase 2: build automaton (sequential / master thread) -------- */
+    /* ---- Phase 2: build automaton ------------------------------------
+     * Strategy selection:
+     *   - default: sequential build (ac_automaton_build), the
+     *     baseline path the dissertation compares against.
+     *   - AC_BUILD_PARALLEL=1 in the environment: switch to the
+     *     parallel BFS construction (idea 4). The thread count comes
+     *     from AC_BUILD_THREADS if set, otherwise from sysconf
+     *     (nproc). num_threads <= 1 in the parallel function
+     *     transparently delegates back to the sequential build, so
+     *     "AC_BUILD_PARALLEL=1 AC_BUILD_THREADS=1" is identical to
+     *     the default. */
     ac_automaton_t aut;
     bench_marker_t build_m;
     bench_marker_start(&build_m, "build");
-    rc = ac_automaton_build(&aut, (const char *const *)pats, plens, npats);
+    const char *bpar_env = getenv("AC_BUILD_PARALLEL");
+    int build_par = (bpar_env && bpar_env[0] == '1');
+    int build_par_threads = 0;
+    if (build_par) {
+        const char *bthr_env = getenv("AC_BUILD_THREADS");
+        build_par_threads = bthr_env ? atoi(bthr_env) : 0;
+        if (build_par_threads <= 0) {
+            long np = sysconf(_SC_NPROCESSORS_ONLN);
+            build_par_threads = (np > 0) ? (int)np : 1;
+        }
+        rc = ac_automaton_build_par(&aut, (const char *const *)pats, plens, npats,
+                                    build_par_threads);
+    } else {
+        rc = ac_automaton_build(&aut, (const char *const *)pats, plens, npats);
+    }
     bench_marker_end(&build_m);
     if (rc != AC_OK) {
         fprintf(stderr, "automaton build failed: %d\n", rc);
@@ -258,7 +282,10 @@ int main(int argc, char **argv)
     printf("# input:      %zu bytes (%.2f MiB) via %s\n",
            input.len, input.len / (double)(1u << 20),
            input.is_mmap ? "mmap" : "read");
-    printf("# build time: %.3f ms\n", bench_marker_seconds(&build_m) * 1000.0);
+    printf("# build time: %.3f ms%s",
+           bench_marker_seconds(&build_m) * 1000.0,
+           build_par ? "" : "\n");
+    if (build_par) printf(" [parallel T=%d]\n", build_par_threads);
     printf("# warmup=%d iters=%d threads=%d\n", warmup, iters, threads);
     printf("\n");
 

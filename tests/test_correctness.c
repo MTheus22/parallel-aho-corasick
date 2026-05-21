@@ -21,6 +21,46 @@ static int build_aut(ac_automaton_t *aut, const char *const *pats, size_t n)
     return rc;
 }
 
+static int build_aut_par(ac_automaton_t *aut, const char *const *pats, size_t n, int nthreads)
+{
+    size_t *lens = malloc(n * sizeof(size_t));
+    for (size_t i = 0; i < n; i++) lens[i] = strlen(pats[i]);
+    int rc = ac_automaton_build_par(aut, pats, lens, n, nthreads);
+    free(lens);
+    return rc;
+}
+
+/* Byte-equality of two automata. Used to validate that
+ * ac_automaton_build_par (idea 4) produces an automaton identical to
+ * ac_automaton_build under all thread counts. The parallel BFS uses
+ * atomic_fetch_add to reserve frontier slots, so the order in which
+ * states appear inside frontier_next is non-deterministic -- but the
+ * resulting (goto_tbl, fail-derived dict_suffix, outputs, own_out_head)
+ * values are completely determined by the trie and depth ordering,
+ * which IS deterministic. Hence the byte compare must succeed. */
+static int automata_byte_equal(const ac_automaton_t *a, const ac_automaton_t *b)
+{
+    if (a->num_states      != b->num_states)      return 0;
+    if (a->num_outputs     != b->num_outputs)     return 0;
+    if (a->num_patterns    != b->num_patterns)    return 0;
+    if (a->max_pattern_len != b->max_pattern_len) return 0;
+    if (a->min_pattern_len != b->min_pattern_len) return 0;
+    if (a->total_flat_pids != b->total_flat_pids) return 0;
+    size_t n = (size_t)a->num_states;
+    if (memcmp(a->goto_tbl,     b->goto_tbl,     n * AC_ALPHABET_SIZE * sizeof(int32_t)) != 0) return 0;
+    if (memcmp(a->own_out_head, b->own_out_head, n * sizeof(int32_t)) != 0) return 0;
+    if (memcmp(a->dict_suffix,  b->dict_suffix,  n * sizeof(int32_t)) != 0) return 0;
+    if (memcmp(a->flat_offset,  b->flat_offset,  n * sizeof(int32_t)) != 0) return 0;
+    if (memcmp(a->flat_count,   b->flat_count,   n * sizeof(int32_t)) != 0) return 0;
+    if (a->total_flat_pids > 0 &&
+        memcmp(a->flat_pids, b->flat_pids,
+               (size_t)a->total_flat_pids * sizeof(int32_t)) != 0) return 0;
+    if (a->num_outputs > 0 &&
+        memcmp(a->outputs, b->outputs,
+               (size_t)a->num_outputs * sizeof(ac_output_entry_t)) != 0) return 0;
+    return 1;
+}
+
 static int lists_equal(ac_match_list_t *a, ac_match_list_t *b)
 {
     if (a->count != b->count) return 0;
@@ -41,6 +81,43 @@ static int run_case(const char *label,
     if (build_aut(&aut, pats, npats) != AC_OK) {
         fprintf(stderr, "[%s] build failed\n", label);
         return 0;
+    }
+
+    /* Idea 4 equivalence check: ac_automaton_build_par must produce a
+     * byte-identical automaton at every thread count we care about. A
+     * mismatch is a build-phase bug; surface it before running any
+     * searcher (otherwise downstream divergences would obscure the
+     * real cause). Skip nthreads <= 1 because that path delegates to
+     * the sequential build and the comparison is trivially true. */
+    {
+        int par_threads[] = {2, 3, 4, 7, 8};
+        size_t npt = sizeof(par_threads) / sizeof(par_threads[0]);
+        int build_par_ok = 1;
+        for (size_t i = 0; i < npt; i++) {
+            ac_automaton_t aut_par;
+            int rc_par = build_aut_par(&aut_par, pats, npats, par_threads[i]);
+            if (rc_par != AC_OK) {
+                fprintf(stderr, "[%s] build_par(t=%d) failed: %d\n",
+                        label, par_threads[i], rc_par);
+                build_par_ok = 0;
+                ac_automaton_destroy(&aut_par);
+                break;
+            }
+            if (!automata_byte_equal(&aut, &aut_par)) {
+                fprintf(stderr,
+                        "[%s] build_par(t=%d) diverged from sequential build\n",
+                        label, par_threads[i]);
+                build_par_ok = 0;
+                ac_automaton_destroy(&aut_par);
+                break;
+            }
+            ac_automaton_destroy(&aut_par);
+        }
+        if (!build_par_ok) {
+            ac_automaton_destroy(&aut);
+            return 0;
+        }
+        printf("[%s] build_par OK across t={2,3,4,7,8}\n", label);
     }
 
     ac_match_list_t baseline;

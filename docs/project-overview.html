@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallel Aho–Corasick — Estado do Projeto</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222638;
+    --border: #2e3250;
+    --text: #e2e4ef;
+    --muted: #8b90b0;
+    --accent-blue: #4f9cf9;
+    --accent-green: #3ecf8e;
+    --accent-orange: #f59e0b;
+    --accent-purple: #a78bfa;
+    --accent-red: #f87171;
+    --accent-teal: #2dd4bf;
+    --done: #3ecf8e;
+    --pending: #f59e0b;
+    --discarded: #6b7280;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Typography */
+  h1 { font-size: 1.9rem; font-weight: 700; color: #fff; }
+  h2 { font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
+  h3 { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: .5rem; }
+  p  { color: var(--text); margin-bottom: .75rem; }
+  code {
+    background: #2a2d3e;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: .1em .4em;
+    font-size: .85em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    color: #a5b4fc;
+  }
+
+  /* Sections */
+  section { margin-bottom: 3rem; }
+  .section-label {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .5rem;
+  }
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-sub {
+    color: var(--muted);
+    margin-top: .4rem;
+    font-size: .95rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .75rem;
+    font-weight: 600;
+    padding: .2rem .6rem;
+    border-radius: 999px;
+    margin-right: .4rem;
+  }
+  .badge-hw { background: #1e2a3a; color: #60a5fa; border: 1px solid #2d4a6a; }
+  .badge-lang { background: #1a2a1a; color: #4ade80; border: 1px solid #2a4a2a; }
+
+  /* Pipeline */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .pipe-phase {
+    flex: 1;
+    min-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1rem;
+    position: relative;
+  }
+  .pipe-phase + .pipe-phase { margin-left: 2.5rem; }
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--muted);
+    font-size: 1.4rem;
+    padding: 0 .2rem;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .pipe-phase::after {
+    content: "→";
+    position: absolute;
+    right: -1.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 1.3rem;
+  }
+  .pipe-phase:last-child::after { display: none; }
+  .phase-number {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: .3rem;
+  }
+  .phase-1 .phase-number { color: var(--accent-blue); }
+  .phase-2 .phase-number { color: var(--accent-purple); }
+  .phase-3 .phase-number { color: var(--accent-teal); }
+  .phase-title { font-weight: 700; font-size: 1rem; color: #fff; margin-bottom: .5rem; }
+  .phase-note { font-size: .8rem; color: var(--muted); }
+  .phase-tag {
+    display: inline-block;
+    font-size: .7rem;
+    padding: .1rem .5rem;
+    border-radius: 4px;
+    margin-top: .5rem;
+    font-weight: 600;
+  }
+  .tag-seq { background: #1e2f1e; color: #4ade80; border: 1px solid #2a4a2a; }
+  .tag-par { background: #1e1e3a; color: #818cf8; border: 1px solid #2a2a5a; }
+  .tag-opt { background: #2a2010; color: #fbbf24; border: 1px solid #4a3010; }
+
+  /* Cards grid */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem;
+    position: relative;
+  }
+  .card-title { font-weight: 700; font-size: .95rem; color: #fff; margin-bottom: .3rem; }
+  .card-meta { font-size: .75rem; color: var(--muted); margin-bottom: .6rem; }
+  .card-body { font-size: .85rem; color: var(--text); }
+  .card-footer { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+  .card-attacks {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: .25rem;
+  }
+  .pill {
+    display: inline-block;
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    margin: .1rem .1rem;
+  }
+  .pill-blue   { background: #1e3a5f; color: #93c5fd; }
+  .pill-purple { background: #2d1f5e; color: #c4b5fd; }
+  .pill-green  { background: #1a3320; color: #6ee7b7; }
+  .pill-orange { background: #3a2210; color: #fdba74; }
+  .pill-teal   { background: #0f3030; color: #5eead4; }
+  .pill-red    { background: #3a1515; color: #fca5a5; }
+  .pill-gray   { background: #252530; color: #94a3b8; }
+
+  /* Status badges for cards */
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: .4rem;
+    vertical-align: middle;
+  }
+  .dot-done     { background: var(--done); }
+  .dot-pending  { background: var(--pending); }
+  .dot-baseline { background: var(--accent-blue); }
+  .dot-discarded{ background: var(--discarded); }
+
+  /* Results table */
+  .results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .83rem;
+    margin-top: 1rem;
+  }
+  .results-table th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: .6rem .8rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-table td {
+    padding: .55rem .8rem;
+    border-bottom: 1px solid #1e2130;
+    vertical-align: middle;
+  }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td { background: #1e2235; }
+  .num { font-variant-numeric: tabular-nums; font-family: monospace; font-size: .88rem; }
+  .winner { color: var(--accent-green); font-weight: 700; }
+  .warn   { color: var(--accent-orange); }
+
+  /* Bar */
+  .bar-cell { width: 120px; }
+  .bar-bg { background: #1e2235; border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: var(--accent-blue); }
+  .bar-fill.green { background: var(--accent-green); }
+  .bar-fill.orange { background: var(--accent-orange); }
+  .bar-fill.red { background: var(--accent-red); }
+
+  /* Combinability */
+  .combo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .combo-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem;
+  }
+  .combo-yes { border-color: #2a4a2a; }
+  .combo-note { border-color: #4a3010; }
+
+  /* Roadmap timeline */
+  .timeline { margin-top: 1rem; position: relative; padding-left: 1.5rem; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--border);
+    border-radius: 2px;
+  }
+  .tl-item {
+    position: relative;
+    margin-bottom: 1.2rem;
+    padding-left: 1rem;
+  }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -1.65rem;
+    top: .4rem;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .tl-done::before   { background: var(--done); }
+  .tl-next::before   { background: var(--accent-orange); box-shadow: 0 0 0 4px rgba(245,158,11,.2); }
+  .tl-pending::before{ background: var(--border); }
+  .tl-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+  .tl-done .tl-label   { color: var(--done); }
+  .tl-next .tl-label   { color: var(--accent-orange); }
+  .tl-pending .tl-label{ color: var(--muted); }
+  .tl-title { font-weight: 600; color: #fff; font-size: .95rem; }
+  .tl-sub   { font-size: .82rem; color: var(--muted); margin-top: .15rem; }
+  .tl-commit { font-size: .72rem; color: #555d80; font-family: monospace; }
+
+  /* Glossary */
+  .glossary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: .6rem;
+    margin-top: 1rem;
+  }
+  .gloss-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .75rem .9rem;
+  }
+  .gloss-term {
+    font-family: "JetBrains Mono", monospace;
+    font-size: .8rem;
+    color: #a5b4fc;
+    font-weight: 700;
+    margin-bottom: .25rem;
+  }
+  .gloss-def { font-size: .8rem; color: var(--muted); }
+  .gloss-def strong { color: var(--text); }
+
+  /* Big stat */
+  .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+  .stat-box {
+    flex: 1; min-width: 160px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat-num { font-size: 1.7rem; font-weight: 800; color: #fff; line-height: 1; }
+  .stat-unit { font-size: .75rem; color: var(--muted); margin-top: .25rem; }
+  .stat-label { font-size: .72rem; color: var(--muted); margin-top: .4rem; }
+  .stat-box.blue  .stat-num { color: var(--accent-blue); }
+  .stat-box.green .stat-num { color: var(--accent-green); }
+  .stat-box.orange.stat-num { color: var(--accent-orange); }
+  .stat-box.red   .stat-num { color: var(--accent-red); }
+
+  /* Alert box */
+  .alert {
+    border-radius: 8px;
+    padding: .9rem 1.1rem;
+    font-size: .85rem;
+    margin: 1rem 0;
+    display: flex;
+    gap: .75rem;
+  }
+  .alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: .05rem; }
+  .alert-orange { background: #2a1e08; border: 1px solid #6b4210; color: #fcd34d; }
+  .alert-green  { background: #0a1e0e; border: 1px solid #1a4a22; color: #86efac; }
+  .alert-blue   { background: #081828; border: 1px solid #1a3a5a; color: #93c5fd; }
+
+  /* Section intro text */
+  .intro { color: var(--muted); font-size: .88rem; margin-bottom: 1rem; line-height: 1.7; }
+
+  @media (max-width: 700px) {
+    .combo-grid { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipe-phase + .pipe-phase { margin-left: 0; margin-top: 1.5rem; }
+    .pipe-phase::after { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="section-label">TCC · IDP · 2026</div>
+  <h1>Parallel Aho–Corasick</h1>
+  <p class="header-sub">Visão técnica do estado do projeto — fases, abordagens, resultados e rumo.</p>
+  <div style="margin-top:.8rem;">
+    <span class="badge badge-hw">⚙ Intel i5-1235U · 2 P-cores + 8 E-cores · 12 threads</span>
+    <span class="badge badge-hw">📦 RAM 31 GiB · L3 12 MB</span>
+    <span class="badge badge-lang">🔧 C11 · Pthreads · -O3 -march=native</span>
+  </div>
+</div>
+
+<!-- PIPELINE OVERVIEW -->
+<section>
+  <div class="section-label">Visão geral</div>
+  <h2>As 3 fases de uma execução</h2>
+  <p class="intro">
+    Toda execução do laboratório passa exatamente por estas fases em sequência.
+    As fases são <strong>estanques</strong>: a busca nunca modifica o autômato, e o merge
+    nunca reprocessa o texto. Isso é o que torna o paralelismo na fase de busca
+    trivialmente livre de locks.
+  </p>
+  <div class="pipeline">
+    <div class="pipe-phase phase-1">
+      <div class="phase-number">Fase 1</div>
+      <div class="phase-title">Construção</div>
+      <p class="phase-note">Carrega padrões, monta trie, executa BFS para calcular as funções de transição, falha e dict_suffix. Resultado: autômato <strong>imutável</strong>.</p>
+      <div>
+        <span class="phase-tag tag-seq">Sequencial padrão</span>
+        <span class="phase-tag tag-par">Paralelo opt-in (Idea 4)</span>
+      </div>
+    </div>
+    <div class="pipe-phase phase-2">
+      <div class="phase-number">Fase 2</div>
+      <div class="phase-title">Busca (Search)</div>
+      <p class="phase-note">Cada worker lê o autômato e seu chunk de texto, emite matches na sua lista privada. Nenhum dado é compartilhado entre workers em escrita.</p>
+      <div>
+        <span class="phase-tag tag-seq">1 thread (baseline)</span>
+        <span class="phase-tag tag-par">N threads (paralelismo)</span>
+      </div>
+    </div>
+    <div class="pipe-phase phase-3">
+      <div class="phase-number">Fase 3</div>
+      <div class="phase-title">Merge</div>
+      <p class="phase-note">O master thread concatena as listas thread-locais em ordem de <code>thread_id</code> após o <code>pthread_join</code>. Representa &lt;1% do tempo total.</p>
+      <div>
+        <span class="phase-tag tag-seq">Sempre sequencial</span>
+        <span class="phase-tag tag-opt">Irrelevante p/ otimizar</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-green">
+    <div class="alert-icon">✅</div>
+    <div>
+      <strong>As fases 1 e 2 são completamente independentes e combináveis.</strong>
+      Você pode usar o build paralelo (Idea 4) com qualquer searcher, ou o
+      build sequencial com qualquer searcher. O autômato produzido é
+      <em>bit-a-bit idêntico</em> nas duas variantes — verificado por
+      <code>automata_byte_equal()</code> em <code>make test</code>.
+      Veja a seção "Combinabilidade" abaixo.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FASE 1: CONSTRUÇÃO -->
+<section>
+  <div class="section-label">Fase 1</div>
+  <h2>Construção do autômato</h2>
+  <p class="intro">
+    Converte o dicionário de padrões em um DFA determinístico completo que permite
+    transitar com um único load indexado por byte de entrada. A construção é um
+    gargalo real apenas para dicionários muito grandes (ET ~44k regras);
+    para dicionários menores domina a fase de busca.
+  </p>
+
+  <div class="cards">
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span>Etapa 1: inserção na trie</div>
+      <div class="card-meta">Sempre sequencial · <code>ac_automaton_build()</code></div>
+      <div class="card-body">
+        Percorre os bytes de cada padrão criando nós na trie (<code>raw_child</code>).
+        Custo <code>O(total_pattern_length)</code> — tipicamente &lt;5% do custo total do build.
+        Não foi paralelizado: a disputa por slots de filho tornaria necessário atomics
+        com custo/benefício desfavorável.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Resultado</div>
+        <span class="pill pill-gray">Trie pronta em raw_child[]</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span>Etapa 2: BFS — goto + fail + dict_suffix</div>
+      <div class="card-meta">Sequencial padrão · Paralelo com <code>AC_BUILD_PARALLEL=1</code></div>
+      <div class="card-body">
+        BFS a partir da raiz preenche <code>goto_tbl</code>, <code>fail[]</code> e
+        <code>dict_suffix[]</code>. Em cada nível <em>d</em>, cada estado depende
+        apenas de estados em <em>d-1</em> — isso é a invariante que torna o nível
+        embarrassingly parallel. Custo dominante: <code>O(num_states × 256)</code>.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ideia atacada</div>
+        <span class="pill pill-purple">Idea 4 — BFS paralela (✅ feito)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-done"></span>Etapa 3: flat output table</div>
+      <div class="card-meta">Sequencial · Idea 5 · Sempre ativo · <code>e78045c</code></div>
+      <div class="card-body">
+        Um pass extra após a BFS pré-computa, para cada estado, a lista
+        contígua de <code>pattern_id</code>s que AC emitiria ao chegar ali.
+        Elimina dois níveis de pointer-chasing na emissão. Searchers antigos
+        ignoram os novos campos; searchers novos (<code>_flat</code>) os leem.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ideia atacada</div>
+        <span class="pill pill-teal">Idea 5 — flat outputs (✅ feito)</span>
+        <span class="pill pill-green">Todos os searchers herdam</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="alert alert-blue" style="margin-top:1rem;">
+    <div class="alert-icon">💡</div>
+    <div>
+      <strong>Idea 4 — BFS Paralela:</strong> ativa via <code>AC_BUILD_PARALLEL=1 AC_BUILD_THREADS=N</code>.
+      Usa uma BFS nível-síncrona com workers por nível e um <code>atomic_fetch_add</code>
+      para reservar slots no frontier de próximo nível. É o único <code>atomic</code>
+      de toda a implementação e só dispara durante o build, nunca no hot loop de busca.
+      Após <code>pthread_join</code> ao final de cada nível, todos os writes do nível
+      anterior ficam visíveis (happens-before garantido pelo join).
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- FASE 2: BUSCA -->
+<section>
+  <div class="section-label">Fase 2</div>
+  <h2>Busca (Search) — 14 searchers registrados</h2>
+  <p class="intro">
+    Cada searcher é um arquivo <code>.c</code> independente que se registra via
+    <code>__attribute__((constructor))</code>. O Makefile os descobre por glob.
+    Todos precisam concordar com o <code>sequential</code> em <code>make test</code>
+    nos thread counts <code>{1,2,3,4,7,8}</code>.
+  </p>
+
+  <!-- Baseline -->
+  <h3 style="margin-top:1rem; color:var(--muted);">Baseline</h3>
+  <div class="cards" style="margin-bottom:1.5rem;">
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>sequential</code></div>
+      <div class="card-meta">Single-thread · Referência de correção</div>
+      <div class="card-body">
+        Loop simples: <code>state = goto_tbl[state*256+c]</code> por byte.
+        Emissão via chain-walk (<code>own_out_head</code> + <code>dict_suffix</code>).
+        É o oráculo contra o qual todos os outros são validados.
+        <br><br>
+        <strong>Resultados medidos:</strong> Snort 207 MB/s · ET-32 103,7 MB/s (enron_x8)
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-gray">Nada — é o baseline</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paralelismo de dados por texto -->
+  <h3 style="color:var(--muted);">Eixo 1: Paralelismo de dados (particionamento do texto)</h3>
+  <p class="intro" style="margin-top:.3rem;">
+    O texto é dividido em chunks, cada thread recebe um. O autômato é compartilhado
+    em leitura. O gargalo residual é o cache blowout em dicionários grandes.
+  </p>
+  <div class="cards" style="margin-bottom:1.5rem;">
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_chunked</code></div>
+      <div class="card-meta">Chunks estáticos homogêneos · v1 original</div>
+      <div class="card-body">
+        Divide o texto em N partes iguais. Cada worker faz warm-up de
+        <code>max_pattern_len-1</code> bytes antes do seu chunk para garantir o
+        estado correto do DFA na fronteira. Emissão com chain-walk.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-purple">Paralelismo básico de busca</span>
+        <span class="pill pill-gray">T=12: 4,13× speedup (Snort)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_chunked_v2</code></div>
+      <div class="card-meta">Split warm-up/owned loops · cache-pad em worker_t</div>
+      <div class="card-body">
+        Divide o loop em duas fases: warm-up (sem emissão) e owned (com emissão).
+        Elimina o branch <code>if (i &lt; core_start)</code> do hot loop.
+        Padding do <code>worker_t</code> para 64 bytes evita false-sharing entre workers.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-blue">False-sharing</span>
+        <span class="pill pill-blue">Branch no hot loop</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_chunked_v3</code> ⭐</div>
+      <div class="card-meta">Topology-aware · Chunks ponderados por frequência</div>
+      <div class="card-body">
+        Lê a frequência de cada core no sysfs (<code>cpufreq</code>) e distribui chunks
+        proporcionalmente: P-cores recebem ~142 MB, E-cores ~107 MB.
+        Minimiza a ociosidade na barreira do <code>pthread_join</code>.
+        <br><br>
+        <strong>Melhor resultado medido:</strong> <span class="winner">735 MB/s · 4,78× speedup</span> (Snort, T=12)
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-orange">Desbalanceamento P/E-core</span>
+        <span class="pill pill-orange">Ociosidade na barreira</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_dynamic</code></div>
+      <div class="card-meta">Dispatch dinâmico via contador atômico</div>
+      <div class="card-body">
+        Divide o texto em 4N tarefas menores. Workers pegam a próxima tarefa
+        com um <code>atomic_fetch_add</code>. Adapta-se a flutuações térmicas
+        em tempo real, mas tem overhead do atomic no dispatch.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-orange">Flutuação de carga dinâmica</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_block_cyclic</code></div>
+      <div class="card-meta">Distribuição cíclica de blocos de 1 MiB</div>
+      <div class="card-body">
+        Alterna blocos de 1 MiB entre threads (round-robin). Thread 0 pega
+        blocos 0, N, 2N...; thread 1 pega 1, N+1, 2N+1... Distribui melhor
+        hot-spots causados por padrões densos em certas regiões do corpus.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-blue">Hot-spots localizados no texto</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_affinity</code></div>
+      <div class="card-meta">CPU pinning via pthread_setaffinity_np</div>
+      <div class="card-body">
+        Fixa cada thread em um core específico (<code>i % nproc</code>) para
+        maximizar reuso de cache L1/L2 por core. Evita migração de thread
+        pelo scheduler do SO.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-blue">Migração de thread / cache thrash</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-baseline"></span><code>pthread_prefetch</code></div>
+      <div class="card-meta">Software prefetch do stream de texto</div>
+      <div class="card-body">
+        Adiciona <code>__builtin_prefetch(text + Δ)</code> no hot loop (Δ ≈ 512B),
+        instruindo o hardware a carregar linhas de cache futuras enquanto
+        processa as atuais. Não ajuda com o autômato (acesso imprevisível),
+        mas reduz stalls de leitura do texto.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-teal">Latência de leitura do texto</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ideas implementadas: layout + delta2 -->
+  <h3 style="color:var(--muted);">Eixo 2: Transformações algorítmicas (ideias implementadas)</h3>
+  <div class="cards" style="margin-bottom:1.5rem;">
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-done"></span><code>sequential_flat</code></div>
+      <div class="card-meta">Idea 5 · Single-thread · <code>e78045c</code></div>
+      <div class="card-body">
+        Idêntico ao <code>sequential</code> exceto a emissão: usa
+        <code>flat_count[state]</code> + <code>flat_pids[]</code> em vez
+        do chain-walk. Isola o ganho do flat layout sem ruído de threading.
+        Serve como fallback dos searchers <code>_flat</code> em inputs pequenos.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-teal">Pointer-chasing na emissão</span>
+        <span class="pill pill-teal">Latência de dict_suffix chain</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-done"></span><code>pthread_chunked_flat</code></div>
+      <div class="card-meta">Idea 5 · Multi-thread · <code>e78045c</code></div>
+      <div class="card-body">
+        Chunking do v2 + emissão flat. É o número headline da Idea 5 em
+        multi-thread: combina o ganho de paralelismo de dados com o ganho
+        de layout na emissão. Todos os outros searchers <code>_flat</code>
+        futuros seguirão este padrão.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-purple">Paralelismo de dados</span>
+        <span class="pill pill-teal">Pointer-chasing na emissão</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-done"></span><code>sequential_delta2</code></div>
+      <div class="card-meta">Idea 3 · Single-thread · <code>5353383</code></div>
+      <div class="card-body">
+        Pré-computa <code>δ²[state][byte_pair]</code>: um único load indexado
+        consome <em>dois</em> bytes. Dimina a cadeia de loads dependentes pela
+        metade. Só funciona quando <code>num_states ≲ 3300</code> (footprint
+        limite de 1 GiB). Para dicionários maiores faz fallback automático
+        para <code>sequential</code>.
+        <br><br>
+        <span class="warn">⚠ Só vale para dicionários pequenos que cabem em cache.</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-blue">Cadeia de loads dependentes/byte</span>
+        <span class="pill pill-gray">Regime: num_states &lt; 3300</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Idea 1: pattern sharding (implementada, três políticas) -->
+  <h3 style="color:var(--muted);">Eixo 3: Paralelismo de dicionário (Idea 1 — três políticas registradas)</h3>
+  <p class="intro" style="margin-top:.3rem;">
+    Em vez de dividir o texto, divide o <em>dicionário</em>. K sub-autômatos
+    disjuntos, cada worker varre o texto <em>inteiro</em> com seu sub-autômato
+    K vezes menor. Três políticas de sharding registradas como searchers
+    independentes; cada política tem cache próprio fingerprinted por
+    <code>(goto_tbl, num_states, num_outputs, num_patterns, K)</code>.
+  </p>
+  <div class="cards" style="margin-bottom:1.5rem;">
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-done"></span><code>pattern_sharded</code> (round-robin)</div>
+      <div class="card-meta">Idea 1 · Multi-thread · 2026-05-21</div>
+      <div class="card-body">
+        Atribui padrão <em>i</em> ao shard <code>i % K</code>. Balanceia
+        contagem de padrões, não bytes nem estados. Implementação mais
+        simples; serve de baseline para comparar as outras políticas.
+        <br><br>
+        <span class="warn">⚠ Regride ~30% vs. sequential em todos os regimes testados.</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-orange">Cache blowout (tentativa, perde por bw de RAM)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="status-dot dot-done"></span><code>pattern_sharded_lpt</code></div>
+      <div class="card-meta">Idea 1 · Multi-thread · 2026-05-21</div>
+      <div class="card-body">
+        Longest-Processing-Time-first: ordena por comprimento desc., atribui
+        cada padrão ao bin mais leve. Balanceia bytes-por-shard, que é uma
+        proxy razoável para estados-por-shard.
+        <br><br>
+        <span class="warn">⚠ Equivale ao round-robin no hardware testado: bytes-por-shard não correlaciona com custo quando o gargalo é banda de RAM.</span>
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-orange">Desbalanceamento de state count</span>
+      </div>
+    </div>
+
+    <div class="card" style="border-color:#1a4a1a;">
+      <div class="card-title"><span class="status-dot dot-done"></span><code>pattern_sharded_prefix</code> ⭐</div>
+      <div class="card-meta">Idea 1 · Multi-thread · 2026-05-21 · Política vencedora</div>
+      <div class="card-body">
+        Bucket pelo primeiro byte: <code>shard = pat[0] % K</code>. Padrões com
+        a mesma letra inicial caem no mesmo shard; sub-autômatos têm raízes
+        densas e hot path coerente em cache.
+        <br><br>
+        <strong>Melhor resultado:</strong>
+        <span class="winner">121,40 MB/s · 1,21× speedup</span>
+        (Snort full + enron, K=8) — única política que vence o <code>sequential</code>.
+        Empiricamente satura em <strong>K=2</strong>.
+      </div>
+      <div class="card-footer">
+        <div class="card-attacks">Ataca</div>
+        <span class="pill pill-green">Cache locality por shard</span>
+        <span class="pill pill-orange">Cache blowout (parcial)</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="alert alert-orange" style="margin-top:.5rem;">
+    <div class="alert-icon">📊</div>
+    <div>
+      <strong>Conclusão honesta da idea 1:</strong> abordagem regime-dependente.
+      Para dicionários grandes (Snort full ≥ 56 MB), a política <code>prefix</code>
+      entrega <strong>1,2×</strong> sobre o sequencial; round-robin e LPT regridem.
+      Para dicionários pequenos (Snort-100 cabe em L2), <em>nenhuma</em> política
+      vence — o "second-scan cache hit" não compensa o tráfego K× de texto.
+      Mesmo o melhor caso (<code>prefix</code>, 1,21×) é <strong>~3× menor</strong>
+      que <code>pthread_chunked_flat</code> (3,64× contra o mesmo baseline) — paralelismo
+      de texto continua sendo o eixo dominante. O valor real da idea 1 está na
+      <strong>composição 2-D (K × N)</strong> com chunking, deixada como trabalho
+      futuro com motivação experimental direta.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- COMBINABILIDADE -->
+<section>
+  <div class="section-label">Composição</div>
+  <h2>Combinabilidade: Build × Search</h2>
+  <p class="intro">
+    Construção e busca são fases estanques. O autômato é o único ponto de contato —
+    e ele é idêntico nas duas variantes de build. Portanto qualquer par (build, searcher) é válido.
+  </p>
+
+  <div class="combo-grid">
+    <div class="combo-box combo-yes">
+      <h3 style="color:var(--done); margin-bottom:.5rem;">✅ Sim — são combináveis</h3>
+      <p style="font-size:.85rem; color:var(--muted);">
+        <code>AC_BUILD_PARALLEL=1</code> + qualquer searcher funciona porque
+        <code>ac_automaton_build_par()</code> produz um struct bit-idêntico a
+        <code>ac_automaton_build()</code>. O searcher não sabe nem se importa
+        com qual função construiu o autômato — ele só lê campos estáticos.
+      </p>
+      <br>
+      <div style="font-size:.82rem; color:var(--text);">
+        <strong>Exemplos válidos:</strong><br>
+        <code>sequential build</code> + <code>pthread_chunked_v3</code> ✓<br>
+        <code>parallel build (T=8)</code> + <code>pthread_chunked_flat</code> ✓<br>
+        <code>parallel build (T=8)</code> + <code>sequential_delta2</code> ✓<br>
+        <code>parallel build (T=8)</code> + <code>pattern_sharded (futuro)</code> ✓
+      </div>
+    </div>
+
+    <div class="combo-box combo-note">
+      <h3 style="color:var(--accent-orange); margin-bottom:.5rem;">⚠ Atenção nas medições</h3>
+      <p style="font-size:.85rem; color:var(--muted);">
+        O ganho do build paralelo é no <strong>tempo de construção</strong>,
+        não no throughput de busca. O CLI reporta os dois separados:
+        <code># build time:</code> e <code>bench_run</code>.
+        Para a dissertação, sempre reporte os dois — especialmente em dicionários
+        grandes onde o build pode ser 10-30% do tempo total em uso real (IDS
+        que recarrega regras).
+      </p>
+      <br>
+      <p style="font-size:.82rem; color:var(--text);">
+        Pattern sharding (Idea 1) constrói K sub-autômatos internamente.
+        Nesses sub-autômatos, <code>ac_automaton_build()</code> será chamada K vezes
+        — portanto o build paralelo (Idea 4) pode ser chamado internamente
+        pelo sharding também, compondo os dois.
+      </p>
+    </div>
+  </div>
+
+  <!-- Matrix visual simples -->
+  <div style="margin-top:1.5rem; overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Build</th>
+          <th>Searcher</th>
+          <th>Válido?</th>
+          <th>O que mede</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ac_automaton_build</code></td>
+          <td>Qualquer dos 14 registrados</td>
+          <td><span class="winner">✅ Sempre</span></td>
+          <td>Apenas ganho de busca</td>
+        </tr>
+        <tr>
+          <td><code>ac_automaton_build_par(T)</code></td>
+          <td>Qualquer dos 14 registrados</td>
+          <td><span class="winner">✅ Sempre</span></td>
+          <td>Ganho de build + ganho de busca</td>
+        </tr>
+        <tr>
+          <td>Qualquer um</td>
+          <td><code>sequential_delta2</code></td>
+          <td><span class="warn">⚠ Condicional</span></td>
+          <td>Só vale se num_states &lt; 3300 (fallback automático)</td>
+        </tr>
+        <tr>
+          <td>Qualquer um</td>
+          <td><code>pattern_sharded (futuro)</code></td>
+          <td><span class="winner">✅ Válido</span></td>
+          <td>K sub-builds internos + busca em paralelo de dicionário</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- RESULTADOS -->
+<section>
+  <div class="section-label">Resultados experimentais</div>
+  <h2>O que foi medido até agora</h2>
+  <p class="intro">
+    Resultados do sweep noturno de 2026-05-20 (<code>15293cc</code>, protocolo <code>--warmup 2 --iters 5</code>) e dos
+    headline benchmarks por searcher (<code>simplewiki ~1,2 GiB + Snort</code>, <code>-O3 -march=native</code>).
+    Hardware: i5-1235U, governor <code>powersave</code>. Ideas 3, 4, 5 e 1 medidas — veja
+    seções específicas abaixo e <code>tcc_notes/tldr_metricas.md §6–10</code>.
+    Sweep formal completo pendente via <code>scripts/sweep_ideas_345.sh</code> e
+    <code>scripts/run_pattern_sharded_sweep.sh</code> (idea 1).
+  </p>
+
+  <!-- Stats rápidos -->
+  <div class="stat-row">
+    <div class="stat-box blue">
+      <div class="stat-num">4,13×</div>
+      <div class="stat-unit">speedup busca</div>
+      <div class="stat-label">Snort · T=12 · enron_x8</div>
+    </div>
+    <div class="stat-box blue">
+      <div class="stat-num">3,62×</div>
+      <div class="stat-unit">speedup busca</div>
+      <div class="stat-label">ET-32 · T=12 · enron_x8</div>
+    </div>
+    <div class="stat-box green">
+      <div class="stat-num">7,49×</div>
+      <div class="stat-unit">speedup busca</div>
+      <div class="stat-label">chunked_flat · T=12 · simplewiki</div>
+    </div>
+    <div class="stat-box" style="border-color:#1a2a4a;">
+      <div class="stat-num" style="color:var(--accent-teal);">1,31×</div>
+      <div class="stat-unit">speedup build</div>
+      <div class="stat-label">BFS paralela T=12 · ET full</div>
+    </div>
+    <div class="stat-box" style="border-color:#4a1010;">
+      <div class="stat-num" style="color:var(--accent-red);">−78,7%</div>
+      <div class="stat-unit">throughput</div>
+      <div class="stat-label">Snort-100 → ET-32 (cache blowout)</div>
+    </div>
+    <div class="stat-box" style="border-color:#1a4a1a;">
+      <div class="stat-num" style="color:var(--done);">72,4M</div>
+      <div class="stat-unit">matches</div>
+      <div class="stat-label">Validados sem divergência (MD5 ≡)</div>
+    </div>
+    <div class="stat-box" style="border-color:#4a3010;">
+      <div class="stat-num" style="color:var(--accent-orange);">1,21×</div>
+      <div class="stat-unit">speedup busca</div>
+      <div class="stat-label"><code>pattern_sharded_prefix</code> · K=8 · Snort full + enron</div>
+    </div>
+  </div>
+
+  <!-- Fase A: speedup curves -->
+  <h3 style="margin-top:1.5rem;">Fase A — Curvas de speedup (enron_x8 · 10,59 GiB)</h3>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Dicionário</th>
+          <th>Threads</th>
+          <th>Mean (ms)</th>
+          <th>MB/s</th>
+          <th>Speedup</th>
+          <th class="bar-cell">Barra</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem; padding:.4rem .8rem;">Snort — 4.188 padrões · autômato ~56 MB · sequencial: 207 MB/s</td></tr>
+        <tr>
+          <td>Snort</td><td class="num">1</td><td class="num">50.781</td><td class="num">213,5</td>
+          <td class="num">1,03×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:25%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort</td><td class="num">4</td><td class="num">23.940</td><td class="num">452,9</td>
+          <td class="num">2,19×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:53%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort</td><td class="num">8</td><td class="num">15.677</td><td class="num">691,6</td>
+          <td class="num">3,34×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:81%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort</td><td class="num">12</td><td class="num winner">12.680</td><td class="num winner">855,1</td>
+          <td class="num winner">4,13×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td>
+        </tr>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem; padding:.4rem .8rem;">ET-32 — 44.678 padrões · autômato ~515 MB (42× L3) · sequencial: 103,7 MB/s</td></tr>
+        <tr>
+          <td>ET-32</td><td class="num">1</td><td class="num">96.905</td><td class="num">111,9</td>
+          <td class="num">1,08×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:30%"></div></div></td>
+        </tr>
+        <tr>
+          <td>ET-32</td><td class="num">4</td><td class="num">49.309</td><td class="num">219,9</td>
+          <td class="num">2,12×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:59%"></div></div></td>
+        </tr>
+        <tr>
+          <td>ET-32</td><td class="num">8</td><td class="num">32.698</td><td class="num">331,6</td>
+          <td class="num">3,20×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:88%"></div></div></td>
+        </tr>
+        <tr>
+          <td>ET-32</td><td class="num">12</td><td class="num winner">28.912</td><td class="num winner">375,0</td>
+          <td class="num winner">3,62×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Fase B: footprint -->
+  <h3 style="margin-top:1.5rem;">Fase B — Impacto do footprint do autômato (enron · 1,32 GiB · T=12)</h3>
+  <div class="alert alert-orange">
+    <div class="alert-icon">🔥</div>
+    <div>
+      Este é o problema central do TCC: throughput cai <strong>78,7%</strong> conforme o dicionário
+      cresce de 1,3 MB para 515 MB. A <strong>Idea 1 (pattern sharding)</strong> foi a abordagem
+      desenhada para atacar diretamente esse gargalo — e foi
+      <strong>parcialmente bem-sucedida</strong>: a política <code>prefix</code> entrega 1,21× sobre
+      o sequencial em Snort full (~56 MB), mas <strong>não recupera</strong> o regime cache-friendly
+      do Snort-100 (1.838 MB/s) — fica em 121 MB/s. O standalone tem teto; a saída é a composição
+      2-D com chunking (ver seção <em>Idea 1</em> abaixo).
+    </div>
+  </div>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Padrões</th><th>Autômato</th><th>MB/s (seq)</th><th>MB/s (v3 T=12)</th><th>Speedup</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Snort-100</td><td class="num">100</td><td class="num">~1,3 MB</td>
+          <td class="num">423,6</td><td class="num winner">1.838,9</td><td class="num winner">4,34×</td>
+        </tr>
+        <tr>
+          <td>Snort-1k</td><td class="num">1.000</td><td class="num">~10 MB</td>
+          <td class="num">275,7</td><td class="num">1.110,0</td><td class="num">4,03×</td>
+        </tr>
+        <tr>
+          <td>Snort</td><td class="num">4.188</td><td class="num">~56 MB</td>
+          <td class="num">160,7</td><td class="num">735,1</td><td class="num">4,57×</td>
+        </tr>
+        <tr style="background:#2a1510;">
+          <td>ET-32</td><td class="num">44.678</td>
+          <td class="num warn">~515 MB ⚠</td>
+          <td class="num warn">111,5</td><td class="num warn">391,4</td>
+          <td class="num warn">3,51×</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    De 1.838 MB/s para 391 MB/s: queda de 78,7% causada por cache blowout.
+    O autômato ET-32 ocupa 42× a L3 disponível (515 MB vs 12 MB).
+  </p>
+
+  <!-- Per-thread -->
+  <h3 style="margin-top:1.5rem;">Fase D — Desbalanceamento P/E-core (Snort · enron · T=12)</h3>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Searcher</th><th>Thread mais rápida</th><th>Thread mais lenta</th><th>Ociosidade na barreira</th><th>Ganho</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>pthread_chunked</code> (chunks iguais)</td>
+          <td class="num">1.234 ms</td>
+          <td class="num warn">1.584 ms</td>
+          <td class="num warn">350 ms</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td><code>pthread_chunked_v3</code> (ponderado)</td>
+          <td class="num">1.308 ms</td>
+          <td class="num winner">1.438 ms</td>
+          <td class="num winner">130 ms</td>
+          <td class="winner">−62,9% de ociosidade</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Idea 5: flat output A/B -->
+  <h3 style="margin-top:1.5rem;">Idea 5 — Flat output A/B (simplewiki ~1,2 GiB · Snort)</h3>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Searcher</th><th>Threads</th><th>MB/s</th><th>Mean (ms)</th><th>Speedup vs. <code>sequential</code></th><th class="bar-cell">Barra</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sequential</code></td><td class="num">1</td>
+          <td class="num">192,82</td><td class="num">6.308,8</td>
+          <td class="num">1,00×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:13%"></div></div></td>
+        </tr>
+        <tr>
+          <td><code>sequential_flat</code></td><td class="num">1</td>
+          <td class="num">244,16</td><td class="num">4.982,3</td>
+          <td class="num">1,27×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:17%"></div></div></td>
+        </tr>
+        <tr>
+          <td><code>pthread_chunked_v2</code></td><td class="num">12</td>
+          <td class="num">791,11</td><td class="num">1.537,6</td>
+          <td class="num">4,10×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:55%"></div></div></td>
+        </tr>
+        <tr>
+          <td><code>pthread_chunked_flat</code></td><td class="num">12</td>
+          <td class="num winner">1.444,17</td><td class="num winner">842,3</td>
+          <td class="num winner">7,49×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Flat multi-thread: <strong>1,83× mais rápido que v2</strong> em corpus de baixa densidade de matches (simplewiki).
+    Em enron_corpus (Snort, 55 MB autômato &gt; L3 12 MB), o ganho collapse para ~0% — o gargalo migra para cache misses em <code>goto_tbl</code>, não para a cadeia de emissão.
+  </p>
+
+  <!-- Idea 3: δ² -->
+  <h3 style="margin-top:1.5rem;">Idea 3 — δ² × tamanho do dicionário (simplewiki + enron · T=1)</h3>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Estados</th><th>Tabela δ²</th><th>MB/s (<code>sequential</code>)</th><th>MB/s (<code>sequential_delta2</code>)</th><th>Δ</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>7 padrões HTTP</td><td class="num">43</td><td class="num">~14 MiB</td>
+          <td class="num">426,70</td>
+          <td class="num winner">587,03</td>
+          <td class="winner">+37,6%</td>
+        </tr>
+        <tr>
+          <td>Snort-100</td><td class="num">1.939</td><td class="num warn">~640 MiB</td>
+          <td class="num">405,70</td>
+          <td class="num warn">315,24</td>
+          <td class="warn">−22,3%</td>
+        </tr>
+        <tr style="background:#2a1510;">
+          <td>Snort-1k</td><td class="num">11.974</td>
+          <td class="num warn">~3.741 MiB</td>
+          <td class="num">275,68</td>
+          <td class="num warn">—</td>
+          <td class="warn">FALLBACK (guard &gt;1 GiB)</td>
+        </tr>
+        <tr style="background:#2a1510;">
+          <td>Snort full</td><td class="num">55.479</td>
+          <td class="num warn">~17.337 MiB</td>
+          <td class="num">160,68</td>
+          <td class="num warn">—</td>
+          <td class="warn">FALLBACK</td>
+        </tr>
+        <tr style="background:#2a1510;">
+          <td>ET-32</td><td class="num">508.896</td>
+          <td class="num warn">&gt;&gt; 1 TiB</td>
+          <td class="num">111,47</td>
+          <td class="num warn">—</td>
+          <td class="warn">FALLBACK</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Cross-over acontece entre 43 e 1.939 estados (~14 MiB vs ~640 MiB de tabela).
+    Em hardware desktop com L3 de 12 MB, δ² só vence para dicionários de até ~50 estados — irrelevante para IDS reais.
+    O searcher faz fallback automático para <code>sequential</code> acima do guard de 1 GiB.
+  </p>
+
+  <!-- Idea 4: build paralelo -->
+  <h3 style="margin-top:1.5rem;">Idea 4 — BFS paralela de construção (build time)</h3>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Estados</th><th>Build seq (ms)</th><th>Build par T=4 (ms)</th><th>Build par T=12 (ms)</th><th>Speedup T=12</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Snort full</td><td class="num">55.479</td>
+          <td class="num">~50</td>
+          <td class="num warn">~54</td>
+          <td class="num warn">~54</td>
+          <td class="warn">0,93× (overhead &gt; ganho)</td>
+        </tr>
+        <tr>
+          <td>ET full</td><td class="num">600.830</td>
+          <td class="num">787</td>
+          <td class="num">649</td>
+          <td class="num winner">603</td>
+          <td class="winner">1,31×</td>
+        </tr>
+        <tr>
+          <td>ET-32 (estimado)</td><td class="num">508.896</td>
+          <td class="num">~580–1670</td>
+          <td class="num">~650–770</td>
+          <td class="num">~600–910</td>
+          <td>~1,3–1,7× (variância alta)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    O build paralelo é significativo apenas para dicionários com &gt;100k estados.
+    Para Snort (~55k), o overhead de spawn/join por nível de BFS supera o ganho.
+    Ativar via <code>AC_BUILD_PARALLEL=1 AC_BUILD_THREADS=N</code>; sweep formal via <code>scripts/sweep_ideas_345.sh F</code>.
+  </p>
+
+  <!-- Idea 1: pattern sharding -->
+  <h3 style="margin-top:1.5rem;">Idea 1 — Pattern sharding × política × K (enron_corpus 1,32 GiB)</h3>
+  <div class="alert alert-orange">
+    <div class="alert-icon">📌</div>
+    <div>
+      Resultado central: <strong>a política importa mais que K</strong>. Apenas
+      <code>pattern_sharded_prefix</code> vence o <code>sequential</code> — e
+      satura em K=2 (ganho de cache locality, não de paralelismo agregado).
+      Round-robin e LPT regridem em todos os regimes.
+    </div>
+  </div>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Dicionário</th>
+          <th>Searcher</th>
+          <th>K</th>
+          <th>MB/s</th>
+          <th>Speedup vs <code>sequential</code></th>
+          <th class="bar-cell">Barra</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem; padding:.4rem .8rem;">Snort full (4.188 padrões · autômato ~56 MB)</td></tr>
+        <tr>
+          <td>Snort full</td><td><code>sequential</code></td><td class="num">—</td>
+          <td class="num">100,50</td><td class="num">1,00×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:25%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort full</td><td><code>pattern_sharded</code> (RR)</td><td class="num">8</td>
+          <td class="num warn">68,42</td><td class="num warn">0,68×</td>
+          <td><div class="bar-bg"><div class="bar-fill red" style="width:17%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort full</td><td><code>pattern_sharded_lpt</code></td><td class="num">8</td>
+          <td class="num warn">70,67</td><td class="num warn">0,70×</td>
+          <td><div class="bar-bg"><div class="bar-fill red" style="width:18%"></div></div></td>
+        </tr>
+        <tr style="background:#0a2a1a;">
+          <td>Snort full</td><td><code>pattern_sharded_prefix</code></td><td class="num">8</td>
+          <td class="num winner">121,40</td><td class="num winner">1,21× ⭐</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:30%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort full</td><td><code>pthread_chunked_flat</code> (ref.)</td><td class="num">12</td>
+          <td class="num winner">365,67</td><td class="num winner">3,64×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:91%"></div></div></td>
+        </tr>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem; padding:.4rem .8rem;">Snort-100 (100 padrões · autômato ~2 MB — cabe em L2 → sharding sempre regride)</td></tr>
+        <tr>
+          <td>Snort-100</td><td><code>sequential</code></td><td class="num">—</td>
+          <td class="num">221,98</td><td class="num">1,00×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:26%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort-100</td><td><code>pattern_sharded_prefix</code></td><td class="num">8</td>
+          <td class="num warn">128,52</td><td class="num warn">0,58×</td>
+          <td><div class="bar-bg"><div class="bar-fill red" style="width:15%"></div></div></td>
+        </tr>
+        <tr>
+          <td>Snort-100</td><td><code>pthread_chunked_flat</code> (ref.)</td><td class="num">12</td>
+          <td class="num winner">840,70</td><td class="num winner">3,79×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">K-sweep do <code>pattern_sharded_prefix</code> (Snort full + enron)</h3>
+  <div style="overflow-x:auto; margin-top:.5rem;">
+    <table class="results-table">
+      <thead>
+        <tr><th>K</th><th>MB/s</th><th>Speedup vs <code>sequential</code></th><th class="bar-cell">Barra</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="num">2</td><td class="num winner">118,99</td><td class="num winner">1,18×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:98%"></div></div></td>
+        </tr>
+        <tr>
+          <td class="num">4</td><td class="num">116,92</td><td class="num">1,16×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:96%"></div></div></td>
+        </tr>
+        <tr>
+          <td class="num">8</td><td class="num winner">121,40</td><td class="num winner">1,21×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td>
+        </tr>
+        <tr>
+          <td class="num">12</td><td class="num warn">97,25</td><td class="num warn">0,97×</td>
+          <td><div class="bar-bg"><div class="bar-fill red" style="width:80%"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Achado não-trivial: o ganho do <code>prefix</code> <strong>já está saturado em K=2</strong>.
+    Não é speedup de paralelismo — é speedup de cache locality por sub-autômato.
+    Em K=12 o tráfego de RAM (12 × 1,32 GiB) colapsa o ganho. Sharding standalone tem
+    teto baixo; a hipótese central de recuperar Snort-100 a partir de ET-32 só pode ser
+    falsificada com a variante 2-D <code>K × N</code> (sharding × chunking), trabalho futuro.
+  </p>
+</section>
+
+<hr class="divider">
+
+<!-- ROADMAP -->
+<section>
+  <div class="section-label">Roadmap</div>
+  <h2>Estado atual e próximos passos</h2>
+  <p class="intro">
+    Cada ideia está num commit atômico — o branch é cumulativo, sem branches separados.
+    <code>make test</code> valida todos os 14 searchers após cada commit (incluindo
+    as três variantes registradas pela idea 1).
+  </p>
+
+  <div class="timeline">
+
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 1º · 2026-05-20</div>
+      <div class="tl-title">Idea 5 — Flat output table</div>
+      <div class="tl-sub">
+        Fase atacada: <span class="pill pill-teal" style="display:inline">Build + Search</span>
+        — Transforma o layout de emissão. Todos os searchers herdam.
+        Adiciona <code>flat_offset</code>, <code>flat_count</code>, <code>flat_pids</code>
+        ao struct. Novos searchers: <code>sequential_flat</code>, <code>pthread_chunked_flat</code>.
+      </div>
+      <div class="tl-commit">e78045c</div>
+      <div class="tl-sub" style="margin-top:.4rem; font-size:.75rem; color:var(--accent-teal);">
+        📊 Medido: <code>sequential_flat</code> +26,6% vs <code>sequential</code> (simplewiki+Snort T=1);
+        <code>pthread_chunked_flat</code> +83% vs <code>pthread_chunked_v2</code> (simplewiki T=12).
+      </div>
+    </div>
+
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2º · 2026-05-21</div>
+      <div class="tl-title">Idea 4 — BFS paralela de construção</div>
+      <div class="tl-sub">
+        Fase atacada: <span class="pill pill-purple" style="display:inline">Build</span>
+        — Única ideia que ataca a fase de construção. BFS nível-síncrona com
+        workers por nível + <code>atomic_fetch_add</code> para frontier.
+        Novo: <code>ac_automaton_build_par()</code>. Ativado via <code>AC_BUILD_PARALLEL=1</code>.
+      </div>
+      <div class="tl-commit">82c0f10</div>
+      <div class="tl-sub" style="margin-top:.4rem; font-size:.75rem; color:var(--accent-teal);">
+        📊 Medido: ET full ~787 ms → ~603 ms T=12 (1,31×). Snort: empate (overhead &gt; ganho).
+      </div>
+    </div>
+
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 3º · 2026-05-21</div>
+      <div class="tl-title">Idea 3 — δ² multi-step transitions</div>
+      <div class="tl-sub">
+        Fase atacada: <span class="pill pill-blue" style="display:inline">Search</span>
+        — Um load indexado consome 2 bytes. Janela de aplicabilidade estreita
+        (<code>num_states &lt; 3300</code>). Funciona como ponto de comparação
+        para mostrar o limite de truques single-thread vs. cache blowout.
+        Novo: <code>sequential_delta2</code>.
+      </div>
+      <div class="tl-commit">5353383</div>
+      <div class="tl-sub" style="margin-top:.4rem; font-size:.75rem; color:var(--accent-orange);">
+        📊 Medido: +37,6% para 43 estados (cabe em L3); −22,3% para 1.939 estados (table 640 MiB &gt;&gt; L3).
+        Fallback automático para Snort+/ET-32 (guard 1 GiB). Cross-over &lt;~50 estados em hardware desktop.
+      </div>
+    </div>
+
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 4º · 2026-05-21</div>
+      <div class="tl-title">Idea 1 — Pattern sharding (paralelismo de dicionário)</div>
+      <div class="tl-sub">
+        Fase atacada: <span class="pill pill-orange" style="display:inline">Search</span>
+        — Divide o dicionário em K sub-autômatos. Cada worker varre o texto
+        inteiro com seu sub-autômato menor. Três políticas registradas:
+        <code>pattern_sharded</code> (round-robin), <code>pattern_sharded_lpt</code>
+        (length-balanced) e <code>pattern_sharded_prefix</code> (bucket por primeiro byte).
+        Novo arquivo: <code>src/searchers/pattern_sharded.c</code>. Sweep:
+        <code>scripts/run_pattern_sharded_sweep.sh</code>.
+      </div>
+      <div class="tl-commit">HEAD</div>
+      <div class="tl-sub" style="margin-top:.4rem; font-size:.75rem; color:var(--accent-orange);">
+        📊 Medido: <code>prefix</code> +21% vs <code>sequential</code> (Snort full + enron K=8);
+        round-robin/LPT regridem em todos os regimes. Satura em K=2 — é ganho de cache locality,
+        não de paralelismo agregado. Fica ~3× atrás de <code>pthread_chunked_flat</code>.
+        Hipótese de recuperar Snort-100 a partir de ET-32 <strong>não confirmada</strong>
+        para sharding standalone; requer composição 2-D (K × N) com chunking.
+      </div>
+    </div>
+
+    <div class="tl-item tl-pending">
+      <div class="tl-label">❌ Descartada</div>
+      <div class="tl-title">Idea 2 — SIMD gather DFA traversal</div>
+      <div class="tl-sub">
+        Vetorização intra-thread (AVX2 gather). Descartada porque o ganho
+        é máximo quando o DFA cabe em L1/L2 — exatamente o regime <em>fora</em>
+        do foco do TCC. Em IDS real (ET-32, DRAM-bound), gathers não aumentam
+        bandwidth de memória e o benefício some. Citada em trabalhos relacionados.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Status dos artefatos -->
+  <div class="alert alert-green" style="margin-top:1.5rem;">
+    <div class="alert-icon">✅</div>
+    <div>
+      <strong>Todas as 4 ideias do roadmap implementadas (idea 2 descartada por escopo):</strong>
+      (1) Seção §10 adicionada a <code>tcc_notes/tldr_metricas.md</code> com análise por política
+      + K-sweep + conclusão honesta da idea 1;
+      (2) Nova Fase E (<em>pattern sharding</em>) em <code>tcc_notes/Relatório de Testes — Paralelização Aho–Corasick.md</code>;
+      (3) Script <code>scripts/run_pattern_sharded_sweep.sh</code> com matriz (dict × policy × K) + CSV summary;
+      (4) Documento detalhado por searcher em
+      <code>parallel-aho-corasick/docs/searchers/pattern_sharded.md</code>.
+      <br><br>
+      <strong>Próximo passo do TCC:</strong> implementar variante 2-D <code>K × N</code> (sharding × chunking).
+      Hipótese a falsificar: <code>K=2 (prefix) × N=6 (chunked_flat)</code> deve compor para >5× speedup em Snort + enron.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- GLOSSÁRIO -->
+<section>
+  <div class="section-label">Referência</div>
+  <h2>Glossário de termos técnicos</h2>
+
+  <div class="glossary">
+
+    <div class="gloss-item">
+      <div class="gloss-term">Aho–Corasick</div>
+      <div class="gloss-def">Algoritmo de busca multi-padrão que constrói um <strong>DFA</strong> a partir de um conjunto de strings e escaneia o texto com uma única passagem, detectando todas as ocorrências de todos os padrões em <strong>O(|texto| + |matches|)</strong>. É a base de ferramentas IDS como Snort e Suricata.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">DFA — Autômato Finito Determinístico</div>
+      <div class="gloss-def">Estrutura que, dado um estado atual e um byte de entrada, determina <strong>exatamente</strong> um próximo estado. No AC, a função de transição é <code>goto_tbl[state * 256 + byte]</code>. "Determinístico" = sem ambiguidade, sem backtracking — cada byte custa exatamente um load indexado.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Trie</div>
+      <div class="gloss-def">Árvore de prefixos onde cada caminho da raiz a uma folha representa um padrão. Construída primeiro; depois transformada em DFA via BFS que resolve as transições de falha.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Fail link (link de falha)</div>
+      <div class="gloss-def">Para cada estado <em>u</em>, <code>fail[u]</code> aponta para o estado que representa o <strong>sufixo próprio mais longo de u que é também prefixo de algum padrão</strong>. Usado internamente na BFS de construção para propagar transições ausentes. Após o build, o <code>goto_tbl</code> já incorpora os fail links — o search nunca precisa seguir <code>fail[]</code> explicitamente.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">dict_suffix</div>
+      <div class="gloss-def"><code>dict_suffix[u]</code> aponta para o <strong>ancestral mais próximo na cadeia de fail que tem saídas próprias</strong> (i.e., é terminal de algum padrão). Permite emitir todos os matches de uma posição sem percorrer a cadeia de fail byte a byte — um salto direto ao próximo estado emissor.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">goto_tbl / função de transição plana</div>
+      <div class="gloss-def">Array <code>int32_t[num_states × 256]</code> que armazena o DFA completo. Para qualquer estado e qualquer byte de entrada, <code>goto_tbl[state*256+byte]</code> dá o próximo estado — direto, sem fail links residuais. É a escolha de layout que torna o hot loop um único load indexado por byte.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Warm-up (aquecimento do DFA)</div>
+      <div class="gloss-def">Nos searchers por chunks, antes de emitir matches no seu intervalo próprio, cada worker processa os <code>max_pattern_len − 1</code> bytes <strong>anteriores</strong> ao seu chunk sem emitir nada. Isso leva o DFA a um estado consistente com o que uma varredura sequencial teria na fronteira. Sem warm-up, padrões que cruzam fronteiras de chunk seriam perdidos.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Overlap (sobreposição)</div>
+      <div class="gloss-def">Os <code>max_pattern_len − 1</code> bytes no final do chunk do worker anterior que o worker atual também lê (como warm-up). "Overlap" não significa que os matches são duplicados — os matches dentro da região de warm-up são <em>descartados</em> pelo worker que os processou durante o warm-up; apenas o worker "dono" daquela região emite.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Ownership de matches</div>
+      <div class="gloss-def">Regra que determina qual worker reporta um match: o worker <em>i</em> reporta apenas matches com <code>end_pos ∈ [core_start_i, core_end_i)</code>. Matches encontrados durante o warm-up (antes de <code>core_start</code>) são silenciosamente descartados — eles serão reportados pelo worker do chunk anterior.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Cache blowout / cache miss</div>
+      <div class="gloss-def">Quando a estrutura de dados usada pela CPU excede a capacidade dos caches (L1, L2, L3) e precisa buscar dados na RAM. O autômato ET-32 (~515 MB) é 42× maior que a L3 do i5-1235U (12 MB). Cada transição de estado resulta em um cache miss, e a CPU fica esperando dados da DRAM a cada byte — é por isso que o throughput cai 78,7%.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Memory bandwidth (largura de banda de memória)</div>
+      <div class="gloss-def">Taxa máxima de transferência de dados entre CPU e RAM. É o gargalo absoluto no regime DRAM-bound: não importa quantas threads adicionais sejam criadas, todas competem pelo mesmo barramento. Em IDS com dicionários grandes, é o limite físico que impede speedup linear.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Thread-local matches</div>
+      <div class="gloss-def">Cada worker mantém sua própria <code>ac_match_list_t</code> que somente ele escreve. Não há mutex, não há atomic. O master thread coleta todas após <code>pthread_join</code>. Isso é possível porque os ranges de ownership são disjuntos — não há duplicação de matches.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">False sharing</div>
+      <div class="gloss-def">Quando duas threads escrevem em variáveis <em>diferentes</em> que estão na <strong>mesma linha de cache</strong> (64 bytes). O hardware invalida a linha inteira a cada escrita, fazendo as threads "brigarem" pelo cache line mesmo sem conflito lógico. Mitigado em <code>pthread_chunked_v2</code> com padding da struct <code>worker_t</code> para 64 bytes.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Speedup</div>
+      <div class="gloss-def">Razão entre o tempo do baseline sequencial e o tempo da variante: <code>speedup = T_seq / T_par</code>. Speedup linear (ideal) = número de threads. Na prática, é sublinear por overheads de sincronização, memory bandwidth e arquitetura híbrida P/E-core.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Level-synchronous BFS (BFS nível-síncrona)</div>
+      <div class="gloss-def">Variant da BFS que processa <strong>todo o nível d</strong> antes de avançar para <em>d+1</em>. No AC, cada estado em <em>d</em> depende apenas de estados em <em>d-1</em> — portanto todos os estados do mesmo nível podem ser processados em paralelo sem comunicação entre si. A barreira entre níveis é um <code>pthread_join</code>.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">BFS frontier (fronteira da BFS)</div>
+      <div class="gloss-def">O conjunto de estados atualmente em processamento na BFS nível-síncrona. <code>frontier_curr[]</code> contém os estados do nível atual; workers descobrem filhos reais e os escrevem em <code>frontier_next[]</code> via <code>atomic_fetch_add</code> para reservar slots sem colisão.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Flat output table (tabela de saídas achatada)</div>
+      <div class="gloss-def">Para cada estado <em>s</em>, um array contíguo de <code>pattern_id</code>s que seriam emitidos ao chegar em <em>s</em>. Substitui dois níveis de listas ligadas (<code>own_out_head + outputs</code> e <code>dict_suffix</code>). Elimina pointer-chasing dependente na emissão, especialmente relevante quando o autômato não cabe em cache (loads aleatórios em listas ligadas = muitos cache misses).</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">δ² (delta-dois) — multi-step transition</div>
+      <div class="gloss-def">Tabela pré-computada onde <code>δ²[state][byte_pair]</code> codifica a transição de <em>dois</em> bytes de uma vez: <code>goto_tbl[goto_tbl[state*256+a]*256+b]</code>. Reduz a cadeia de loads dependentes pela metade. Footprint: <code>num_states × 65536 × 4 bytes</code> — só viável com estados &lt; 3300.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Pattern sharding (divisão do dicionário)</div>
+      <div class="gloss-def">Em vez de dividir o texto entre workers, divide o <strong>dicionário</strong>. Cada worker recebe um subconjunto dos padrões, constrói seu próprio sub-autômato (K vezes menor) e varre o texto inteiro. O ganho é que sub-autômatos menores cabem em L2/L3 quando o DFA unificado não cabe.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">pthread_join / barreira de sincronização</div>
+      <div class="gloss-def"><code>pthread_join(tid)</code> bloqueia até a thread terminar e garante que todas as escritas desta thread são visíveis ao chamador (<em>happens-before</em>). É a única barreira de memória no modelo de paralelismo do laboratório — não há mutexes, semáforos ou spinlocks no hot loop.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">AC_UNLIKELY / branch prediction</div>
+      <div class="gloss-def">Macro que expande para <code>__builtin_expect(x, 0)</code>, indicando ao compilador que a condição (geralmente um match) é rara. O preditor de branch da CPU pode otimizar o código do caminho raro sem penalizar o caminho comum (byte sem match, que é a grande maioria).</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">ThreadSanitizer (TSan) / data race</div>
+      <div class="gloss-def">Ferramenta de instrumentação de tempo de execução que detecta <strong>data races</strong> — acessos concorrentes ao mesmo endereço de memória onde pelo menos um é escrita, sem sincronização. <code>make tsan</code> compila com <code>-fsanitize=thread</code>. Se o autômato é verdadeiramente read-only e os matches são thread-local, o TSan deve ficar silencioso.</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">Software prefetch</div>
+      <div class="gloss-def"><code>__builtin_prefetch(addr)</code> instrui a CPU a começar a carregar uma linha de cache <em>antes</em> que ela seja necessária, escondendo a latência. Útil para o stream de <em>texto</em> (acesso sequencial e previsível). Não ajuda para o <em>autômato</em> (acesso dirigido pelo estado atual — imprevisível).</div>
+    </div>
+
+    <div class="gloss-item">
+      <div class="gloss-term">P-core / E-core (Intel Alder Lake)</div>
+      <div class="gloss-def">O i5-1235U tem 2 cores de Performance (P, mais rápidos, com Hyperthreading) e 8 cores de Eficiência (E, mais lentos, sem HT). Com chunks iguais, os E-cores ditam a barreira final — os P-cores ficam ociosos esperando. <code>pthread_chunked_v3</code> distribui chunks proporcionais à frequência para reduzir essa assimetria.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); text-align:center; font-size:.75rem; color:var(--muted);">
+  Atualizado em 2026-05-21 · parallel-aho-corasick · TCC IDP · Documentação técnica interna
+</div>
+
+</div>
+</body>
+</html>

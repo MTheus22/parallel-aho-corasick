@@ -17,6 +17,14 @@ Este é o material de apoio de um TCC focado em **detecção de intrusão
 de gigabytes (Enron Email Dataset), e métricas alinhadas com a literatura
 (throughput em MB/s ou Gbps, *speedup* vs. nº de threads).
 
+**Foco de desempenho:** grandes dicionários (Snort ET, ~44 k regras,
+autômato de ~515 MiB >> L3), corpus grandes (≥ 1 GiB), CPUs multicore
+com memória suficiente. O regime de interesse é o *memory-bound* com
+cache blowout — não dicionários pequenos que cabem em L2. Optimizações
+que só funcionam no regime cache-friendly (ex.: SIMD intra-thread) são
+fora de escopo e estão documentadas como tal em
+`docs/proposals/parallelism-roadmap.md` §6.
+
 ## Layout
 
 ```
@@ -59,6 +67,12 @@ docs/                Documentação detalhada (arquitetura + searchers).
 | `pthread_block_cyclic`| Distribuição round-robin estática de blocos de 1 MiB.                            |
 | `pthread_affinity`    | v2 + pinning ingênuo `i % nproc` via `pthread_setaffinity_np`.                  |
 | `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
+| `sequential_flat`     | Sequential AC scan lendo a tabela achatada de saídas (idea 5).                  |
+| `sequential_delta2`   | Sequential com tabela `δ²` de 2 bytes por load indexado (idea 3).               |
+| `pthread_chunked_flat`| `pthread_chunked_v2` + emissão pela tabela achatada (idea 5).                   |
+| `pattern_sharded`     | Sharding do dicionário (idea 1), round-robin. K sub-autômatos, scan completo cada.|
+| `pattern_sharded_lpt` | idea 1 com sharding length-balanced (Longest-Processing-Time-first).            |
+| `pattern_sharded_prefix`| idea 1 com bucketing pelo primeiro byte. Política que mais entrega speedup.   |
 
 Documentação por searcher: `docs/searchers/<nome>.md`.
 

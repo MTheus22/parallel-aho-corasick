@@ -36,6 +36,10 @@ int (*search)(const ac_automaton_t *aut,
 | [`pthread_block_cyclic.md`](pthread_block_cyclic.md) | `pthread_block_cyclic`  |
 | [`pthread_affinity.md`](pthread_affinity.md)         | `pthread_affinity`      |
 | [`pthread_prefetch.md`](pthread_prefetch.md)         | `pthread_prefetch`      |
+| [`sequential_flat.md`](sequential_flat.md)           | `sequential_flat`       |
+| [`sequential_delta2.md`](sequential_delta2.md)       | `sequential_delta2`     |
+| [`pthread_chunked_flat.md`](pthread_chunked_flat.md) | `pthread_chunked_flat`  |
+| [`pattern_sharded.md`](pattern_sharded.md)           | `pattern_sharded` / `_lpt` / `_prefix` |
 
 ## Comparação rápida
 

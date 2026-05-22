@@ -97,15 +97,14 @@ warnings on `make tsan`.
 
 ## 2 · The five proposed ideas
 
-> **Next idea to implement: idea 2 (SIMD gather DFA traversal).**
-> Order rationale in §3. When the agent finishes idea N, this line
-> is rewritten to point to N's successor (or to "all ideas
-> implemented" if done).
+> **All ideas implemented.** Idea 1 was the last; see the row below
+> for its searcher doc. The line above used to point to the next
+> idea to implement; it is now retired.
 
 | #  | Idea                                              | Phase          | Page                     | Order | Status                              |
 |----|---------------------------------------------------|----------------|--------------------------|-------|-------------------------------------|
-| 1  | Pattern sharding (dictionary-level parallelism)   | Search         | [`idea_1.md`](idea_1.md) | 5th   | Not implemented                     |
-| 2  | SIMD gather DFA traversal                         | Search         | [`idea_2.md`](idea_2.md) | 4th   | Not implemented                     |
+| 1  | Pattern sharding (dictionary-level parallelism)   | Search         | [`idea_1.md`](idea_1.md) | 4th   | ✅ Implemented 2026-05-21 (see [`../searchers/pattern_sharded.md`](../searchers/pattern_sharded.md)) |
+| 2  | SIMD gather DFA traversal                         | Search         | [`idea_2.md`](idea_2.md) | —     | ❌ Descartada (ver §6)              |
 | 3  | Multi-step (k-byte) transition tables — δᵏ        | Search         | [`idea_3.md`](idea_3.md) | 3rd   | ✅ Implemented 2026-05-21 (5353383) |
 | 4  | Parallel BFS construction of fail/goto/dict_suffix| Build          | [`idea_4.md`](idea_4.md) | 2nd   | ✅ Implemented 2026-05-21 (82c0f10) |
 | 5  | Eager dict_suffix flattening (flat output table)  | Build + Search | [`idea_5.md`](idea_5.md) | 1st   | ✅ Implemented 2026-05-20 (e78045c) |
@@ -121,13 +120,6 @@ lists. No inter-chunk overlap is needed — every byte is touched by
 every worker, just through a much smaller DFA. The win comes from
 sub-automata that individually fit in cache when the unified one
 does not.
-
-### 2 · SIMD gather DFA traversal
-Within a single worker, advance `V` independent byte streams in
-lockstep (one per SIMD lane) using one vector-gather instruction
-per step. Breaks the per-byte dependent-load chain that limits each
-scalar core. Composes multiplicatively with any of the existing
-threaded searchers and with pattern sharding.
 
 ### 3 · Multi-step (k-byte) transition tables — δᵏ
 Precompute `δ²[state][byte_pair]` so one indexed load consumes two
@@ -151,8 +143,7 @@ loop replaces a nested chain-walk
 (`while (l != NIL) for (o = …; …) {} l = dict_suffix[l]`) with one
 contiguous linear scan of `flat_pids[…]`. This is a **layout
 transformation** that every existing and proposed searcher
-inherits without code changes; it is also a *prerequisite* for
-clean SIMD emission in idea 2.
+inherits without code changes.
 
 ---
 
@@ -162,34 +153,26 @@ The ordering minimises rework: each step either has zero
 dependencies on the others or relies on the algorithmic / data-layout
 changes already in place.
 
-1. **Idea 5 (flat outputs).** A pure layout change that touches one
-   build pass and one struct. Every other idea — sequential
-   baseline included — gets a small speed-up for free, and idea 2
-   later relies on it. Smallest blast radius. Do it first.
-2. **Idea 4 (parallel BFS construction).** Independent of 5;
-   touches `src/ac_automaton.c` only. Validates the parallel-build
-   plumbing (per-level workers, atomic frontier, barriers) that
-   will be reused if future ideas want to parallelise more of build.
-3. **Idea 3 (δ² sequential).** Pure algorithmic transformation of
-   the search inner loop with no threading at all. Smallest
-   feedback loop for testing the build/storage pattern of
-   precomputed extra tables and the boundary-arithmetic adjustment
-   to chunked searchers later on.
-4. **Idea 2 (SIMD chunked).** Builds on idea 5 (clean emission) and
-   on the warm-up boundary arithmetic refined in idea 3. Produces
-   the most spectacular per-core throughput curve for the
-   dissertation defence.
-5. **Idea 1 (pattern sharding).** Biggest engineering footprint
-   (multiple sub-automata, id remap, per-shard match merge), but
-   biggest research payoff because it is the only idea that lifts
-   the cache-pressure ceiling. Best done last so it can be
-   evaluated against — and composed with — the SIMD and δ²
-   variants.
+1. **Idea 5 (flat outputs).** ✅ Done. Layout change; every other idea inherits it.
+2. **Idea 4 (parallel BFS construction).** ✅ Done. Attacks the build phase.
+3. **Idea 3 (δ² sequential).** ✅ Done. Algorithmic acceleration with a clean
+   applicability ceiling (`num_states ≲ 4 000`); useful as a comparison point
+   that demonstrates why single-thread tricks have limited reach on large dicts.
+4. **Idea 1 (pattern sharding).** ✅ Done. The only idea that directly
+   attacks the cache-blowout regime (large dictionaries >> L3) that is the
+   central performance problem for IDS-scale workloads. Three policies
+   registered (`pattern_sharded`, `pattern_sharded_lpt`, `pattern_sharded_prefix`).
+   On Snort full + simplewiki (12-core x86_64), `pattern_sharded_prefix` at
+   K=8 delivers **1.19×** speedup vs. `sequential`; round-robin and LPT
+   policies regress on every dictionary size tested. The headline cross-
+   over is empirically dictionary-size + policy dependent — see
+   [`../searchers/pattern_sharded.md`](../searchers/pattern_sharded.md)
+   "Headline benchmark" for the full table.
 
-This ordering yields a clean dissertation arc: a build-time
-optimisation, a sequential algorithmic optimisation, an intra-thread
-vectorisation, and finally a dictionary-level parallelism axis. Each
-stage produces a complete, independently-publishable result.
+The dissertation arc is: layout optimisation → parallel build → algorithmic
+single-thread ceiling → dictionary-level parallelism that defeats the cache wall.
+Each stage is a complete, independently-measurable result. Idea 2 was removed
+from this order; see §6.
 
 ---
 
@@ -235,7 +218,7 @@ contribution disappears in the aggregate.
 worktrees, no per-idea branches.** This is a deliberate architectural
 choice, not a convenience. Three rules make it work:
 
-1. **Search-phase ideas (1, 2, 3) only add new files under
+1. **Search-phase ideas (1, 3) only add new files under
    `src/searchers/`.** They never modify existing searcher files.
    The plug-in registry (`__attribute__((constructor))` →
    `ac_searcher_register`) picks them up automatically. Every prior
@@ -289,6 +272,7 @@ one that flips the §2 status to "Implemented".
 
 | Idea                                | Why not in scope                                                                                          |
 |-------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| SIMD gather DFA traversal (idea 2)  | Intra-thread vectorisation, not multi-core parallelism. Gain peaks when the DFA fits in L1/L2 — exactly the regime that is *not* the TCC's focus. At IDS scale (ET ≫ L3), memory bandwidth is the bottleneck; gathers do not increase bandwidth. High implementation cost for a result that regresses in the most important benchmark. |
 | Adaptive/meta strategy selector     | A dispatcher does not accelerate AC; it just picks among accelerators. Useful as future engineering, not algorithm. |
 | Parallel trie insertion             | Insertion cost is `O(total_pattern_length)`; BFS cost is `O(num_states × 256)`. BFS dominates → idea 4 instead. |
 | NUMA-aware text replication         | Pure environment tuning; the dissertation's contribution should be portable across machine classes.       |
@@ -306,10 +290,10 @@ one that flips the §2 status to "Implemented".
   surveyed papers. Closest in spirit to the head/body split of
   HBM / FHBM (Lee & Yang 2017), but applied to threads rather than
   automaton tiers.
-- **SIMD gather DFA traversal (idea 2)** — Sitaridi, Polychroniou
-  & Ross, DaMoN '16, *"SIMD-Accelerated Regular Expression
-  Matching"*. The short-circuit (non-lockstep) variant in §6 of
-  that paper is the direct model.
+- **SIMD gather DFA traversal (idea 2)** — descartada (ver §6).
+  Referência de contraste para trabalhos relacionados: Sitaridi,
+  Polychroniou & Ross, DaMoN '16, *"SIMD-Accelerated Regular
+  Expression Matching"*.
 - **Multi-step transition tables (idea 3)** — folklore in
   finite-state engines; the clearest treatment in the lab's reading
   list is Sitaridi et al. §4 (DFA representation trade-offs).

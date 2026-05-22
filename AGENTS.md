@@ -17,6 +17,14 @@ Este é o material de apoio de um TCC focado em **detecção de intrusão
 de gigabytes (Enron Email Dataset), e métricas alinhadas com a literatura
 (throughput em MB/s ou Gbps, *speedup* vs. nº de threads).
 
+**Foco de desempenho:** grandes dicionários (Snort ET, ~44 k regras,
+autômato de ~515 MiB >> L3), corpus grandes (≥ 1 GiB), CPUs multicore
+com memória suficiente. O regime de interesse é o *memory-bound* com
+cache blowout — não dicionários pequenos que cabem em L2. Optimizações
+que só funcionam no regime cache-friendly (ex.: SIMD intra-thread) são
+fora de escopo e estão documentadas como tal em
+`docs/proposals/parallelism-roadmap.md` §6.
+
 ## Layout
 
 ```

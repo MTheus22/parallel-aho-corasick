@@ -238,9 +238,6 @@ the diff.
   chain-walk vs. flat across `T ∈ {1, …, nproc}`. The dissertation
   argument is that the gain *grows* with dictionary size because the
   chain-walk pointer chasing increasingly misses cache.
-- **Combined with idea 2.** Once both ideas are implemented, report
-  SIMD-flat vs. SIMD-chain on the same dictionary range. This is the
-  cleanest possible demonstration of orthogonality.
 - **Memory cost.** Report `total_flat_pids` and
   `flat_offset+flat_count+flat_pids` bytes for each dictionary.
   Compare to the original `outputs` arena size; the flat arena is

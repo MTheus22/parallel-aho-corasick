@@ -242,6 +242,86 @@ int main(void)
         free(text);
     }
 
+    /* ---- Case 7: mixed pattern length classes (idea 1 stress) --------
+     * Pattern sharding policies behave differently across length
+     * distributions. This case mixes 1-byte, 8-byte, 64-byte and
+     * 256-byte patterns so that:
+     *   - round-robin produces shards with skewed total length;
+     *   - LPT (length-balanced greedy) must successfully balance
+     *     pattern length across shards even when sizes span 8
+     *     orders of binary magnitude;
+     *   - prefix-byte bucketing must handle the case where the
+     *     long-pattern bucket contains all the state-heavy patterns.
+     * Each policy must still produce the same match multiset as
+     * `sequential` for every thread count {1, 2, 3, 4, 7, 8}. */
+    {
+        /* 1-byte */
+        const char *p1 = "z";
+        /* 8-byte */
+        const char *p2 = "needle__";
+        /* 64-byte */
+        const char *p3 =
+            "0123456789abcdef0123456789abcdef"
+            "0123456789abcdef0123456789abcdef";
+        /* 256-byte */
+        char *p4 = malloc(257);
+        for (int i = 0; i < 256; i++) p4[i] = (char)('A' + (i % 26));
+        p4[256] = 0;
+        const char *pats[] = { p1, p2, p3, p4, "the", "and", "of" };
+        const char *unit =
+            "zzz the needle__ in the haystack 0123456789abcdef0123456789abcdef"
+            "0123456789abcdef0123456789abcdef of zz and the ";
+        char *text = make_repeated(unit, 100);
+        all_ok &= run_case("mixed_lengths", pats,
+                           sizeof(pats)/sizeof(pats[0]),
+                           text, strlen(text));
+        free(text);
+        free(p4);
+    }
+
+    /* ---- Case 8: more patterns than threads, prefix-bucket bias ------
+     * All patterns start with the same first byte ('h'), so
+     * `pattern_sharded_prefix` collapses every pattern into a single
+     * shard. The other shards are empty and their workers must do
+     * zero work without corrupting output. Forces an asymmetric
+     * pattern_sharded_prefix execution path. */
+    {
+        const char *pats[] = {
+            "he", "hat", "have", "his", "her", "hello", "history",
+            "html", "head", "hand", "hold", "hash", "host", "hex",
+        };
+        const char *unit =
+            "his hat had hello there; hers were hashed in the head "
+            "of his history of html hosts. ";
+        char *text = make_repeated(unit, 200);
+        all_ok &= run_case("prefix_bias_h", pats,
+                           sizeof(pats)/sizeof(pats[0]),
+                           text, strlen(text));
+        free(text);
+    }
+
+    /* ---- Case 9: more patterns than threads, varied prefix bytes -----
+     * 16 patterns with diverse first bytes; exercises every sharding
+     * policy with K ∈ {1, 2, 3, 4, 7, 8} producing distinct
+     * partitions. Validates that the local->global pid remap survives
+     * shard counts both smaller and larger than commonly-seen K. */
+    {
+        const char *pats[] = {
+            "alpha", "bravo", "charlie", "delta",
+            "echo", "foxtrot", "golf", "hotel",
+            "india", "juliet", "kilo", "lima",
+            "mike", "november", "oscar", "papa",
+        };
+        const char *unit =
+            "alpha bravo charlie delta echo foxtrot golf hotel "
+            "india juliet kilo lima mike november oscar papa ";
+        char *text = make_repeated(unit, 300);
+        all_ok &= run_case("phonetic_16", pats,
+                           sizeof(pats)/sizeof(pats[0]),
+                           text, strlen(text));
+        free(text);
+    }
+
     if (all_ok) { printf("\nAll correctness tests PASSED.\n"); return 0; }
     printf("\nSome correctness tests FAILED.\n");
     return 1;

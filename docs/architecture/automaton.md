@@ -169,8 +169,8 @@ A função `ac_automaton_build_par()`, declarada em
 substitui apenas a **etapa 2** (a BFS) por uma versão
 nível-síncrona paralela. A trie insertion (etapa 1) e o pass de
 flat-output (etapa 3) permanecem sequenciais — o trade-off de
-paralelizá-los é desfavorável (ver `idea_4.md` §"Out of scope" e
-`flat-outputs.md`). O resultado é byte-equivalente ao build
+paralelizá-los é desfavorável (ver [`parallel-build.md`](parallel-build.md)
+e [`flat-outputs.md`](flat-outputs.md)). O resultado é byte-equivalente ao build
 sequencial em todas as combinações de threads testadas. Selecionada
 via env `AC_BUILD_PARALLEL=1` na CLI. Detalhes em
 [`parallel-build.md`](parallel-build.md).

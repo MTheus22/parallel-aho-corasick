@@ -1,0 +1,1937 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Síntese do TCC — Abordagem Mais Rápida + Metodologia/Resultados/Conclusão</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222638;
+    --border: #2e3250;
+    --text: #e2e4ef;
+    --muted: #8b90b0;
+    --accent-blue: #4f9cf9;
+    --accent-green: #3ecf8e;
+    --accent-orange: #f59e0b;
+    --accent-purple: #a78bfa;
+    --accent-red: #f87171;
+    --accent-teal: #2dd4bf;
+    --done: #3ecf8e;
+    --pending: #f59e0b;
+    --discarded: #6b7280;
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 1180px; margin: 0 auto; }
+
+  h1 { font-size: 2rem; font-weight: 700; color: #fff; }
+  h2 { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 1rem; }
+  h3 { font-size: 1.02rem; font-weight: 600; color: #fff; margin-bottom: .5rem; }
+  h4 { font-size: .92rem; font-weight: 600; color: #fff; margin-bottom: .4rem; }
+  p  { color: var(--text); margin-bottom: .75rem; }
+  code {
+    background: #2a2d3e;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: .1em .4em;
+    font-size: .85em;
+    font-family: "JetBrains Mono", "Fira Code", monospace;
+    color: #a5b4fc;
+  }
+
+  section { margin-bottom: 3rem; }
+  .section-label {
+    font-size: .7rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: .5rem;
+  }
+  .divider {
+    border: none; border-top: 1px solid var(--border); margin: 2.5rem 0;
+  }
+
+  .header { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+  .header-sub { color: var(--muted); margin-top: .5rem; font-size: 1rem; max-width: 880px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .75rem; font-weight: 600;
+    padding: .2rem .6rem; border-radius: 999px; margin: .15rem .25rem .15rem 0;
+  }
+  .badge-hw { background: #1e2a3a; color: #60a5fa; border: 1px solid #2d4a6a; }
+  .badge-lang { background: #1a2a1a; color: #4ade80; border: 1px solid #2a4a2a; }
+  .badge-data { background: #2a1e30; color: #c4b5fd; border: 1px solid #4a3a5a; }
+
+  /* Hero veredito */
+  .hero {
+    background: linear-gradient(135deg, #0f2a1e 0%, #0a1828 100%);
+    border: 1px solid #2a4a3a;
+    border-radius: 14px;
+    padding: 1.8rem;
+    margin: 1.5rem 0 2rem 0;
+  }
+  .hero-label {
+    font-size: .72rem; font-weight: 700; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--accent-green); margin-bottom: .5rem;
+  }
+  .hero-title {
+    font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: .8rem;
+  }
+  .hero-eq {
+    font-family: "JetBrains Mono", monospace;
+    font-size: .95rem; color: #d1fae5;
+    background: rgba(0,0,0,.25); border-radius: 6px;
+    padding: .65rem .85rem; margin: .5rem 0 1rem 0;
+    border: 1px solid #1f4a2f;
+  }
+  .hero-stats { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1rem; }
+  .hero-stat { min-width: 140px; }
+  .hero-stat-num { font-size: 1.9rem; font-weight: 800; color: var(--accent-green); line-height: 1; }
+  .hero-stat-label { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
+
+  /* Pipeline */
+  .pipeline { display: flex; gap: 0; margin: 1.5rem 0; overflow-x: auto; }
+  .pipe-phase {
+    flex: 1; min-width: 200px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.2rem 1rem; position: relative;
+  }
+  .pipe-phase + .pipe-phase { margin-left: 2.5rem; }
+  .pipe-phase::after {
+    content: "→"; position: absolute; right: -1.75rem; top: 50%;
+    transform: translateY(-50%); color: var(--muted); font-size: 1.3rem;
+  }
+  .pipe-phase:last-child::after { display: none; }
+  .phase-number {
+    font-size: .65rem; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; margin-bottom: .3rem;
+  }
+  .phase-1 .phase-number { color: var(--accent-blue); }
+  .phase-2 .phase-number { color: var(--accent-purple); }
+  .phase-3 .phase-number { color: var(--accent-teal); }
+  .phase-title { font-weight: 700; font-size: 1rem; color: #fff; margin-bottom: .4rem; }
+  .phase-note { font-size: .8rem; color: var(--muted); }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.1rem; position: relative;
+  }
+  .card-title { font-weight: 700; font-size: .95rem; color: #fff; margin-bottom: .3rem; }
+  .card-meta { font-size: .75rem; color: var(--muted); margin-bottom: .6rem; }
+  .card-body { font-size: .85rem; color: var(--text); }
+  .card-footer { margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--border); }
+  .pill {
+    display: inline-block; font-size: .7rem; font-weight: 600;
+    padding: .15rem .5rem; border-radius: 999px; margin: .1rem .1rem;
+  }
+  .pill-blue   { background: #1e3a5f; color: #93c5fd; }
+  .pill-purple { background: #2d1f5e; color: #c4b5fd; }
+  .pill-green  { background: #1a3320; color: #6ee7b7; }
+  .pill-orange { background: #3a2210; color: #fdba74; }
+  .pill-teal   { background: #0f3030; color: #5eead4; }
+  .pill-red    { background: #3a1515; color: #fca5a5; }
+  .pill-gray   { background: #252530; color: #94a3b8; }
+
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: .4rem; vertical-align: middle; }
+  .dot-done     { background: var(--done); }
+  .dot-pending  { background: var(--pending); }
+  .dot-baseline { background: var(--accent-blue); }
+  .dot-discarded{ background: var(--discarded); }
+
+  /* Results table */
+  .results-table { width: 100%; border-collapse: collapse; font-size: .83rem; margin-top: 1rem; }
+  .results-table th {
+    background: var(--surface2); color: var(--muted);
+    font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .08em; padding: .6rem .8rem; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .results-table td { padding: .55rem .8rem; border-bottom: 1px solid #1e2130; vertical-align: middle; }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr:hover td { background: #1e2235; }
+  .num { font-variant-numeric: tabular-nums; font-family: monospace; font-size: .88rem; }
+  .winner { color: var(--accent-green); font-weight: 700; }
+  .warn   { color: var(--accent-orange); }
+  .neg    { color: var(--accent-red); }
+
+  .bar-cell { width: 140px; }
+  .bar-bg { background: #1e2235; border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; background: var(--accent-blue); }
+  .bar-fill.green { background: var(--accent-green); }
+  .bar-fill.orange { background: var(--accent-orange); }
+  .bar-fill.red { background: var(--accent-red); }
+  .bar-fill.purple { background: var(--accent-purple); }
+  .bar-fill.teal  { background: var(--accent-teal); }
+
+  /* Stat row */
+  .stat-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+  .stat-box {
+    flex: 1; min-width: 160px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem; text-align: center;
+  }
+  .stat-num { font-size: 1.75rem; font-weight: 800; color: #fff; line-height: 1; }
+  .stat-unit { font-size: .75rem; color: var(--muted); margin-top: .3rem; }
+  .stat-label { font-size: .72rem; color: var(--muted); margin-top: .45rem; }
+  .stat-box.blue   .stat-num { color: var(--accent-blue); }
+  .stat-box.green  .stat-num { color: var(--accent-green); }
+  .stat-box.orange .stat-num { color: var(--accent-orange); }
+  .stat-box.purple .stat-num { color: var(--accent-purple); }
+  .stat-box.teal   .stat-num { color: var(--accent-teal); }
+  .stat-box.red    .stat-num { color: var(--accent-red); }
+
+  /* Alert */
+  .alert { border-radius: 8px; padding: .9rem 1.1rem; font-size: .87rem; margin: 1rem 0; display: flex; gap: .75rem; }
+  .alert-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: .05rem; }
+  .alert-orange { background: #2a1e08; border: 1px solid #6b4210; color: #fcd34d; }
+  .alert-green  { background: #0a1e0e; border: 1px solid #1a4a22; color: #86efac; }
+  .alert-blue   { background: #081828; border: 1px solid #1a3a5a; color: #93c5fd; }
+  .alert-red    { background: #2a0a0a; border: 1px solid #4a1a1a; color: #fca5a5; }
+  .alert-purple { background: #1a0a2a; border: 1px solid #3a1a5a; color: #c4b5fd; }
+
+  .intro { color: var(--muted); font-size: .89rem; margin-bottom: 1rem; line-height: 1.7; }
+
+  /* Timeline */
+  .timeline { margin-top: 1rem; position: relative; padding-left: 1.5rem; }
+  .timeline::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--border); border-radius: 2px;
+  }
+  .tl-item { position: relative; margin-bottom: 1.2rem; padding-left: 1rem; }
+  .tl-item::before {
+    content: ''; position: absolute; left: -1.65rem; top: .4rem;
+    width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--bg);
+  }
+  .tl-done::before    { background: var(--done); }
+  .tl-next::before    { background: var(--accent-orange); box-shadow: 0 0 0 4px rgba(245,158,11,.2); }
+  .tl-pending::before { background: var(--border); }
+  .tl-fail::before    { background: var(--accent-red); }
+  .tl-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+  .tl-done .tl-label    { color: var(--done); }
+  .tl-next .tl-label    { color: var(--accent-orange); }
+  .tl-pending .tl-label { color: var(--muted); }
+  .tl-fail .tl-label    { color: var(--accent-red); }
+  .tl-title { font-weight: 600; color: #fff; font-size: .95rem; }
+  .tl-sub   { font-size: .82rem; color: var(--muted); margin-top: .15rem; }
+
+  /* Related-work grid */
+  .rw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .rw-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.1rem; display: flex; flex-direction: column;
+  }
+  .rw-cite { font-size: .72rem; color: var(--muted); margin-bottom: .25rem; font-style: italic; }
+  .rw-title { font-weight: 700; font-size: .9rem; color: #fff; margin-bottom: .35rem; }
+  .rw-body { font-size: .83rem; color: var(--text); margin-bottom: .55rem; flex: 1; }
+  .rw-tag { font-size: .7rem; padding: .15rem .55rem; border-radius: 4px; font-weight: 600; }
+  .rw-tag.compl { background: #0f3030; color: #5eead4; border: 1px solid #1a4a4a; }
+  .rw-tag.contr { background: #2a2010; color: #fbbf24; border: 1px solid #4a3010; }
+  .rw-tag.parl  { background: #1e1e3a; color: #818cf8; border: 1px solid #2a2a5a; }
+  .rw-link { font-size: .72rem; color: var(--muted); font-family: monospace; margin-top: .4rem; word-break: break-word; }
+
+  /* Combine matrix */
+  .combo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+  .combo-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem; }
+  .combo-yes  { border-color: #2a4a2a; }
+  .combo-note { border-color: #4a3010; }
+
+  /* Future-work card variants */
+  .future-card { border-left: 3px solid var(--accent-orange); }
+  .future-card.high { border-left-color: var(--accent-green); }
+  .future-card.med  { border-left-color: var(--accent-blue); }
+  .future-card.low  { border-left-color: var(--accent-purple); }
+  .effort {
+    font-size: .7rem; padding: .1rem .5rem; border-radius: 4px;
+    background: #1e2235; color: var(--muted); margin-left: .25rem;
+  }
+  .effort.s { background: #1a3320; color: #6ee7b7; }
+  .effort.m { background: #1e3a5f; color: #93c5fd; }
+  .effort.l { background: #3a2210; color: #fdba74; }
+
+  /* TCC mapping */
+  .tcc-map {
+    display: grid; grid-template-columns: 130px 1fr; gap: 1rem;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: .7rem 1rem; margin: .4rem 0; align-items: start;
+  }
+  .tcc-sec { font-size: .72rem; font-weight: 800; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--accent-purple); padding-top: .15rem; }
+  .tcc-content { font-size: .85rem; color: var(--text); }
+
+  /* TOC */
+  .toc {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.25rem; margin: 1.5rem 0;
+  }
+  .toc h3 { font-size: .82rem; color: var(--muted); margin-bottom: .5rem;
+    text-transform: uppercase; letter-spacing: .1em; }
+  .toc ol { padding-left: 1.5rem; color: var(--text); font-size: .87rem; }
+  .toc a { color: #93c5fd; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+
+  @media (max-width: 760px) {
+    .combo-grid { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipe-phase + .pipe-phase { margin-left: 0; margin-top: 1.5rem; }
+    .pipe-phase::after { display: none; }
+    .tcc-map { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="section-label">TCC · IDP · 2026 · Síntese executiva</div>
+  <h1>Aho–Corasick paralelo — qual é a abordagem mais rápida?</h1>
+  <p class="header-sub">
+    Documento de síntese consolidando: <strong>(a)</strong> qual combinação de paralelizações
+    do laboratório <code>parallel-aho-corasick</code> entrega o maior speedup no hardware
+    de referência; <strong>(b)</strong> a metodologia experimental que sustenta a conclusão;
+    <strong>(c)</strong> o posicionamento contra a literatura analisada;
+    <strong>(d)</strong> direções concretas de trabalho futuro. Serve de espinha dorsal para
+    as seções <em>Metodologia</em>, <em>Resultados</em> e <em>Conclusão</em> do TCC.
+  </p>
+  <div style="margin-top: 1rem;">
+    <span class="badge badge-hw">⚙ Intel i5-1235U · 2 P-cores HT + 8 E-cores = 12 threads</span>
+    <span class="badge badge-hw">📦 RAM 31 GiB · L3 12 MB</span>
+    <span class="badge badge-lang">🔧 C11 · POSIX Threads · GCC -O3 -march=native</span>
+    <span class="badge badge-data">📚 Snort + Snort ET · Enron · SimpleWiki</span>
+  </div>
+
+  <div class="alert alert-green" style="margin-top:1rem;">
+    <div class="alert-icon">🗂️</div>
+    <div>
+      <strong>Fonte de verdade desta síntese: sweep definitivo de 2026-05-29.</strong>
+      265 runs, 0 falhas, ~7h29m, commit <code>e3dc7d4</code>, i5-1235U (12 threads HW),
+      governor <code>performance</code>. Fases A (curvas de speedup), B (footprint × throughput),
+      C (cross-corpus), D (per-thread) e E (build paralelo). Dados brutos em
+      <code>runs/overnight/sweep.db</code> (SQLite tipado, 6 views). Correctness validada:
+      match-count único por <code>(patterns, corpus)</code> entre todos os 11 searchers
+      &mdash; todos concordam com o baseline <code>sequential</code>. Os números abaixo
+      foram reconciliados contra essa DB; valores de sweeps anteriores (ex.: o headline
+      de 7,49× em SimpleWiki) <strong>não</strong> são reproduzidos por este sweep e foram
+      revistos (ver §1).
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h3>Mapa do documento</h3>
+    <ol>
+      <li><a href="#veredito">Veredito — a abordagem mais rápida</a></li>
+      <li><a href="#metodologia">Metodologia experimental (base para o TCC §Metodologia)</a></li>
+      <li><a href="#resultados">Resultados — varredura cumulativa (base para o TCC §Resultados)</a></li>
+      <li><a href="#ranking">Ranking unificado dos searchers</a></li>
+      <li><a href="#literatura">Posicionamento contra trabalhos relacionados</a></li>
+      <li><a href="#conclusao">Conclusão e contribuições (base para o TCC §Conclusão)</a></li>
+      <li><a href="#futuro">Próximos passos úteis para este TCC</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ===================== 1. VEREDITO ===================== -->
+<section id="veredito">
+  <div class="section-label">§1 · Veredito experimental</div>
+  <h2>A abordagem mais rápida no hardware de referência</h2>
+
+  <div class="hero">
+    <div class="hero-label">⭐ Abordagem vencedora (regime-dependente)</div>
+    <div class="hero-title">Paralelismo de texto (chunking) ⊕ Flat output table (Idea 5) — líder muda com o regime</div>
+    <div class="hero-eq">
+      dict pequeno (Snort, 55 MiB): <strong>pthread_dynamic</strong> T=12 → 4,79× &nbsp;·&nbsp;
+      dict grande (ET-32, 507 MiB ≫ L3): <strong>pthread_chunked_v3_flat</strong> T=6 → 2,85×
+    </div>
+    <p style="color:#bbf7d0; font-size:.9rem; margin-top:.5rem;">
+      O sweep definitivo de 2026-05-29 mostra que <strong>não há um único vencedor global</strong>:
+      no regime moderado (Snort) o dispatch dinâmico atômico (<code>pthread_dynamic</code>)
+      lidera em T=12; no regime DRAM-bound severo (ET-32 ≫ L3) os searchers <em>flat</em>
+      (idea 5/7) lideram, mas o ganho satura cedo (platô já em T≈6, P-cores). Em todos os
+      casos a paralelização de <em>texto</em> domina a de <em>dicionário</em>.
+      <code>make tsan</code> confirma ausência de data races; correctness validada por
+      match-count único entre os 11 searchers.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num">4,79×</div>
+        <div class="hero-stat-label">pico de speedup vs <code>sequential</code> (<code>pthread_dynamic</code>, Snort + Enron, T=12)</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">~1.148 MB/s</div>
+        <div class="hero-stat-label">throughput de pico medido (~9,2 Gbps · Snort + Enron, T=12)</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">2,85×</div>
+        <div class="hero-stat-label">pico no regime ET-32 ≫ L3 (<code>v3_flat</code>, Enron, T=6 — não T=12)</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">1,55×</div>
+        <div class="hero-stat-label">speedup de build paralelo (ET-32, pico em T=8; 1,41× em T=12)</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">265</div>
+        <div class="hero-stat-label">runs · 0 falhas · 11 searchers concordam no match-count</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-blue">
+    <div class="alert-icon">🧭</div>
+    <div>
+      <strong>Por que paralelismo de texto + flat, e não sharding?</strong> Os eixos atacam
+      fases ortogonais. Idea 5 (flat output) substitui dois níveis de pointer-chasing na
+      emissão por um array contíguo — herdada por <em>todos</em> os searchers, é o ganho
+      single-thread mais barato. O paralelismo de texto (chunking) escala bem no dict
+      pequeno. Idea 1 (sharding de dicionário) e Idea 6 (composição 2-D) foram testadas:
+      <strong>perdem para os searchers de texto em todos os regimes deste hardware</strong>
+      (sharding: 1,15× em T=12 vs 4,79× do dynamic; 2-D: sempre abaixo do chunking puro),
+      e isso é parte central do resultado do TCC.
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">A cadeia cumulativa de speedups (Snort full + Enron ~1,32 GiB · T=12)</h3>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Variante</th>
+          <th>O que adiciona</th>
+          <th>Threads</th>
+          <th>MB/s</th>
+          <th>Speedup vs <code>sequential</code></th>
+          <th class="bar-cell">Barra</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sequential</code></td>
+          <td>Baseline — DFA + chain-walk de emissão</td>
+          <td class="num">seq</td>
+          <td class="num">239,60</td>
+          <td class="num">1,00×</td>
+          <td><div class="bar-bg"><div class="bar-fill" style="width:21%"></div></div></td>
+        </tr>
+        <tr>
+          <td><code>pthread_chunked_v2</code></td>
+          <td>+ chunking de texto (sem flat)</td>
+          <td class="num">12</td>
+          <td class="num">891,97</td>
+          <td class="num">3,72×</td>
+          <td><div class="bar-bg"><div class="bar-fill purple" style="width:78%"></div></div></td>
+        </tr>
+        <tr>
+          <td><code>pthread_chunked_flat</code></td>
+          <td>Idea 5 ⊕ chunking</td>
+          <td class="num">12</td>
+          <td class="num">976,09</td>
+          <td class="num">4,07×</td>
+          <td><div class="bar-bg"><div class="bar-fill teal" style="width:85%"></div></div></td>
+        </tr>
+        <tr style="background:#0a2a1a;">
+          <td><code>pthread_dynamic</code> ⭐</td>
+          <td>Dispatch atômico de chunks — <strong>vencedor neste regime</strong></td>
+          <td class="num">12</td>
+          <td class="num winner">1.148,09</td>
+          <td class="num winner">4,79×</td>
+          <td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    No regime moderado (Snort, autômato 55 MiB &gt; L3 mas ≪ ET-32), o flat layout adiciona
+    ~9 % sobre o <code>chunked_v2</code> e o dispatch dinâmico fecha o pico em 4,79×. Neste
+    sweep o ganho do flat <strong>não compõe multiplicativamente</strong> como o sweep antigo
+    de SimpleWiki sugeria (lá o headline era 7,49× — não reproduzido aqui): o gargalo de
+    emissão já é parcialmente mascarado pelas esperas de DRAM mesmo em Snort.
+  </p>
+
+  <h3 style="margin-top:1.5rem;">Onde o ganho diminui — regime DRAM-bound (ET-32 ≫ L3)</h3>
+  <div class="alert alert-orange">
+    <div class="alert-icon">⚠</div>
+    <div>
+      Com o dicionário grande (<code>ET-32</code> ~507 MiB, 42× a L3) sobre
+      <code>enron_corpus</code>, o gargalo migra do <em>caminho de emissão</em> para o
+      <em>cache miss em <code>goto_tbl</code></em> e a <strong>banda de DRAM satura</strong>.
+      O melhor searcher (<code>pthread_chunked_v3_flat</code>) atinge apenas <strong>2,85× em
+      T=6</strong> (~368 MB/s) — e o speedup <em>regride</em> ao subir para T=12 (2,76×,
+      ~355 MB/s), evidenciando platô já nos P-cores. Este é o <strong>problema central</strong>
+      de IDS-scale: a banda de DRAM, não o número de threads, é o limite físico.
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">Atualização 2026-05-29 — quem lidera em cada cenário (sweep definitivo)</h3>
+  <div class="alert alert-orange">
+    <div class="alert-icon">⚠</div>
+    <div>
+      O sweep definitivo cobre 4 cenários <code>(patterns × corpus)</code> com curva completa
+      de threads. O <strong>líder em T=12 muda com o regime</strong>, confirmando que não há
+      vencedor universal:
+
+      <table class="results-table" style="margin-top:.6rem;">
+        <thead><tr><th>Cenário</th><th>Líder (T=12, salvo nota)</th><th>MB/s</th><th>Speedup vs seq</th></tr></thead>
+        <tbody>
+          <tr><td>Snort + Enron (moderado, 55 MiB)</td>
+              <td><code>pthread_dynamic</code></td>
+              <td class="num winner">1.148,09</td>
+              <td class="num winner">4,79×</td></tr>
+          <tr><td>Snort + enron_x8 (10,59 GiB)</td>
+              <td><code>pthread_chunked_v3_flat</code></td>
+              <td class="num winner">1.087,13</td>
+              <td class="num winner">4,52×</td></tr>
+          <tr><td>ET-32 + Enron (507 MiB ≫ L3)</td>
+              <td><code>pthread_chunked_v3_flat</code> (pico em <strong>T=6</strong>)</td>
+              <td class="num warn">367,83</td>
+              <td class="num warn">2,85×</td></tr>
+          <tr><td>ET-32 + enron_x8 (≫ L3, 10,59 GiB)</td>
+              <td><code>pthread_chunked_flat</code></td>
+              <td class="num warn">350,01</td>
+              <td class="num warn">2,79×</td></tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:.5rem;">
+        <strong>Leituras:</strong>
+        <strong>(a)</strong> Os searchers <em>flat</em> (idea 5/7) e o dynamic dispatch
+        revezam a liderança; o <code>pthread_chunked_v3_flat</code> vence 2 dos 4 cenários
+        (incluindo o pico ET-32 em T=6).
+        <strong>(b)</strong> No regime ET-32 ≫ L3 o pico ocorre em <strong>T=6</strong>
+        (P-cores) e regride em T=8–12: a banda de DRAM satura e adicionar E-cores não
+        ajuda — a tese central do TCC.
+        <strong>(c)</strong> A composição prefetch + flat (idea 8) permanece
+        <strong>fora do escopo</strong> (removida em 2026-05-28); a lição de negativo
+        qualificado já é carregada pelo <code>pthread_prefetch</code> não-flat.
+        <strong>(d)</strong> As curvas deste sweep têm CV não-trivial em alguns pontos
+        (ruído térmico/sistêmico em runs longos); os picos por cenário acima são as
+        âncoras canônicas.
+      </p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== 2. METODOLOGIA ===================== -->
+<section id="metodologia">
+  <div class="section-label">§2 · Metodologia experimental</div>
+  <h2>Base para a seção <em>Metodologia</em> do TCC</h2>
+
+  <div class="tcc-map">
+    <div class="tcc-sec">TCC §Metodologia</div>
+    <div class="tcc-content">
+      Esta seção fornece os blocos de construção da metodologia do texto: hardware,
+      datasets, protocolo de medição, métricas, invariantes de corretude e o conjunto
+      controlado de variantes a comparar. Cada subseção abaixo pode virar uma subseção
+      do capítulo.
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">2.1 · Pipeline canônico em três fases</h3>
+  <p class="intro">
+    Toda execução do laboratório passa por estas três fases. As fases são <strong>estanques</strong>:
+    a busca nunca modifica o autômato e o merge nunca reprocessa o texto. Esse desacoplamento
+    é o que torna o paralelismo da fase de busca trivialmente livre de locks no caminho quente.
+  </p>
+  <div class="pipeline">
+    <div class="pipe-phase phase-1">
+      <div class="phase-number">Fase 1</div>
+      <div class="phase-title">Construção do autômato</div>
+      <p class="phase-note">
+        Insere padrões na trie, executa BFS para preencher <code>goto_tbl</code>, <code>fail[]</code>,
+        <code>dict_suffix[]</code> e flat outputs. Resultado: autômato <strong>imutável</strong>.
+        Sequencial padrão; paralelo (Idea 4) ativável via <code>AC_BUILD_PARALLEL=1</code>.
+      </p>
+    </div>
+    <div class="pipe-phase phase-2">
+      <div class="phase-number">Fase 2</div>
+      <div class="phase-title">Busca (matching)</div>
+      <p class="phase-note">
+        Cada worker lê o autômato compartilhado e seu chunk de texto, emitindo matches em
+        lista privada. Sem mutex, sem atomic no caminho quente — o autômato é
+        estritamente read-only. Overlap entre chunks adjacentes ≥ <code>max_pattern_len − 1</code>.
+      </p>
+    </div>
+    <div class="pipe-phase phase-3">
+      <div class="phase-number">Fase 3</div>
+      <div class="phase-title">Merge</div>
+      <p class="phase-note">
+        Master thread concatena as listas thread-locais por ordem determinística após o
+        <code>pthread_join</code>. Sempre sequencial; representa &lt;1% do tempo total —
+        otimizar é irrelevante.
+      </p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">2.2 · Plataforma de hardware</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-title">Processador</div>
+      <div class="card-body">
+        Intel Core i5-1235U (Alder Lake-U híbrido): <strong>2 P-cores</strong> com Hyperthreading
+        (4 threads) + <strong>8 E-cores</strong> sem HT = <strong>12 threads</strong> lógicas.
+        Frequência turbo P: ~4,4 GHz; E: ~3,3 GHz. Heterogeneidade impacta o balanceamento
+        estático de chunks (motivação direta para <code>pthread_chunked_v3</code>).
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Hierarquia de memória</div>
+      <div class="card-body">
+        L1d 48 KiB/core; L2 1,25 MiB/P-core, 2 MiB/cluster E; <strong>L3 unificada 12 MiB</strong>.
+        RAM 31 GiB DDR4 dual-channel; banda DRAM pico medida ~25 GB/s. O autômato ET-32
+        (506,8 MiB, 508.896 estados) é <strong>42× a L3</strong> — regime DRAM-bound canônico.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Stack de software</div>
+      <div class="card-body">
+        Linux 6.x; GCC com <code>-O3 -march=native -Wall -Wextra -Wpedantic -Wshadow</code>;
+        POSIX Threads; CPU governor <code>performance</code>; <code>taskset</code>-pinned;
+        ThreadSanitizer e AddressSanitizer/UBSan em CI local.
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">2.3 · Dicionários e corpus</h3>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dataset</th><th>Tipo</th><th>Tamanho</th><th>Caracterização</th><th>Função no TCC</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>patterns_snort_100.txt</code></td><td>Dicionário</td>
+          <td class="num">100 padrões · 1,93 MiB autômato (1.939 estados)</td>
+          <td>Cabe em L2 — regime <strong>cache-friendly</strong></td>
+          <td>Limite superior; isola efeito de cache</td>
+        </tr>
+        <tr>
+          <td><code>patterns_snort.txt</code></td><td>Dicionário</td>
+          <td class="num">4.188 padrões · 55,23 MiB autômato (55.479 estados)</td>
+          <td>Excede L3; cabe em RAM — regime <strong>moderado</strong></td>
+          <td>Benchmark canônico do TCC</td>
+        </tr>
+        <tr>
+          <td><code>patterns_et_32.txt</code></td><td>Dicionário</td>
+          <td class="num">44.678 padrões · 506,78 MiB autômato (508.896 estados)</td>
+          <td>42× a L3 — regime <strong>DRAM-bound severo</strong></td>
+          <td>Stress-test de IDS realista</td>
+        </tr>
+        <tr>
+          <td><code>simplewiki.txt</code></td><td>Corpus</td>
+          <td class="num">~1,2 GiB</td>
+          <td>Texto natural; baixa densidade de matches</td>
+          <td>Iteração rápida; isola layout</td>
+        </tr>
+        <tr>
+          <td><code>enron_corpus.txt</code></td><td>Corpus</td>
+          <td class="num">~1,32 GiB</td>
+          <td>E-mails reais; densidade média de matches</td>
+          <td>Benchmark canônico do TCC</td>
+        </tr>
+        <tr>
+          <td><code>enron_x8.txt</code></td><td>Corpus</td>
+          <td class="num">~10,59 GiB</td>
+          <td>Replicado 8× para amortizar build</td>
+          <td>Validação de escala (Fase A)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">2.4 · Searchers comparados</h3>
+  <p class="intro">
+    11 searchers registrados e medidos no sweep de 2026-05-29 (incluindo os dois baselines
+    <code>sequential</code> e <code>sequential_flat</code>), todos no mesmo binário,
+    selecionáveis em runtime por <code>--searcher &lt;nome&gt;</code>. O registro via
+    <code>__attribute__((constructor))</code> garante que <code>make test</code> valide
+    todas após cada commit.
+  </p>
+
+  <table class="results-table">
+    <thead>
+      <tr><th>Categoria</th><th>Searcher</th><th>Eixo atacado</th><th>Ideia</th></tr>
+    </thead>
+    <tbody>
+      <tr><td rowspan="1">Baseline</td><td><code>sequential</code></td><td>Referência sequencial</td><td>—</td></tr>
+      <tr><td rowspan="5">Paralelismo de texto</td>
+          <td><code>pthread_chunked</code></td><td>Chunks estáticos homogêneos</td><td>—</td></tr>
+      <tr><td><code>pthread_chunked_v2</code></td><td>Cache-pad + split warm-up</td><td>—</td></tr>
+      <tr><td><code>pthread_chunked_v3</code></td><td>Topology-aware (cpufreq)</td><td>—</td></tr>
+      <tr><td><code>pthread_dynamic</code></td><td>Dispatch atômico de tarefas</td><td>—</td></tr>
+      <tr><td><code>pthread_prefetch</code></td><td><code>__builtin_prefetch</code> do texto</td><td>—</td></tr>
+      <tr><td rowspan="2">Algorítmico/layout</td>
+          <td><code>sequential_flat</code></td><td>Emissão flat (single-thread)</td><td>Idea 5</td></tr>
+      <tr><td><code>pthread_chunked_flat</code> ⭐</td><td>Emissão flat + chunking</td><td>Idea 5</td></tr>
+      <tr><td>Paralelismo de dicionário</td>
+          <td><code>pattern_sharded_prefix</code></td><td>K shards por primeiro byte</td><td>Idea 1</td></tr>
+      <tr><td>Composição 2-D</td>
+          <td><code>pthread_2d_sharded_chunked</code></td><td>K shards × N chunks</td><td>Idea 6</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:1.5rem;">2.5 · Protocolo de medição</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-title">Iteração e warm-up</div>
+      <div class="card-body">
+        <code>--warmup ≥ 1 --iters ≥ 3</code> em todos os runs publicáveis;
+        <code>--iters 5</code> no sweep formal. Warm-up paga page faults e aquece
+        os caches; iterações posteriores são as cronometradas.
+        Reporta-se média (<code>mean</code>) e melhor caso (<code>min</code>).
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Métricas reportadas</div>
+      <div class="card-body">
+        <strong>Throughput</strong> (MiB/s e Gbps); <strong>tempo de busca</strong> em ms;
+        <strong>speedup</strong> S(T) = T<sub>seq</sub> / T<sub>par</sub>(T);
+        <strong>eficiência</strong> E(T) = S(T)/T; <strong>tempo de build</strong> separado;
+        <strong>footprint</strong> do autômato em bytes.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Isolamento ambiental</div>
+      <div class="card-body">
+        Governor <code>performance</code> (documentado quando <code>powersave</code>);
+        <code>taskset -c 0-(N-1)</code>; sem browsers/IDE durante medição;
+        HT documentado e pinning explícito; <code>--per-thread</code> para diagnóstico
+        de balanceamento por worker.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Validação de corretude</div>
+      <div class="card-body">
+        Todo searcher precisa concordar com <code>sequential</code> em
+        <code>make test</code> sob thread counts <code>{1, 2, 3, 4, 7, 8}</code>.
+        Hash MD5 do stream de matches igual ao do sequential é a invariante
+        máxima — validado em T=64 (oversubscrição 5,3×) sem divergência.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Detecção de races</div>
+      <div class="card-body">
+        <code>make tsan</code> (ThreadSanitizer) silencioso é mandatório para qualquer
+        variante paralela. Para Idea 4 (BFS paralela), o único atomic permitido
+        (<code>atomic_size_t next_count</code>) só dispara em discovery de filhos
+        — nunca por byte de entrada.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Invariantes não-negociáveis</div>
+      <div class="card-body">
+        (1) Autômato read-only durante busca. (2) Sem locks/atomics no hot loop.
+        (3) Matches thread-local até o join. (4) Overlap ≥ <code>max_pattern_len − 1</code>.
+        (5) Match ownership disjunta. (6) Assinatura de <code>ac_searcher_t::search</code>
+        estável. Violação ⇒ falha de <code>make test</code> ou warning de TSan.
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">2.6 · Estratégia de comparação — grade aditiva</h3>
+  <div class="alert alert-purple">
+    <div class="alert-icon">🧩</div>
+    <div>
+      As 5 ideias propostas (idea 2 descartada) formam uma <strong>grade ortogonal</strong>:
+      Build (Idea 4) × Layout (Idea 5) × Paralelismo de texto (chunking variants) ×
+      Paralelismo de dicionário (Idea 1, 3 políticas) × Composição 2-D (Idea 6).
+      O autômato produzido pela construção paralela é <em>bit-a-bit idêntico</em> ao
+      sequencial (verificado por <code>automata_byte_equal</code>), de modo que qualquer
+      par (build × searcher) é válido. Isso isola limpamente o ganho de cada eixo.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== 3. RESULTADOS ===================== -->
+<section id="resultados">
+  <div class="section-label">§3 · Resultados experimentais</div>
+  <h2>Base para a seção <em>Resultados</em> do TCC</h2>
+
+  <div class="tcc-map">
+    <div class="tcc-sec">TCC §Resultados</div>
+    <div class="tcc-content">
+      Sequência canônica: <strong>(a)</strong> caracterização do baseline e do gargalo
+      (footprint × throughput); <strong>(b)</strong> ataque por eixo, isolando o ganho de
+      cada ideia; <strong>(c)</strong> headline cumulativo no melhor regime e no pior;
+      <strong>(d)</strong> resultados negativos (Idea 3 fora de janela, Idea 1
+      regime-dependente, Idea 6 hipótese falsificada). Esta ordem é defendida abaixo.
+    </div>
+  </div>
+
+  <!-- 3.1 baseline + footprint -->
+  <h3 style="margin-top:1.5rem;">3.1 · Caracterização do gargalo — footprint × throughput</h3>
+  <p class="intro">
+    O throughput single-thread cai <strong>74,0%</strong> à medida que o autômato cresce de
+    1,93 MiB (Snort-100, cabe em L2) para 506,8 MiB (ET-32, 42× a L3): de 483,1 MB/s para
+    125,6 MB/s. Mesmo em T=12 o speedup do <code>pthread_chunked_v3</code> degrada de 6,68×
+    (Snort-100) para 2,63× (ET-32). Este é o problema central que motiva todo o trabalho.
+    <em>(Fase B do sweep · thr=0 = sequential, thr=12 = paralelo.)</em>
+  </p>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Padrões</th><th>Estados</th><th>Autômato</th><th>MB/s seq</th><th>MB/s v3 T=12</th><th>Speedup</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Snort-100</td><td class="num">100</td><td class="num">1.939</td><td class="num">1,93 MiB (L2)</td>
+            <td class="num">483,14</td><td class="num winner">3.228,38</td><td class="num winner">6,68×</td></tr>
+        <tr><td>Snort-1k</td><td class="num">~1.000</td><td class="num">11.974</td><td class="num">11,92 MiB</td>
+            <td class="num">337,30</td><td class="num">1.283,79</td><td class="num">3,81×</td></tr>
+        <tr><td>Snort full</td><td class="num">4.188</td><td class="num">55.479</td><td class="num">55,23 MiB</td>
+            <td class="num">240,71</td><td class="num">894,79</td><td class="num">3,72×</td></tr>
+        <tr style="background:#2a1510;">
+          <td>ET-32</td><td class="num">44.678</td><td class="num">508.896</td><td class="num warn">506,78 MiB (42× L3)</td>
+          <td class="num warn">125,59</td><td class="num warn">330,50</td><td class="num warn">2,63×</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Nota: para Snort-100 o <code>pthread_chunked_flat</code> atinge 1.430,4 MB/s em T=12
+    (menos que o v3, 3.228,4 — neste regime cache-friendly o balanceamento topology-aware
+    do v3 domina). No regime ET-32 os dois ficam próximos (chunked_flat 358,8 vs v3 330,5).
+  </p>
+
+  <!-- 3.2 escalonamento -->
+  <h3 style="margin-top:1.5rem;">3.2 · Escalonamento por threads (Fase A · <code>enron_x8</code> 10,59 GiB)</h3>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>T</th><th>Mean (ms)</th><th>MB/s</th><th>Speedup</th><th class="bar-cell">Barra</th></tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem;">Snort full · <code>pthread_chunked_v3_flat</code> · seq 240,3 MB/s (45.125 ms)</td></tr>
+        <tr><td>Snort</td><td class="num">1</td><td class="num">43.172</td><td class="num">251,2</td><td class="num">1,05×</td><td><div class="bar-bg"><div class="bar-fill" style="width:23%"></div></div></td></tr>
+        <tr><td>Snort</td><td class="num">4</td><td class="num">18.538</td><td class="num">584,9</td><td class="num">2,43×</td><td><div class="bar-bg"><div class="bar-fill" style="width:54%"></div></div></td></tr>
+        <tr><td>Snort</td><td class="num">8</td><td class="num">12.498</td><td class="num">867,6</td><td class="num">3,61×</td><td><div class="bar-bg"><div class="bar-fill" style="width:80%"></div></div></td></tr>
+        <tr><td>Snort</td><td class="num">12</td><td class="num winner">9.974</td><td class="num winner">1.087,1</td><td class="num winner">4,52×</td><td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td></tr>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem;">ET-32 · <code>pthread_chunked_flat</code> · seq 125,4 MB/s (86.457 ms) · autômato 42× L3</td></tr>
+        <tr><td>ET-32</td><td class="num">1</td><td class="num">76.094</td><td class="num">142,5</td><td class="num">1,14×</td><td><div class="bar-bg"><div class="bar-fill" style="width:41%"></div></div></td></tr>
+        <tr><td>ET-32</td><td class="num">4</td><td class="num">43.566</td><td class="num">248,9</td><td class="num">1,99×</td><td><div class="bar-bg"><div class="bar-fill" style="width:71%"></div></div></td></tr>
+        <tr><td>ET-32</td><td class="num">8</td><td class="num">32.729</td><td class="num">331,3</td><td class="num">2,64×</td><td><div class="bar-bg"><div class="bar-fill" style="width:95%"></div></div></td></tr>
+        <tr><td>ET-32</td><td class="num">12</td><td class="num winner">30.979</td><td class="num winner">350,0</td><td class="num winner">2,79×</td><td><div class="bar-bg"><div class="bar-fill green" style="width:100%"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Escalonamento sublinear em ambos os regimes. Em ET-32 o ganho relativo é levemente
+    melhor porque a concorrência mascara latência de DRAM pendente — mas o tempo absoluto
+    permanece dominado pela banda física.
+  </p>
+
+  <!-- 3.2b cross-corpus -->
+  <h3 style="margin-top:1.5rem;">3.2.1 · Sensibilidade ao corpus (Fase C · Snort · <code>pthread_chunked_v3</code>)</h3>
+  <p class="intro">
+    Trocar o corpus (Enron vs SimpleWiki), fixando dicionário e searcher, isola o efeito do
+    tipo de texto. O baseline sequencial é praticamente idêntico (240,96 vs 248,36 MB/s); em
+    T=12 o Enron escala um pouco melhor (4,42× vs 3,64×), coerente com sua densidade de
+    matches mais alta amortizando a latência de DRAM.
+  </p>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Corpus</th><th>seq MB/s (T=0)</th><th>v3 MB/s (T=12)</th><th>Speedup</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>enron_corpus</td><td class="num">240,96</td><td class="num winner">1.065,24</td><td class="num winner">4,42×</td></tr>
+        <tr><td>simplewiki</td><td class="num">248,36</td><td class="num">908,85</td><td class="num">3,64×</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3.3 desbalanceamento P/E -->
+  <h3 style="margin-top:1.5rem;">3.3 · Diagnóstico per-thread (Fase D · Snort + Enron · T=12, 12 workers)</h3>
+  <p class="intro">
+    A Fase D mede a estabilidade de cada searcher rodando 12 workers no Snort + Enron. O
+    coeficiente de variação (<code>cv_pct</code>) entre iterações expõe a sensibilidade ao
+    desbalanceamento P/E-core e ao jitter de barreira: os searchers <em>flat</em> são os mais
+    estáveis (CV ≤ 4,3 %), enquanto <code>chunked</code>/<code>chunked_v2</code> (chunking
+    estático homogêneo) sofrem CV de 40–53 %, sinal direto de stragglers nos E-cores.
+  </p>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Searcher</th><th>MB/s</th><th>Mean (ms)</th><th>CV %</th><th>Leitura</th></tr>
+      </thead>
+      <tbody>
+        <tr style="background:#0a2a1a;"><td><code>pthread_chunked</code></td>
+            <td class="num winner">1.064,7</td><td class="num">1.273,0</td><td class="num warn">39,9</td>
+            <td class="warn">rápido em média, mas instável (stragglers)</td></tr>
+        <tr><td><code>pthread_chunked_flat</code></td>
+            <td class="num">1.007,2</td><td class="num">1.345,7</td><td class="num winner">0,4</td>
+            <td class="winner">mais estável de todos</td></tr>
+        <tr><td><code>pthread_chunked_v3_flat</code></td>
+            <td class="num">994,2</td><td class="num">1.363,2</td><td class="num">4,3</td>
+            <td>estável + topology-aware</td></tr>
+        <tr><td><code>pthread_2d_sharded_chunked</code></td>
+            <td class="num">980,7</td><td class="num">1.382,0</td><td class="num">5,2</td><td>—</td></tr>
+        <tr><td><code>pthread_chunked_v2</code></td>
+            <td class="num">902,0</td><td class="num">1.502,7</td><td class="num warn">52,9</td>
+            <td class="warn">maior CV — desbalanceamento severo</td></tr>
+        <tr><td><code>pthread_chunked_v3</code></td>
+            <td class="num">879,8</td><td class="num">1.540,6</td><td class="num">1,7</td>
+            <td>cpufreq-weighting reduz CV</td></tr>
+        <tr><td><code>pthread_dynamic</code></td>
+            <td class="num">864,4</td><td class="num">1.568,0</td><td class="num">3,3</td>
+            <td>dispatch atômico estabiliza</td></tr>
+        <tr><td><code>pthread_prefetch</code></td>
+            <td class="num">861,0</td><td class="num">1.574,1</td><td class="num">4,8</td><td>—</td></tr>
+        <tr><td><code>pattern_sharded_prefix</code></td>
+            <td class="num neg">243,8</td><td class="num">5.560,4</td><td class="num">7,3</td>
+            <td class="neg">paralelismo de dicionário ~4,4× mais lento</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    O <code>cpufreq</code>-weighting do <code>v3</code> reduz o CV de 52,9 % (v2) para 1,7 %,
+    confirmando o efeito do balanceamento topology-aware sobre a ociosidade de barreira; a
+    versão flat herda essa estabilidade (4,3 %). Em throughput médio o <code>chunked</code>
+    simples lidera neste run isolado, mas com alta variância — o que justifica preferir os
+    searchers de baixo CV para reprodutibilidade.
+  </p>
+
+  <!-- 3.4 idea 5 -->
+  <h3 style="margin-top:1.5rem;">3.4 · Idea 5 — Flat output table (Fase B · single-thread)</h3>
+  <div class="cards">
+    <div class="card" style="border-color:#1a4a4a;">
+      <div class="card-title"><span class="status-dot dot-done"></span>Single-thread (Fase B, thr=0)</div>
+      <div class="card-body">
+        <code>sequential_flat</code> sobre <code>sequential</code> rende ganho
+        <strong>regime-dependente</strong>: <strong>+13,0 %</strong> em ET-32
+        (141,97 vs 125,59 MB/s, autômato ≫ L3), <strong>+4,7 %</strong> em Snort full
+        (251,99 vs 240,71) e <strong>+1,0 %</strong> em Snort-100 (488,09 vs 483,14, já
+        cache-friendly). A emissão deixa de fazer dois pointer-chasings
+        (<code>dict_suffix</code> + <code>outputs</code>) e passa a ler
+        <code>flat_pids[off, off+cnt)</code> — array contíguo previsível para o prefetcher.
+        O ganho é maior justamente onde o autômato estoura a cache.
+      </div>
+    </div>
+    <div class="card" style="border-color:#1a4a1a;">
+      <div class="card-title"><span class="status-dot dot-done"></span>Multi-thread</div>
+      <div class="card-body">
+        Em T=12 o flat lidera ou empata por regime: vence Snort + enron_x8
+        (<code>v3_flat</code> 1.087 MB/s, 4,52×) e ET-32 + Enron
+        (<code>v3_flat</code> 367,8 MB/s no pico T=6, 2,85×). Em Snort + Enron o
+        <code>pthread_dynamic</code> (976→1.148 MB/s) supera marginalmente o flat. O headline
+        de 7,49× sobre SimpleWiki de sweeps anteriores <strong>não foi reproduzido</strong>
+        neste sweep (SimpleWiki só entra na Fase C, sem curva completa de threads).
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.5 idea 4 -->
+  <h3 style="margin-top:1.5rem;">3.5 · Idea 4 — BFS paralela de construção (Fase E)</h3>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Estados</th><th>Build seq (ms)</th><th>T=4</th><th>T=8</th><th>T=12</th><th>Pico (speedup)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Snort-100</td><td class="num">1.939</td><td class="num">1,50</td>
+            <td class="num warn">1,82</td><td class="num warn">2,12</td><td class="num warn">2,50</td>
+            <td class="warn">regride (0,60× @T=12)</td></tr>
+        <tr><td>Snort-1k</td><td class="num">11.974</td><td class="num">9,87</td>
+            <td class="num">9,85</td><td class="num warn">11,21</td><td class="num warn">12,67</td>
+            <td class="warn">~empata (1,00× @T=4)</td></tr>
+        <tr><td>Snort full</td><td class="num">55.479</td><td class="num">48,21</td>
+            <td class="num">40,49</td><td class="num">41,38</td><td class="num warn">52,98</td>
+            <td>1,19× @T=4 · 0,91× @T=12</td></tr>
+        <tr style="background:#0a2a1a;"><td>ET-32 (alvo TCC)</td><td class="num">508.896</td>
+            <td class="num">485,18</td><td class="num">338,59</td>
+            <td class="num winner">312,66</td><td class="num">345,08</td>
+            <td class="winner">1,55× @T=8 · 1,41× @T=12</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    A BFS paralela só compensa no dicionário grande: ET-32 (508k estados) atinge
+    <strong>1,55× em T=8</strong> (485→313 ms) e 1,41× em T=12 — o pico está em T=8, não em
+    T=12. Para Snort full (55k) o melhor é 1,19× em T=4 e regride a 0,91× em T=12; Snort-1k e
+    Snort-100 regridem (overhead de spawn/join por nível &gt; ganho). Em IDS que recarregam
+    regras com frequência, cortar o build de 485 para 313 ms é melhoria de latência
+    operacional relevante.
+  </p>
+
+  <!-- 3.6 idea 3 -->
+  <h3 style="margin-top:1.5rem;">3.6 · Idea 3 — δ² multi-step (resultado negativo qualificado)</h3>
+  <div class="alert alert-blue">
+    <div class="alert-icon">ℹ️</div>
+    <div>
+      <strong>Sem dado novo no sweep de 2026-05-29:</strong> o searcher <code>sequential_delta2</code>
+      foi removido do registro (não consta entre os 11 searchers deste sweep). Os números
+      abaixo são do sweep anterior, mantidos como resultado histórico do roadmap; não foram
+      re-medidos aqui.
+    </div>
+  </div>
+  <div class="alert alert-orange">
+    <div class="alert-icon">📐</div>
+    <div>
+      Pré-computar <code>δ²[s × 65536 + ab] = goto[goto[s][a]][b]</code> halving a cadeia de loads
+      <strong>só compensa</strong> quando a tabela cabe em L3. Footprint cresce como
+      <code>N<sub>states</sub> × 65536 × 5 bytes</code> — inviável para dicionários de IDS.
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Estados</th><th>Tabela δ²</th><th>MB/s seq</th><th>MB/s δ²</th><th>Δ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>7 padrões HTTP</td><td class="num">43</td><td class="num">~14 MiB</td>
+            <td class="num">426,70</td><td class="num winner">587,03</td><td class="winner">+37,6%</td></tr>
+        <tr><td>Snort-100</td><td class="num">1.939</td><td class="num warn">~640 MiB</td>
+            <td class="num">405,70</td><td class="num warn">315,24</td><td class="warn">−22,3%</td></tr>
+        <tr style="background:#2a1510;">
+          <td>Snort-1k</td><td class="num">11.974</td><td class="num warn">~3,7 GiB</td>
+          <td class="num">275,68</td><td class="num warn">—</td>
+          <td class="warn">FALLBACK</td></tr>
+        <tr style="background:#2a1510;">
+          <td>ET-32</td><td class="num">508.896</td><td class="num warn">≫ 1 TiB</td>
+          <td class="num">111,47</td><td class="num warn">—</td>
+          <td class="warn">FALLBACK</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Cross-over de viabilidade entre 43 e 1.939 estados (~14 vs ~640 MiB de tabela).
+    Em hardware desktop com L3 de 12 MB, δ² só vence para dicionários de até ~50 estados —
+    fora do regime de interesse do TCC. <strong>Resultado científico:</strong> demonstra
+    empiricamente o teto de truques algorítmicos single-thread frente ao cache blowout.
+  </p>
+
+  <!-- 3.7 idea 1 -->
+  <h3 style="margin-top:1.5rem;">3.7 · Idea 1 — Pattern sharding (3 políticas; só <code>prefix</code> vence)</h3>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>Política</th><th>K</th><th>MB/s</th><th>vs <code>sequential</code></th><th>vs <code>chunked_flat</code></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Snort full + enron</td><td><code>sequential</code></td><td class="num">seq</td>
+            <td class="num">239,60</td><td class="num">1,00×</td><td class="num neg">0,21×</td></tr>
+        <tr><td>Snort full + enron</td><td><code>prefix</code> (T=2)</td><td class="num">2</td>
+            <td class="num">322,62</td><td class="num">1,35×</td><td class="num neg">0,28×</td></tr>
+        <tr style="background:#0a2a1a;">
+          <td>Snort full + enron</td><td><code>prefix</code> pico ⭐</td><td class="num">6</td>
+          <td class="num winner">327,19</td><td class="num winner">1,37×</td><td class="num neg">0,34×</td></tr>
+        <tr><td>Snort full + enron</td><td><code>prefix</code> (T=12)</td><td class="num">12</td>
+            <td class="num warn">276,56</td><td class="num warn">1,15×</td><td class="num neg">0,28×</td></tr>
+        <tr><td>Snort full + enron</td><td><code>pthread_chunked_flat</code> (ref. T=12)</td><td class="num">12</td>
+            <td class="num winner">976,09</td><td class="num winner">4,07×</td><td class="num">1,00×</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    Curva do <code>pattern_sharded_prefix</code> (Snort full + enron, este sweep): T=2 → 1,35×;
+    T=6 → 1,37× (pico); T=8 → 1,22×; T=12 → 1,15× (banda colapsa). <strong>Ganho satura
+    cedo</strong>: é cache locality por shard, não paralelismo agregado. Mesmo o melhor caso
+    fica em ~0,34× do <code>chunked_flat</code> — paralelismo de texto domina o de dicionário
+    neste hardware. <em>(As políticas round-robin/LPT foram descartadas em sweeps anteriores;
+    só <code>prefix</code> permanece registrado e é o medido aqui.)</em>
+  </p>
+
+  <!-- 3.8 idea 6 -->
+  <h3 style="margin-top:1.5rem;">3.8 · Idea 6 — Composição 2-D K × N (hipótese falsificada)</h3>
+  <div class="alert alert-red">
+    <div class="alert-icon">❌</div>
+    <div>
+      A composição 2-D foi <strong>desenhada</strong> para combinar o ganho de cache locality
+      da Idea 1 com o paralelismo de texto da Idea 5. No sweep de 2026-05-29,
+      <code>pthread_2d_sharded_chunked</code> (K=2) <strong>perde para o chunking puro em
+      T=12 nos dois cenários medidos</strong>: −19,5 % em Snort + Enron e −7,5 % em ET-32 +
+      Enron. Este é o resultado científico central de "fechamento" da grade: paralelismo de
+      texto &gt; paralelismo de dicionário neste hardware desktop.
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr><th>Dicionário</th><th>T</th><th>K</th><th>2-D MB/s</th><th>chunked_flat MB/s</th><th>Razão 2-D / flat</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Snort full + enron</td><td class="num">12</td><td class="num">2</td>
+            <td class="num">785,40</td><td class="num winner">976,09</td>
+            <td class="num warn">0,80× (−19,5 %)</td></tr>
+        <tr><td>ET-32 + enron</td><td class="num">12</td><td class="num">2</td>
+            <td class="num">289,03</td><td class="num winner">312,30</td>
+            <td class="num warn">0,93× (−7,5 %)</td></tr>
+        <tr><td>ET-32 + enron_x8</td><td class="num">12</td><td class="num">2</td>
+            <td class="num">314,47</td><td class="num winner">350,01</td>
+            <td class="num warn">0,90× (−10,2 %)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
+    A curva do 2-D escala (Snort + enron: T=4 1,78×; T=8 2,85×; T=12 3,28×) mas sempre fica
+    abaixo do chunking de texto puro, porque cada shard re-lê todo o texto e multiplica o
+    tráfego de RAM por K. Sair do regime DRAM-bound em ET-32 exigiria K ≥ 22 (sub-autômato
+    ≤ L3), mas K alto multiplica o tráfego de texto linearmente — irrecuperável em hardware
+    com banda ~25 GB/s. <em>(K-sweep fino e cenários com SimpleWiki não foram re-medidos
+    neste sweep.)</em>
+  </p>
+
+  <!-- 3.9 F3 stack end-to-end -->
+  <h3 style="margin-top:1.5rem;">3.9 · Stack F3 (Build paralelo ⊕ Flat ⊕ v3) — headline end-to-end sobre <code>enron_x8</code> (10,59 GiB)</h3>
+  <div class="alert alert-green">
+    <div class="alert-icon">⭐</div>
+    <div>
+      A composição final do TCC cronometra <strong>build + search</strong> sobre o corpus
+      de escala (10,59 GiB), separando explicitamente as duas fases para que o leitor
+      avalie cada contribuição de forma independente. 5 configurações × 2 dicionários.
+      Sweep canônico: <code>scripts/run_f3_v3flat_build_par_sweep.sh</code> · log
+      <code>f3_sweep.log</code> · doc detalhada
+      <code>tcc_notes/tldr_metricas.md §13</code>.
+    </div>
+  </div>
+  <div class="alert alert-blue">
+    <div class="alert-icon">ℹ️</div>
+    <div>
+      <strong>Esta tabela é do sweep F3 dedicado (2026-05-22), não do sweep de 2026-05-29.</strong>
+      O sweep definitivo de 2026-05-29 (<code>sweep.db</code>) mede o <em>search</em> em fases
+      A–E mas não cronometra o pipeline build+search end-to-end sobre <code>enron_x8</code>.
+      Os números de wall-clock E2E abaixo permanecem como o headline E2E histórico; a Fase A
+      deste sweep confirma a <em>direção</em> (em Snort + enron_x8, <code>v3_flat</code> e
+      <code>chunked_flat</code> empatam dentro de ~1,3 %: 1.087 vs 1.073 MB/s em T=12).
+    </div>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Dicionário</th>
+          <th>Configuração</th>
+          <th>Build (ms)</th>
+          <th>Search mean (ms)</th>
+          <th>MB/s</th>
+          <th>Wall-clock E2E (min)</th>
+          <th>Speedup E2E</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="7" style="color:var(--muted); font-size:.75rem;">Snort full · 142,8 M matches/iter</td></tr>
+        <tr>
+          <td>Snort</td><td>full sequential (build seq + T=1)</td>
+          <td class="num">99,7</td><td class="num">157.669</td><td class="num">68,77</td>
+          <td class="num">94.706</td><td class="num">1,00×</td>
+        </tr>
+        <tr>
+          <td>Snort</td><td><code>chunked_flat</code> T=12, build seq</td>
+          <td class="num">93,2</td><td class="num">22.075</td><td class="num">491,19</td>
+          <td class="num">21.545</td><td class="num">4,40×</td>
+        </tr>
+        <tr style="background:#0a2a1a;">
+          <td>Snort</td><td><code>v3_flat</code> T=12, build seq ⭐</td>
+          <td class="num">86,6</td><td class="num winner">21.327</td><td class="num winner">508,40</td>
+          <td class="num winner">21.158</td><td class="num winner">4,48×</td>
+        </tr>
+        <tr>
+          <td>Snort</td><td><code>chunked_flat</code> T=12, build par(12)</td>
+          <td class="num">99,8</td><td class="num">21.421</td><td class="num">506,18</td>
+          <td class="num">21.351</td><td class="num">4,44×</td>
+        </tr>
+        <tr style="background:#0a2a1a;">
+          <td>Snort</td><td>Stack F3 — <code>v3_flat</code> T=12, build par(12)</td>
+          <td class="num">92,6</td><td class="num">21.823</td><td class="num">496,85</td>
+          <td class="num">21.292</td><td class="num winner">4,45×</td>
+        </tr>
+        <tr><td colspan="7" style="color:var(--muted); font-size:.75rem;">ET-32 · 466,9 M matches/iter · autômato 515 MiB ≫ L3</td></tr>
+        <tr>
+          <td>ET-32</td><td>full sequential</td>
+          <td class="num">929,6</td><td class="num">342.312</td><td class="num">31,68</td>
+          <td class="num">198.906</td><td class="num">1,00×</td>
+        </tr>
+        <tr style="background:#0a2a1a;">
+          <td>ET-32</td><td><code>chunked_flat</code> T=12, build seq ⭐</td>
+          <td class="num">1.077,5</td><td class="num winner">66.759</td><td class="num winner">162,42</td>
+          <td class="num winner">65.428</td><td class="num winner">3,04×</td>
+        </tr>
+        <tr>
+          <td>ET-32</td><td><code>v3_flat</code> T=12, build seq</td>
+          <td class="num">1.188,0</td><td class="num warn">141.998</td><td class="num warn">76,36</td>
+          <td class="num warn">131.059</td><td class="num warn">1,52×</td>
+        </tr>
+        <tr>
+          <td>ET-32</td><td><code>chunked_flat</code> T=12, build par(12)</td>
+          <td class="num">1.327,0</td><td class="num">85.387</td><td class="num">126,98</td>
+          <td class="num">75.094</td><td class="num">2,65×</td>
+        </tr>
+        <tr>
+          <td>ET-32</td><td>Stack F3 — <code>v3_flat</code> T=12, build par(12)</td>
+          <td class="num">807,1</td><td class="num">86.839</td><td class="num">124,86</td>
+          <td class="num">85.736</td><td class="num">2,32×</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-orange" style="margin-top:.6rem;">
+    <div class="alert-icon">📊</div>
+    <div>
+      <strong>Leituras do F3:</strong>
+      <strong>(1)</strong> Em Snort + <code>enron_x8</code>, todas as 4 variantes paralelas
+      ficam dentro de 1,8 % uma da outra — confirma estatisticamente que <code>v3_flat</code>
+      e <code>chunked_flat</code> são equivalentes no regime Snort + corpus médio-grande
+      (mesma direção do R2 do §12, com magnitude reduzida).
+      <strong>(2)</strong> Em ET-32 + <code>enron_x8</code>, <code>chunked_flat</code>
+      (build seq) é o vencedor inequívoco com 3,04× wall-clock; <code>v3_flat</code>
+      regrediu agudamente (−53 % mean) — direção consistente com R4 do §12 (−9,5 %)
+      mas amplificada por throttling térmico sob carga sustentada de ~64 min.
+      <strong>(3)</strong> O build paralelo (Idea 4) contribui &lt; 1 % ao wall-clock E2E
+      neste regime — o ganho de 1,31× do §3.5 é uma métrica operacional separada
+      (latência de recarga de regras), não componente do throughput de scan.
+      <strong>(4)</strong> O <code>mean(sequential)</code> medido aqui foi ~3,3× mais
+      lento que o reportado em §3.2 — evidência de saturação térmica/sistêmica após
+      ~30 min de varredura contínua, prova adicional de que o regime real de IDS-scale
+      é dominado por restrições físicas (banda DRAM + thermal envelope).
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== 4. RANKING ===================== -->
+<section id="ranking">
+  <div class="section-label">§4 · Ranking unificado</div>
+  <h2>Os 11 searchers comparados lado a lado (sweep 2026-05-29)</h2>
+  <p class="intro">
+    Ranking por throughput em <strong>T=12 no regime canônico Snort + Enron</strong>
+    (autômato 55 MiB &gt; L3), a coluna principal de comparação justa entre searchers. A
+    coluna <strong>ET-32</strong> dá o speedup do mesmo searcher no regime DRAM-bound severo
+    (507 MiB ≫ L3) para evidenciar a inversão de líderes. <code>sequential</code> e
+    <code>sequential_flat</code> são baselines (sem curva de threads).
+  </p>
+
+  <div style="overflow-x:auto;">
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Searcher</th>
+          <th>Snort+Enron T=12 (MB/s)</th>
+          <th>Speedup vs seq</th>
+          <th>ET-32+Enron (speedup, T)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#0a2a1a;">
+          <td class="num">1</td>
+          <td><code>pthread_dynamic</code> ⭐</td>
+          <td class="num winner">1.148,09</td>
+          <td class="num winner">4,79×</td>
+          <td class="num warn">1,99× (T=12)</td>
+          <td><span class="pill pill-green">Vencedor Snort+Enron</span></td>
+        </tr>
+        <tr>
+          <td class="num">2</td>
+          <td><code>pthread_prefetch</code></td>
+          <td class="num">1.027,16</td>
+          <td class="num">4,29×</td>
+          <td class="num warn">2,14× (T=12)</td>
+          <td><span class="pill pill-teal">Prefetch sw</span></td>
+        </tr>
+        <tr>
+          <td class="num">3</td>
+          <td><code>pthread_chunked_v3_flat</code></td>
+          <td class="num">982,32</td>
+          <td class="num">4,10×</td>
+          <td class="num winner">2,85× (T=6, pico ET-32)</td>
+          <td><span class="pill pill-green">Líder em ET-32 e enron_x8</span></td>
+        </tr>
+        <tr>
+          <td class="num">4</td>
+          <td><code>pthread_chunked_flat</code></td>
+          <td class="num">976,09</td>
+          <td class="num">4,07×</td>
+          <td class="num">2,42× (T=12)</td>
+          <td><span class="pill pill-teal">Idea 5 + chunking</span></td>
+        </tr>
+        <tr>
+          <td class="num">5</td>
+          <td><code>pthread_chunked_v2</code></td>
+          <td class="num">891,97</td>
+          <td class="num">3,72×</td>
+          <td class="num">1,99× (T=12)</td>
+          <td><span class="pill pill-blue">Base do flat</span></td>
+        </tr>
+        <tr>
+          <td class="num">6</td>
+          <td><code>pthread_chunked</code></td>
+          <td class="num">887,81</td>
+          <td class="num">3,71×</td>
+          <td class="num">2,40× (T=12)</td>
+          <td><span class="pill pill-blue">v1 original</span></td>
+        </tr>
+        <tr>
+          <td class="num">7</td>
+          <td><code>pthread_chunked_v3</code></td>
+          <td class="num">887,04</td>
+          <td class="num">3,70×</td>
+          <td class="num">2,60× (T=12)</td>
+          <td><span class="pill pill-blue">Topology-aware</span></td>
+        </tr>
+        <tr>
+          <td class="num">8</td>
+          <td><code>pthread_2d_sharded_chunked</code></td>
+          <td class="num warn">785,40</td>
+          <td class="num warn">3,28×</td>
+          <td class="num warn">2,24× (T=12)</td>
+          <td><span class="pill pill-red">Falsifica hipótese 2-D</span></td>
+        </tr>
+        <tr>
+          <td class="num">9</td>
+          <td><code>pattern_sharded_prefix</code></td>
+          <td class="num neg">276,56</td>
+          <td class="num neg">1,15×</td>
+          <td class="num">1,43× (T=12; pico 1,77× T=8)</td>
+          <td><span class="pill pill-orange">Única política &gt;1×</span></td>
+        </tr>
+        <tr>
+          <td class="num">B</td>
+          <td><code>sequential_flat</code> (baseline)</td>
+          <td class="num">251,99 (Fase B, T=0)</td>
+          <td class="num">1,05× (Snort) · 1,13× (ET-32)</td>
+          <td class="num">—</td>
+          <td><span class="pill pill-teal">Idea 5 isolada</span></td>
+        </tr>
+        <tr>
+          <td class="num">B</td>
+          <td><code>sequential</code> (baseline)</td>
+          <td class="num">239,60</td>
+          <td class="num">1,00×</td>
+          <td class="num">1,00× (128,9 MB/s)</td>
+          <td><span class="pill pill-gray">Referência</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert alert-green" style="margin-top:1rem;">
+    <div class="alert-icon">📌</div>
+    <div>
+      <strong>Lições do ranking (sweep 2026-05-29):</strong>
+      <strong>(1)</strong> O top-7 é inteiramente paralelismo de texto + variantes de chunking;
+      a separação entre eles (4,79× → 3,70×) é estreita e em parte ruído entre runs.
+      <strong>(2)</strong> <strong>O líder inverte com o regime</strong>: no Snort + Enron
+      o <code>pthread_dynamic</code> (4,79×) vence; no ET-32 ≫ L3 o <code>v3_flat</code>
+      (2,85× em T=6) lidera enquanto o dynamic cai a 1,99×. Nenhum searcher domina os dois.
+      <strong>(3)</strong> <code>pattern_sharded_prefix</code> (#9) fica só marginalmente
+      acima do <code>sequential</code> em Snort (1,15×) — resultado negativo com valor
+      científico (paralelismo de dicionário tem teto baixo frente ao de texto).
+      <strong>(4)</strong> A composição 2-D (#8) perde ao chunking puro em todos os cenários
+      medidos — central para a conclusão do TCC.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== 5. LITERATURA ===================== -->
+<section id="literatura">
+  <div class="section-label">§5 · Correlação com a literatura</div>
+  <h2>Posicionamento contra trabalhos relacionados</h2>
+  <p class="intro">
+    A revisão sistemática do TCC (vault Obsidian em <code>tcc_notes/related_work_summaries/</code>)
+    levantou ~25 estudos. Abaixo, os 6 mais diretamente relacionados ao nosso resultado, com
+    o argumento de comparação direta: o que cada um faz, o que medem, e como nosso resultado
+    se posiciona (complementar, contrastante ou direta).
+  </p>
+
+  <div class="rw-grid">
+
+    <div class="rw-card">
+      <div class="rw-cite">Qu, Zhang, Fang, Liu (2016) · IJHIT</div>
+      <div class="rw-title">A Parallel Algorithm of String Matching Based on MPI</div>
+      <div class="rw-body">
+        Mesmo algoritmo (AC), mesma fase atacada (busca), <strong>mesma técnica</strong>:
+        data parallelism com chunks de overlap <code>= max_pattern_len − 1</code>. Diferença
+        crítica: usam <strong>MPI</strong> sobre memória compartilhada, introduzindo
+        <code>MPI_Send/Recv</code> entre master e slaves no <em>mesmo nó</em>.
+        <strong>Nosso resultado é o argumento direto:</strong> Pthreads com listas thread-local
+        elimina o ping-pong de mensagens; reportam 10,5 Gbps em 8 cores; nosso melhor searcher
+        atinge ~9,2 Gbps (1.148 MB/s, Snort + Enron, T=12) no laptop. A comparação valida que a
+        coordenação por join + listas thread-local é estritamente superior dentro de um nó.
+      </div>
+      <span class="rw-tag parl">Mesma técnica, API diferente</span>
+      <div class="rw-link">related_work_summaries/a_parallel_algorithm_of_string_matching_based_on_m.md</div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-cite">Lee & Yang (2017) · Algorithms (MDPI)</div>
+      <div class="rw-title">Flexible Head-Body Matching (FHBM) · Multi-Core NIDS</div>
+      <div class="rw-body">
+        Mesmo domínio (NIDS sobre Snort/ClamAV) e plataforma (4-core CPU), mas <strong>modifica</strong>
+        o autômato: particiona em head-DFA (denso, cache-friendly) + body-NFA (SIMD).
+        Atingem 540–1.300 MB/s em 4 threads. Nosso resultado (~1.148 MB/s em 12 threads no
+        regime Snort + Enron, com autômato AC <strong>intacto</strong>) demonstra que paralelismo
+        de texto + flat layout atinge throughput comparável ao FHBM <em>sem</em> reestruturar o
+        autômato — preservando
+        a equivalência matemática com o AC clássico, vantajosa para validação e prova de
+        corretude.
+      </div>
+      <span class="rw-tag contr">Mesmo throughput, sem alterar AC</span>
+      <div class="rw-link">related_work_summaries/a_flexible_pattern-matching__algorithm_for_network_intrusion_detection_systems_using_multi-core_processors.md</div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-cite">Thambawita, Ragel, Elkaduwe (2018) · arXiv</div>
+      <div class="rw-title">Parallel Failure-less AC (PFAC) para DNA · GPGPU</div>
+      <div class="rw-body">
+        Mesmo algoritmo base (AC), <strong>plataforma diferente</strong> (GPU SIMT).
+        Usam autômato sem fail links (PFAC), com uma thread por byte. Reportam ~3× sobre
+        a biblioteca PFAC original; sem baseline contra AC sequencial. <strong>Nossa
+        contribuição é distinta:</strong> demonstra que em CPU multi-core o PFAC é
+        contraindicado (per-byte overhead de K travessias independentes), validando a
+        escolha de manter o AC clássico com chunking. O paper é cita do como contraste
+        de plataforma.
+      </div>
+      <span class="rw-tag contr">Plataforma e variante diferentes</span>
+      <div class="rw-link">related_work_summaries/an_optimized_parallel_failure_less_aho_corasick_al.md</div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-cite">Xu et al. (~2023) · IEEE Xplore (Harry)</div>
+      <div class="rw-title">Harry: SIMD-based Multi-literal Engine (Hyperscan)</div>
+      <div class="rw-body">
+        Replace AC por Shift-Or/FDR column-vector com AVX-512; <strong>52× sobre AC sequencial</strong>
+        em workloads DPI. Single-thread, com SIMD. <strong>Complementar ao nosso trabalho:</strong>
+        Harry explora paralelismo de dados <em>dentro de uma thread</em> (vetorização);
+        nosso TCC explora paralelismo <em>entre threads</em>. Os eixos são ortogonais — futuro:
+        compor Harry-style SIMD com chunking Pthreads. Citação obrigatória para mostrar que
+        nossa contribuição (Pthreads × AC) é distinta e complementar.
+      </div>
+      <span class="rw-tag compl">Eixo ortogonal (SIMD intra-thread)</span>
+      <div class="rw-link">related_work_summaries/harry_a_scalable_simd-based_multi-literal_pattern_matching_engine_for_deep_packet_inspection.md</div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-cite">Regéciová, Kolář, Milkovič (2021) · IEEE Access</div>
+      <div class="rw-title">Pattern Matching in YARA — ACISM</div>
+      <div class="rw-body">
+        Sequencial; foco em compressão de tabela de transição (ACISM) e suporte a regex.
+        Não paraleliza. Reportam até 9,6× sobre YARA standard em padrões degenerados.
+        <strong>Confirma indiretamente o valor do nosso layout flat:</strong> ambos os
+        trabalhos atacam a fase de emissão/transição com mudanças de layout. Nosso
+        <code>flat_pids</code> ataca outro nível (emissão de matches, não transição),
+        o que torna as técnicas combinávies em uma futura iteração.
+      </div>
+      <span class="rw-tag compl">Layout complementar</span>
+      <div class="rw-link">related_work_summaries/pattern_matching_in_yara__improved_aho_corasick_al.md</div>
+    </div>
+
+    <div class="rw-card">
+      <div class="rw-cite">Lin et al. (2010) · PFAC original</div>
+      <div class="rw-title">PFAC: Parallel Failure-less Aho-Corasick · GPU</div>
+      <div class="rw-body">
+        Descartado como abordagem para o nosso eixo: per-byte overhead de K travessias
+        independentes é proibitivo em CPU. Citado em <code>parallelism-roadmap.md §6</code>
+        como contraste deliberado. <strong>Nosso TCC sustenta empiricamente</strong> a
+        argumentação: nas três políticas de Idea 1 testadas, apenas <code>prefix</code> com
+        K=2 vence o sequential — confirmando que dividir o dicionário paga banda de texto
+        sem entregar paralelismo agregado em CPU.
+      </div>
+      <span class="rw-tag contr">Hipótese GPU-only refutada em CPU</span>
+      <div class="rw-link">Citado via Thambawita (2018) — original não no vault</div>
+    </div>
+
+  </div>
+
+  <h3 style="margin-top:1.5rem;">5.1 · Posicionamento sintético</h3>
+  <div class="alert alert-blue">
+    <div class="alert-icon">📚</div>
+    <div>
+      <strong>Onde nos colocamos no espaço do design:</strong> o trabalho do TCC ocupa
+      o quadrante <em>(autômato AC intacto)</em> × <em>(paralelismo Pthreads multi-core)</em> ×
+      <em>(IDS-scale: dicionários grandes, corpus em GiB)</em>. Trabalhos vizinhos
+      (Lee & Yang) modificam o autômato; outros (Xu/Harry) substituem-no por algoritmos
+      alternativos; outros (Thambawita) mudam de plataforma para GPU. Nossa contribuição
+      cumulativa é mostrar que <strong>com ideias aditivas atacando fases distintas</strong>
+      é possível atingir até 4,79× sobre sequential em hardware de laptop (Snort + Enron, T=12),
+      que o ganho satura cedo no regime DRAM-bound severo (2,85× já em T=6 para ET-32 ≫ L3),
+      e que a hipótese natural de combinar paralelismo de texto com paralelismo de dicionário
+      (Idea 6) <strong>falha empiricamente</strong> em hardware desktop — resultado que a
+      literatura raramente publica.
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== 6. CONCLUSÃO ===================== -->
+<section id="conclusao">
+  <div class="section-label">§6 · Conclusão</div>
+  <h2>Base para a seção <em>Conclusão</em> do TCC</h2>
+
+  <div class="tcc-map">
+    <div class="tcc-sec">TCC §Conclusão</div>
+    <div class="tcc-content">
+      A conclusão do TCC deve sustentar: <strong>(a)</strong> qual abordagem é a mais rápida e
+      por quê; <strong>(b)</strong> quais hipóteses foram falsificadas, com valor científico;
+      <strong>(c)</strong> qual é o teto neste hardware; <strong>(d)</strong> implicações
+      para IDS de produção; <strong>(e)</strong> linha de continuação. As subseções abaixo
+      organizam esses pontos.
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">6.1 · Síntese das contribuições</h3>
+  <div class="cards">
+    <div class="card" style="border-color:#1a4a1a;">
+      <div class="card-title">C1 · Paralelismo de texto + flat, regime-dependente</div>
+      <div class="card-body">
+        Sem alterar a estrutura matemática do AC, a combinação de chunking de texto + flat
+        output entrega <strong>4,79× em Snort + Enron</strong> (<code>pthread_dynamic</code>,
+        T=12) e <strong>2,85× em ET-32 ≫ L3</strong> (<code>v3_flat</code>, T=6). O líder muda
+        com o regime; o eixo de texto domina o de dicionário em todos os casos.
+      </div>
+    </div>
+    <div class="card" style="border-color:#1a4a4a;">
+      <div class="card-title">C2 · Layout transformation universal</div>
+      <div class="card-body">
+        <strong>Idea 5 (flat output table)</strong> entrega ganho single-thread
+        regime-dependente (Fase B): <strong>+13,0% em ET-32</strong> (≫ L3),
+        +4,7% em Snort full, +1,0% em Snort-100 (já cache-friendly) — maior justamente onde o
+        autômato estoura a cache. Todo searcher do laboratório herda o ganho sem modificar uma
+        linha de código. Análogo às otimizações ACISM de Regéciová (2021), em outro nível do
+        autômato.
+      </div>
+    </div>
+    <div class="card" style="border-color:#1a4a5f;">
+      <div class="card-title">C3 · Topology-aware balancing</div>
+      <div class="card-body">
+        <strong><code>pthread_chunked_v3</code></strong> lê cpufreq via sysfs e pondera chunks
+        proporcionalmente à frequência — ataque direto à heterogeneidade Alder Lake P/E-core.
+        Na Fase D (Snort + Enron, T=12) reduz o CV entre iterações de <strong>52,9% (v2) para
+        1,7%</strong>, estabilizando a barreira; a versão flat herda a estabilidade (4,3%).
+      </div>
+    </div>
+    <div class="card" style="border-color:#5a3a1a;">
+      <div class="card-title">C4 · Build paralelo opt-in</div>
+      <div class="card-body">
+        <strong>Idea 4</strong> reduz o tempo de construção do ET-32 em até 36% (485→313 ms,
+        pico 1,55× em T=8; 1,41× em T=12) sem alterar o autômato produzido (bit-a-bit
+        idêntico ao sequencial). Só compensa no dict grande — Snort/Snort-1k/Snort-100
+        regridem. <em>Único atomic do projeto</em>, mas só dispara durante build, nunca no
+        hot loop.
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">6.2 · Hipóteses falsificadas (resultados negativos científicos)</h3>
+  <div class="timeline">
+    <div class="tl-item tl-fail">
+      <div class="tl-label">❌ H1 falsificada</div>
+      <div class="tl-title">δ² acelera AC para dicionários reais (Idea 3)</div>
+      <div class="tl-sub">
+        <strong>Hipótese:</strong> halving a cadeia de loads dependentes via δ² entrega
+        ganho proporcional. <strong>Empírico:</strong> +37,6% apenas para ≤50 estados;
+        −22,3% em 1.939 estados; <strong>fallback automático</strong> acima de 1 GiB de
+        tabela. <strong>Causa raiz:</strong> footprint da tabela cresce em
+        N<sub>states</sub> × 65k bytes — estoura L3 dramaticamente cedo. <strong>Lição:</strong>
+        em IDS, otimizações algorítmicas single-thread têm teto baixo; o cache é o limite.
+      </div>
+    </div>
+    <div class="tl-item tl-fail">
+      <div class="tl-label">❌ H2 falsificada</div>
+      <div class="tl-title">Pattern sharding standalone vence em dicionário grande (Idea 1)</div>
+      <div class="tl-sub">
+        <strong>Hipótese:</strong> dividir o dicionário em K sub-autômatos menores (≤ L3)
+        recupera o regime cache-friendly. <strong>Empírico (sweep 2026-05-29):</strong> apenas
+        <code>pattern_sharded_prefix</code> vence o sequencial — pico 1,37× (T=6) em Snort +
+        Enron, caindo a 1,15× em T=12; ~0,34× do <code>chunked_flat</code>. Round-robin e LPT
+        foram descartadas em sweeps anteriores. <strong>Causa raiz:</strong> cada worker re-lê
+        todo o texto, multiplicando o tráfego de RAM por K; o sub-autômato ainda não cabe em
+        L3. <strong>Lição:</strong> paralelismo de dicionário em CPU é dominado por banda de
+        texto, ao contrário do que ocorre em GPU.
+      </div>
+    </div>
+    <div class="tl-item tl-fail">
+      <div class="tl-label">❌ H3 falsificada</div>
+      <div class="tl-title">Composição 2-D K × N recupera o cache (Idea 6)</div>
+      <div class="tl-sub">
+        <strong>Hipótese:</strong> compor sharding (cache locality) com chunking (paralelismo
+        de texto) atinge throughput acima do chunked_flat puro. <strong>Empírico
+        (sweep 2026-05-29, T=12):</strong> 2-D perde para o <code>pthread_chunked_flat</code>
+        em todos os cenários — −19,5% em Snort + Enron, −7,5% em ET-32 + Enron, −10,2% em
+        ET-32 + enron_x8. <strong>Causa raiz:</strong> ~254 MiB/shard (K=2 em ET-32) ainda é 21× a L3; o
+        multiplicador de banda de texto é hard linear. <strong>Lição:</strong> a composição
+        só pode reverter em hardware com banda DRAM &gt; 200 GB/s e L3 &gt; 128 MiB
+        (servidor) — direção concreta de trabalho futuro.
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">6.3 · Teto experimental neste hardware</h3>
+  <div class="alert alert-orange">
+    <div class="alert-icon">⛔</div>
+    <div>
+      A vazão pico medida (<code>pthread_dynamic</code>, ~1.148 MB/s ≈ 9,2 Gbps em
+      Snort + Enron, T=12) é limitada por <strong>dois fatores físicos</strong>:
+      <strong>(1)</strong> banda de DRAM ~25 GB/s — saturada com 12 threads cada uma
+      lendo texto + autômato; <strong>(2)</strong> heterogeneidade P/E-core do Alder Lake —
+      E-cores ditam a velocidade da barreira final mesmo com chunks ponderados.
+      Eficiência paralela E(12) = 4,79 / 12 ≈ 0,40 (Snort) — sublinear como esperado pela lei
+      de Amdahl no regime memory-bound. No regime ET-32 ≫ L3 o teto é ainda mais baixo:
+      2,85× já em T=6, com regressão para T &gt; 6 — o número de threads deixa de importar
+      antes mesmo de esgotar os 12 lógicos.
+    </div>
+  </div>
+
+  <h3 style="margin-top:1.5rem;">6.4 · Implicações práticas para IDS de produção</h3>
+  <ul style="font-size:.88rem; color:var(--text); margin-left:1.2rem; line-height:1.85;">
+    <li><strong>O custo de adicionar regras a um IDS não é linear.</strong> Conforme o autômato
+      cruza a L3, a queda é abrupta: o throughput single-thread cai 74,0% de Snort-100
+      (1,93 MiB, 483 MB/s) para ET-32 (507 MiB, 126 MB/s). Sistemas como Snort/Suricata
+      em hardware modesto sofrem regressão drástica de throughput em rule sets grandes —
+      nosso resultado quantifica isto e oferece um caminho mitigatório.</li>
+    <li><strong>Recarregamento de regras é viável em ~313 ms para ET-32 em 8 threads.</strong>
+      (485 ms sequencial → 313 ms em T=8, 1,55×.) Suficiente para pipelines de IDS que
+      atualizam regras com latência aceitável.</li>
+    <li><strong>Flat output layout deveria ser default.</strong> Para qualquer
+      implementação de AC em produção, o custo de pré-computar
+      <code>flat_offset/flat_count/flat_pids</code> é desprezível em build time e entrega
+      ganho de single-digit a single-digit× em runtime, dependendo do regime.</li>
+  </ul>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== 7. FUTURO ===================== -->
+<section id="futuro">
+  <div class="section-label">§7 · Trabalho futuro</div>
+  <h2>Próximos passos úteis para este TCC</h2>
+  <p class="intro">
+    Direções concretas listadas por <strong>retorno esperado</strong> e <strong>esforço de
+    implementação</strong>. As primeiras três são variantes de searcher que já podem ser
+    implementadas sobre a infraestrutura atual sem mudar o autômato — entregam valor para
+    o TCC em uma sessão de trabalho cada. As demais exigem novo hardware ou novos eixos.
+  </p>
+
+  <div class="cards">
+
+    <div class="card future-card med" style="border-color:#4a3010;">
+      <div class="card-title">F1 · Topology-aware + Flat ✅ <span class="effort s">implementado · ganho regime-específico</span></div>
+      <div class="card-meta">Composição entregue 2026-05-22 · <code>pthread_chunked_v3_flat</code></div>
+      <div class="card-body">
+        <code>src/searchers/pthread_chunked_v3_flat.c</code> — combina topology-aware
+        affinity + chunks ponderados por <code>cpuinfo_max_freq</code> (v3) com a
+        emissão pela tabela achatada (flat output, idea 5).
+        <strong>Resultado multi-regime:</strong>
+        empata com <code>chunked_flat</code> em R1 (Snort + SimpleWiki, −0,7 %); ganha
+        +2,6 % em R2 (Snort + Enron, regime DRAM-bound) — o único onde se sustenta;
+        <span class="neg">regride 26,3 %</span> em R3 (Snort-100 cache-friendly, overhead
+        do sysfs domina) e 9,5 % em R4 (ET-32). Hipótese de ortogonalidade
+        <strong>parcialmente validada</strong>: o ganho existe mas é modesto e
+        confinado ao regime DRAM-bound moderado. Doc:
+        <code>docs/searchers/pthread_chunked_v3_flat.md</code>.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-green">Implementado ✓ make test + tsan</span>
+        <span class="pill pill-orange">+2,6 % apenas em R2 (Snort + Enron)</span>
+        <span class="pill pill-blue">v3 + flat (idea 5 + 7)</span>
+      </div>
+    </div>
+
+    <div class="card future-card low" style="border-color:#4a1010;">
+      <div class="card-title">F2 · Prefetch + Flat ⚠️ <span class="effort s">testado · removido do escopo</span></div>
+      <div class="card-meta">Composição testada 2026-05-22 · removida do escopo 2026-05-28</div>
+      <div class="card-body">
+        Combinava <code>__builtin_prefetch(text + 128)</code> (pthread_prefetch) com a
+        emissão flat. <strong>Regredia em todos os 4 regimes testados</strong>
+        (−12,8 %, −22,2 %, −45,2 %, −7,3 %). O custo de 1 instrução extra de prefetch
+        por byte só compensa se o HW prefetcher x86_64 falhar em cobrir o stride +1 do
+        texto — e isso quase nunca acontece. <strong>Removido do escopo:</strong> a
+        lição de negativo qualificado (SW prefetch de texto não ajuda em CPUs modernas
+        com HW prefetcher competente) já é carregada pelo <code>pthread_prefetch</code>
+        não-flat; o searcher dedicado era redundante.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-red">Regredia em 4/4 regimes (mín −7,3 %)</span>
+        <span class="pill pill-teal">Removido — lição em <code>pthread_prefetch</code></span>
+      </div>
+    </div>
+
+    <div class="card future-card high" style="border-color:#1a4a1a;">
+      <div class="card-title">F3 · v3 + Flat + Build paralelo ✅ <span class="effort s">implementado · 4,45× end-to-end</span></div>
+      <div class="card-meta">Sweep concluído 2026-05-22 · <code>scripts/run_f3_v3flat_build_par_sweep.sh</code> · log <code>f3_sweep.log</code></div>
+      <div class="card-body">
+        Sweep formal cronometrando <strong>build + search end-to-end</strong> sobre o corpus
+        de escala <code>enron_x8</code> (10,59 GiB) com 5 configurações (build seq vs par(T=12)
+        × searcher <code>chunked_flat</code> / <code>v3_flat</code>) em dois dicionários
+        (Snort full, ET-32).
+        <br><br>
+        <strong>Headline:</strong>
+        <span class="winner">stack F3 (build par T=12 ⊕ <code>v3_flat</code> T=12 ⊕ flat)
+        entrega 4,45× wall-clock em Snort + enron_x8</span>; o pipeline alternativo
+        (build par T=12 ⊕ <code>chunked_flat</code> T=12) é o vencedor em ET-32
+        + enron_x8 com 2,65× wall-clock end-to-end. <code>v3_flat</code> degrada sob
+        carga sustentada em ET-32 (DRAM-bound), confirmando direção de R4 (§3 / §12) com
+        magnitude amplificada por throttling térmico. <strong>Default
+        recomendado:</strong> <code>pthread_chunked_flat</code>; <code>v3_flat</code>
+        permanece registrado como variante de nicho para Snort-class + corpus high-density.
+        Doc completa: <a href="../../tcc_notes/tldr_metricas.md">tldr_metricas.md §13</a>.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-green">Headline do TCC ⭐</span>
+        <span class="pill pill-blue">4,45× E2E (Snort)</span>
+        <span class="pill pill-orange">3,04× E2E (ET-32, chunked_flat vence)</span>
+      </div>
+    </div>
+
+    <div class="card future-card med">
+      <div class="card-title">F4 · Hardware servidor (banda &gt;200 GB/s) <span class="effort m">esforço: médio</span></div>
+      <div class="card-meta">Reproduzir grade em Xeon/EPYC</div>
+      <div class="card-body">
+        Reportar a grade completa em hardware com banda DRAM &gt; 200 GB/s e L3 &gt; 128 MiB
+        (Xeon Gold 6348 do paper Harry, ou EPYC 9004). <strong>Hipótese central a testar:</strong>
+        a Idea 6 (2-D K × N) pode reverter — i.e., em servidor o aumento de tráfego de texto
+        é amortizado pela banda, e o ganho de cache locality dos shards menores volta a
+        compor. Caso reverta, o resultado é uma <strong>generalização</strong> importante
+        do TCC. Caso confirme, é o limite arquitetural definitivo.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-blue">Generaliza ou confirma negativos</span>
+        <span class="pill pill-orange">Depende de acesso a hardware</span>
+      </div>
+    </div>
+
+    <div class="card future-card med">
+      <div class="card-title">F5 · Pattern sharding adaptativo <span class="effort m">esforço: médio</span></div>
+      <div class="card-meta">Política sensível ao footprint</div>
+      <div class="card-body">
+        Política nova: ao construir o autômato, calcular K* = ⌈footprint / L3⌉ e usar
+        K = max(2, K*). Se footprint &lt; L3 (Snort-100), degenera para 1-shard (=
+        <code>pthread_chunked_flat</code>). Se footprint &gt; L3 (ET-32), tenta K alto com
+        verificação dinâmica de regressão. <strong>Hipótese:</strong> dispatch automático
+        evita o caso patológico de Idea 1 em pequeno e ainda permite buscar o cross-over
+        em hardware servidor. Encaixa-se bem como continuação de F4.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-blue">Auto-tuning runtime</span>
+        <span class="pill pill-purple">Reuso de Idea 1</span>
+      </div>
+    </div>
+
+    <div class="card future-card med">
+      <div class="card-title">F6 · NUMA-aware text replication <span class="effort m">esforço: médio</span></div>
+      <div class="card-meta">Para servidores multi-socket</div>
+      <div class="card-body">
+        Em servidor multi-socket, replicar o autômato e (opcionalmente) o texto por nó NUMA
+        usando <code>libnuma</code> + <code>mbind</code>. <strong>Hipótese:</strong> reduz
+        cross-socket bandwidth pressure no regime DRAM-bound. Out-of-scope para o TCC atual
+        (i5-1235U é UMA), mas natural para a versão estendida em F4. Citado no
+        <code>parallelism-roadmap.md §6</code> como "ambiente tuning" — válido se reportado
+        explicitamente como tal.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-blue">Necessário para multi-socket</span>
+        <span class="pill pill-orange">Requer servidor</span>
+      </div>
+    </div>
+
+    <div class="card future-card low">
+      <div class="card-title">F7 · SIMD intra-thread (compor com Harry) <span class="effort l">esforço: grande</span></div>
+      <div class="card-meta">Eixo ortogonal — out-of-scope original</div>
+      <div class="card-body">
+        Cita-se Harry (Xu et al.) como evidência de que SIMD intra-thread entrega 26–52× sobre
+        AC sequencial em DPI. Caminho de extensão: <strong>(a)</strong> implementar AC com
+        gather AVX-512 (Idea 2 descartada do roadmap original); <strong>(b)</strong> compor
+        com chunking Pthreads para atingir produto SIMD × cores. Risco: a Idea 2 foi descartada
+        porque seu ganho some no regime IDS-scale (autômato &gt;&gt; L3) — pode ser confirmado
+        ou refutado empiricamente como contribuição própria.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-purple">Substancialmente diferente</span>
+        <span class="pill pill-red">Pode regredir em IDS-scale</span>
+      </div>
+    </div>
+
+    <div class="card future-card low">
+      <div class="card-title">F8 · Comparação direta com Hyperscan/Snort 3 <span class="effort l">esforço: grande</span></div>
+      <div class="card-meta">Posicionamento contra estado da arte de produção</div>
+      <div class="card-body">
+        Reportar <code>pthread_chunked_flat</code> lado a lado com Hyperscan
+        (modo <code>HS_FLAG_LITERAL</code>) e Snort 3 (<code>fast pattern</code> engine) no
+        mesmo corpus + dicionário. <strong>Esperado:</strong> Hyperscan vence em Gbps absoluto
+        (engenharia FDR+Teddy); nosso AC paralelo vence em paridade matemática e em
+        controle didático. Comparação ressalta o trade-off
+        <em>(simplicidade do AC + Pthreads)</em> vs. <em>(engineering complexity de Hyperscan)</em>.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-blue">Posiciona vs prod</span>
+        <span class="pill pill-orange">Esforço de integração</span>
+      </div>
+    </div>
+
+    <div class="card future-card low">
+      <div class="card-title">F9 · Modelo analítico de throughput <span class="effort m">esforço: médio</span></div>
+      <div class="card-meta">Roofline para o regime DRAM-bound</div>
+      <div class="card-body">
+        Derivar modelo: <code>throughput ≈ min(N · F<sub>core</sub>, BW<sub>DRAM</sub> / (B<sub>text</sub> + B<sub>autômato</sub>))</code>
+        onde <code>B<sub>autômato</sub></code> depende do hit rate efetivo no
+        <code>goto_tbl</code>. Validar contra medições. Permite <strong>extrapolar</strong>
+        para hardware não testado (servidor) e justificar quantitativamente a hipótese
+        de F4. Tipicamente <em>uma figura</em> + 2 páginas de matemática no TCC, mas
+        eleva a contribuição do empírico para o analítico.
+      </div>
+      <div class="card-footer">
+        <span class="pill pill-purple">Eleva o rigor científico</span>
+        <span class="pill pill-blue">Permite extrapolação</span>
+      </div>
+    </div>
+
+  </div>
+
+  <h3 style="margin-top:1.5rem;">Ordem de prioridade recomendada</h3>
+  <ol style="font-size:.88rem; color:var(--text); margin-left:1.2rem; line-height:1.85;">
+    <li><strong>F1 (v3+flat)</strong> ✅ <strong>concluído 2026-05-22</strong>; <strong>F2
+      (prefetch+flat)</strong> ⚠️ testado e <strong>removido do escopo 2026-05-28</strong>.
+      Sweep multi-regime (4 combinações patterns × corpus) mostra
+      que <code>pthread_chunked_flat</code> <strong>continua sendo o melhor searcher em
+      3 dos 4 regimes</strong>: F1 só ganha em Snort + Enron (+2,6 %, regime DRAM-bound)
+      e F2 regredia em todos os 4 regimes (lição já carregada pelo
+      <code>pthread_prefetch</code> não-flat). Hipótese de ortogonalidade
+      <strong>parcialmente refutada</strong>; resultado útil como negativo qualificado
+      para o TCC.</li>
+    <li><strong>F3</strong> ✅ <strong>concluído 2026-05-22</strong>. Sweep cronometrando
+      build + search end-to-end em <code>enron_x8</code> (10,59 GiB) confirma o vencedor
+      empírico:
+      <strong>(a)</strong> Snort + enron_x8: stack completo
+      <code>v3_flat</code> + build par T=12 entrega <strong>4,45× wall-clock</strong>;
+      <strong>(b)</strong> ET-32 + enron_x8: stack <code>chunked_flat</code> + build par T=12
+      entrega <strong>3,04× wall-clock</strong> (v3_flat regride neste regime, consistente
+      com §3.8 / §12 R4); <strong>(c)</strong> a contribuição absoluta do build paralelo
+      ao orçamento end-to-end é &lt;1 % em sweep de 10 GiB — o ganho de 1,31× do §3.5
+      é relevante apenas como métrica operacional separada (latência de recarga de regras).
+      Doc canônica: <code>tcc_notes/tldr_metricas.md §13</code>.</li>
+    <li><strong>F9 (modelo analítico)</strong> — fortalece a discussão das hipóteses
+      falsificadas e prepara o leitor para F4.</li>
+    <li><strong>F4 (servidor)</strong> — se houver acesso a hardware. Caso a Idea 6 reverta,
+      é uma nota de extensão; caso confirme, é o limite arquitetural definitivo. Ambos os
+      desfechos enriquecem o TCC.</li>
+    <li>Demais (F5–F8) — material para "trabalhos futuros" explícitos na conclusão; não
+      precisam ser executados.</li>
+  </ol>
+</section>
+
+<hr class="divider">
+
+<!-- ===================== APÊNDICE: Roadmap status ===================== -->
+<section>
+  <div class="section-label">Apêndice · Status do roadmap original</div>
+  <h2>5 ideias de paralelização: o que foi implementado</h2>
+
+  <div class="timeline">
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2026-05-20 (e78045c)</div>
+      <div class="tl-title">Idea 5 — Flat output table (Build + Search)</div>
+      <div class="tl-sub">
+        Transforma o layout de emissão. Searchers <code>sequential_flat</code> e
+        <code>pthread_chunked_flat</code>. Resultado (sweep 2026-05-29, Fase B single-thread):
+        +13,0% em ET-32 ≫ L3, +4,7% em Snort full, +1,0% em Snort-100 — ganho regime-dependente,
+        maior onde o autômato estoura a cache.
+      </div>
+    </div>
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2026-05-21 (82c0f10)</div>
+      <div class="tl-title">Idea 4 — BFS paralela de construção (Build)</div>
+      <div class="tl-sub">
+        Única ideia que ataca a fase de construção. BFS nível-síncrona com
+        <code>atomic_fetch_add</code> apenas para reservar slots no frontier do próximo
+        nível. Speedup 1,55× em ET-32 (T=8; 1,41× em T=12). Único atomic do projeto.
+      </div>
+    </div>
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2026-05-21 (5353383)</div>
+      <div class="tl-title">Idea 3 — δ² multi-step (Search) · Negativo qualificado</div>
+      <div class="tl-sub">
+        Demonstra empiricamente o teto de truques single-thread em IDS: cross-over &lt; 50
+        estados. Fallback automático em &gt;1 GiB de tabela.
+      </div>
+    </div>
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2026-05-21</div>
+      <div class="tl-title">Idea 1 — Pattern sharding (Search)</div>
+      <div class="tl-sub">
+        <code>pattern_sharded_prefix</code> (única política retida; round-robin e LPT
+        descartadas). Em Snort + Enron o pico é 1,37× (T=6) e cai a 1,15× em T=12 —
+        satura cedo, é cache locality, não paralelismo agregado.
+      </div>
+    </div>
+    <div class="tl-item tl-fail">
+      <div class="tl-label">✅ 2026-05-22 · Hipótese falsificada</div>
+      <div class="tl-title">Idea 6 — Composição 2-D K × N (Search)</div>
+      <div class="tl-sub">
+        <code>pthread_2d_sharded_chunked</code>. Perde 7,5–19,5% (sweep 2026-05-29, T=12) para
+        <code>pthread_chunked_flat</code> em todos os regimes — paralelismo de texto domina
+        paralelismo de dicionário neste hardware. Resultado científico de fechamento.
+      </div>
+    </div>
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2026-05-22 · Ganho regime-específico</div>
+      <div class="tl-title">Idea 7 — v3 (topology) + flat (Search)</div>
+      <div class="tl-sub">
+        <code>pthread_chunked_v3_flat</code>. Sweep multi-regime: empata em R1
+        (SimpleWiki, −0,7 %), <strong>vence em R2 (Snort + Enron, +2,6 %)</strong>,
+        regride 26,3 % em R3 (Snort-100 cache-friendly, overhead de sysfs domina) e
+        9,5 % em R4 (ET-32). Hipótese de ortogonalidade <strong>parcialmente validada</strong>
+        — o ganho existe mas é modesto e confinado ao regime DRAM-bound moderado.
+      </div>
+    </div>
+    <div class="tl-item tl-fail">
+      <div class="tl-label">⚠️ 2026-05-22 · refutada · removida do escopo 2026-05-28</div>
+      <div class="tl-title">Idea 8 — prefetch (texto) + flat (Search)</div>
+      <div class="tl-sub">
+        Composição testada e depois removida do escopo. Regredia em <strong>todos os 4
+        regimes testados</strong> (−12,8 %, −22,2 %, −45,2 %, −7,3 %). O HW prefetcher x86_64
+        já cobre o stride +1 do texto; o hint explícito adiciona 1 instrução por byte
+        sem benefício. <strong>Negativo qualificado</strong>: a lição (SW prefetch de
+        texto não ajuda em CPUs modernas) já é carregada pelo <code>pthread_prefetch</code>
+        não-flat, tornando o searcher dedicado redundante.
+      </div>
+    </div>
+    <div class="tl-item tl-done">
+      <div class="tl-label">✅ 2026-05-22 · headline final do TCC</div>
+      <div class="tl-title">F3 — Stack end-to-end (Build paralelo ⊕ Flat ⊕ v3) sobre <code>enron_x8</code></div>
+      <div class="tl-sub">
+        Sweep formal de 5 configurações × 2 dicionários × 10,59 GiB de corpus
+        (<code>scripts/run_f3_v3flat_build_par_sweep.sh</code>, log <code>f3_sweep.log</code>).
+        Confirma <strong>4,45× wall-clock end-to-end em Snort + <code>enron_x8</code></strong>
+        (stack <code>v3_flat</code> + build par T=12), <strong>3,04× em ET-32</strong> com
+        <code>chunked_flat</code> (v3_flat regride neste regime). Build paralelo contribui
+        &lt; 1 % do orçamento end-to-end; ganho operacional permanece relevante para
+        recarga de regras (latência, §3.5). Vencedor default: <code>pthread_chunked_flat</code>.
+        Doc canônica em <code>tcc_notes/tldr_metricas.md §13</code>.
+      </div>
+    </div>
+
+    <div class="tl-item tl-pending">
+      <div class="tl-label">❌ Descartada</div>
+      <div class="tl-title">Idea 2 — SIMD gather DFA traversal</div>
+      <div class="tl-sub">
+        Vetorização intra-thread cujo ganho some no regime IDS-scale (DFA &gt;&gt; L3).
+        Citada como contraste no related work (Sitaridi et al.; Harry).
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); text-align:center; font-size:.75rem; color:var(--muted);">
+  Síntese reconciliada com o sweep definitivo de 2026-05-29 (<code>runs/overnight/sweep.db</code>,
+  265 runs, commit <code>e3dc7d4</code>) · <code>parallel-aho-corasick/docs/tcc-synthesis.html</code> ·
+  Companion de <code>project-overview.html</code> · TCC IDP — Aho-Corasick paralelo em CPU multi-core
+</div>
+
+</div>
+</body>
+</html>

@@ -1,9 +1,8 @@
 # Flat output table (idea 5)
 
 Página de arquitetura dedicada à transformação de layout introduzida
-pela idea 5 do roadmap de paralelismo
-([`../proposals/idea_5.md`](../proposals/idea_5.md)). Descreve **o que
-o pass extra de construção monta**, **por que ele é seguro de
+pela idea 5 do laboratório. Descreve **o que o pass extra de
+construção monta**, **por que ele é seguro de
 compartilhar** e **como searchers devem ler a nova arena**.
 
 ## Motivação em uma frase
@@ -182,7 +181,5 @@ não foram tocados. Isso é deliberado: a idea 5 mantém o struct
   construção (referenciada por este pass).
 - [`parallelism.md`](parallelism.md) — invariantes de paralelismo
   que o pass continua respeitando.
-- [`../proposals/idea_5.md`](../proposals/idea_5.md) — discussão de
-  design e decisões (de-duplicação, memory bound, ordem).
-- [`../proposals/parallelism-roadmap.md`](../proposals/parallelism-roadmap.md)
-  — onde a idea 5 se encaixa no plano cumulativo.
+- [`../../../tcc_notes/sections/notes/methodology.md`](../../../tcc_notes/sections/notes/methodology.md) — formulação experimental e motivação.
+- [`../../../tcc_notes/sections/notes/results.md`](../../../tcc_notes/sections/notes/results.md) — números consolidados da idea 5.

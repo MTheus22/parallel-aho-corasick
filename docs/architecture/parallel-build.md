@@ -2,7 +2,7 @@
 
 Página de arquitetura dedicada à **BFS paralela nível-síncrona** da
 construção (`ac_automaton_build_par`), introduzida pela idea 4 do
-roadmap de paralelismo ([`../proposals/idea_4.md`](../proposals/idea_4.md)).
+laboratório. 
 É a primeira (e única, por enquanto) variação que ataca a fase de
 **construção** do autômato — todas as variações anteriores
 paralelizam apenas a fase de busca.
@@ -105,7 +105,7 @@ Cada `bfs_process_state(u)`:
 5. **Trie insertion permanece sequencial**. Custo `O(total_pattern_length)`,
    tipicamente < 5 % do build total; paralelizar exigiria atomics em
    `raw_child` e em `aut->num_states`, com complexidade desproporcional
-   ao ganho. Documentado em `idea_4.md` §"Out of scope".
+  ao ganho. Mantido deliberadamente fora de escopo nesta iteração.
 6. **Build atomics são toleráveis**; **search atomics são proibidos**.
    O único atomic introduzido (`next_count`) fica restrito à fase
    de build e é tocado uma vez por descoberta de filho real — muito
@@ -242,15 +242,13 @@ row, níveis sob `MIN_PAR_LEVEL`) reduzem o ganho efetivo.
 
 - **Pool persistente de workers + `pthread_barrier_t`** em vez de
   spawn/join por nível. Menor overhead em níveis profundos e
-  estreitos. Documentado em `idea_4.md` §"Per-level worker spawn
-  vs persistent pool"; deixado como otimização para a próxima
-  iteração.
+  estreitos. Mantido como otimização possível para a próxima iteração.
 - **Per-level histogram** (logar `(level, frontier_size, level_ms)`
   via flag CLI opcional). Ajuda a discussão na dissertação sobre
   *quais* níveis ganham com paralelismo.
 - **Build em NUMA-aware allocator** para máquinas com >1 socket
   (não relevante na máquina-alvo do TCC, mas documentado por
-  completude). Fora de escopo per `idea_4.md` §"Out of scope".
+  completude). Fora de escopo nesta iteração.
 
 ## Searchers consumidores
 
@@ -270,7 +268,5 @@ todos os searchers contra autômatos byte-equivalentes em
 - [`flat-outputs.md`](flat-outputs.md) — o pass adicional da idea 5
   permanece sequencial no epílogo, executado igual nos dois
   caminhos de build.
-- [`../proposals/idea_4.md`](../proposals/idea_4.md) — discussão de
-  design, decisões e métricas a reportar.
-- [`../proposals/parallelism-roadmap.md`](../proposals/parallelism-roadmap.md)
-  — onde a idea 4 se encaixa no plano cumulativo.
+- [`../../../tcc_notes/sections/notes/methodology.md`](../../../tcc_notes/sections/notes/methodology.md) — motivação experimental e protocolo.
+- [`../../../tcc_notes/sections/notes/results.md`](../../../tcc_notes/sections/notes/results.md) — números consolidados da idea 4.

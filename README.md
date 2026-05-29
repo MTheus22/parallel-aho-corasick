@@ -115,9 +115,8 @@ Para a referência completa de flags:
 | `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
 | `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
 | `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico.                               |
-| `pthread_block_cyclic`| Distribuição round-robin estática de blocos de 1 MiB.                            |
-| `pthread_affinity`    | v2 + pinning ingênuo `i % nproc` via `pthread_setaffinity_np`.                  |
 | `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
+| `pthread_2d_sharded_chunked` | Idea 6 — 2-D `K × N` (sharding por prefixo × chunking de texto).         |
 
 Documentação por searcher em [`docs/searchers/`](docs/searchers/).
 

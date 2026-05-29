@@ -30,10 +30,10 @@
 #       enron_x8:     T ∈ {1,4,8,12}          × {snort, et_32} × 8 searchers
 #       warmup=2 iters=5 (resolve anomalia em T=4 e baseline frio do et_32)
 #   B — footprint do autômato vs throughput
-#       dicts ∈ {snort_100, snort_1k, snort, et_32} × {seq, v3, affinity}
+#       dicts ∈ {snort_100, snort_1k, snort, et_32} × {seq, v3}
 #       T ∈ {1, 12}, corpus = enron_corpus
 #   C — sensibilidade ao corpus
-#       (snort) × {simplewiki, enron_corpus} × {seq, v3, affinity} × T ∈ {1, 12}
+#       (snort) × {simplewiki, enron_corpus} × {seq, v3} × T ∈ {1, 12}
 #   D — per-thread em T=12 (para tabela de balanceamento)
 #       1 run por searcher paralelo em (snort, enron_corpus, T=12, --per-thread)
 #
@@ -266,9 +266,12 @@ phase_A() {
   log "===== Fase A — speedup curves ====="
   local phase="A_speedup_curves"
   local parallel=(pthread_chunked pthread_chunked_v2 pthread_chunked_v3
-                  pthread_dynamic pthread_block_cyclic pthread_affinity
+                  pthread_dynamic
                   pthread_prefetch
-                  pthread_chunked_flat)   # idea 5 — flat output table
+                  pthread_chunked_flat        # idea 5
+                  pthread_chunked_v3_flat     # ideas 5+7
+                  pthread_2d_sharded_chunked  # idea 6
+                  pattern_sharded_prefix)     # idea 1
 
   # A1: enron_corpus (1.36 GiB) — curva dinâmica até MAX_T
   local Ts_corpus=(1)
@@ -313,14 +316,14 @@ phase_B() {
   log "===== Fase B — footprint sweep ====="
   local phase="B_footprint"
   local dicts=(patterns_snort_100.txt patterns_snort_1k.txt patterns_snort.txt patterns_et_32.txt)
-  # single-thread baselines (idea 3 e 5)
-  local seq_searchers=(sequential sequential_flat sequential_delta2)
+  # single-thread baselines
+  local seq_searchers=(sequential sequential_flat)
   # parallel searchers (incluindo flat — idea 5)
-  local par_searchers=(pthread_chunked_v3 pthread_affinity pthread_chunked_flat)
+  local par_searchers=(pthread_chunked_v3 pthread_chunked_flat)
   local cor="enron_corpus.txt"
 
   for pat in "${dicts[@]}"; do
-    # Single-thread: sequential, sequential_flat, sequential_delta2
+    # Single-thread: sequential, sequential_flat
     for s in "${seq_searchers[@]}"; do
       run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" 0 2 5
     done
@@ -339,7 +342,7 @@ phase_B() {
 phase_C() {
   log "===== Fase C — cross-corpus ====="
   local phase="C_cross_corpus"
-  local searchers=(sequential pthread_chunked_v3 pthread_affinity)
+  local searchers=(sequential pthread_chunked_v3)
   local pat="patterns_snort.txt"
 
   for cor in "simplewiki.txt" "enron_corpus.txt"; do
@@ -362,9 +365,12 @@ phase_D() {
   log "===== Fase D — per-thread (T=$MAX_T) ====="
   local phase="D_per_thread"
   local parallel=(pthread_chunked pthread_chunked_v2 pthread_chunked_v3
-                  pthread_dynamic pthread_block_cyclic pthread_affinity
+                  pthread_dynamic
                   pthread_prefetch
-                  pthread_chunked_flat)   # idea 5
+                  pthread_chunked_flat        # idea 5
+                  pthread_chunked_v3_flat     # ideas 5+7
+                  pthread_2d_sharded_chunked  # idea 6
+                  pattern_sharded_prefix)     # idea 1
   local pat="patterns_snort.txt"
   local cor="enron_corpus.txt"
 

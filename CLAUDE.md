@@ -22,8 +22,8 @@ autômato de ~515 MiB >> L3), corpus grandes (≥ 1 GiB), CPUs multicore
 com memória suficiente. O regime de interesse é o *memory-bound* com
 cache blowout — não dicionários pequenos que cabem em L2. Optimizações
 que só funcionam no regime cache-friendly (ex.: SIMD intra-thread) são
-fora de escopo e estão documentadas como tal em
-`docs/proposals/parallelism-roadmap.md` §6.
+fora de escopo para a tese e estão consolidadas em
+`../tcc_notes/sections/notes/methodology.md` e `docs/searchers/README.md`.
 
 ## Layout
 
@@ -42,6 +42,9 @@ data/                Datasets gerados (Snort, Enron, Wikipedia). Não
 docs/                Documentação detalhada (arquitetura + searchers).
 ```
 
+Ao transformar resultados do laboratório em material para a escrita do
+TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclusion}.md`.
+
 ## Comandos essenciais
 
 | Comando                    | O que faz                                                              |
@@ -51,7 +54,8 @@ docs/                Documentação detalhada (arquitetura + searchers).
 | `make asan`                | AddressSanitizer + UBSan                                               |
 | `make tsan`                | ThreadSanitizer — verifica ausência de data races na fase paralela     |
 | `make test`                | Executa `tests/test_correctness.c` contra todos os searchers          |
-| `make bench`               | Sweep sintético em `scripts/run_benchmarks.sh`                         |
+| `scripts/run_overnight_sweep.sh` | Sweep canônico do TCC (fases A–E, resume automático) → `runs/overnight/` |
+| `scripts/extract_sweep_csv.py` + `build_sweep_db.py` | Pós-sweep: logs → `sweep.csv` → SQLite `sweep.db` (consulta token-efficient) |
 | `./build/aclab --list`     | Lista todos os searchers registrados                                   |
 | `./build/aclab --help`     | Mostra todas as flags do CLI                                           |
 
@@ -64,15 +68,12 @@ docs/                Documentação detalhada (arquitetura + searchers).
 | `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
 | `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
 | `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico (4N tarefas).                  |
-| `pthread_block_cyclic`| Distribuição round-robin estática de blocos de 1 MiB.                            |
-| `pthread_affinity`    | v2 + pinning ingênuo `i % nproc` via `pthread_setaffinity_np`.                  |
 | `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
 | `sequential_flat`     | Sequential AC scan lendo a tabela achatada de saídas (idea 5).                  |
-| `sequential_delta2`   | Sequential com tabela `δ²` de 2 bytes por load indexado (idea 3).               |
 | `pthread_chunked_flat`| `pthread_chunked_v2` + emissão pela tabela achatada (idea 5).                   |
-| `pattern_sharded`     | Sharding do dicionário (idea 1), round-robin. K sub-autômatos, scan completo cada.|
-| `pattern_sharded_lpt` | idea 1 com sharding length-balanced (Longest-Processing-Time-first).            |
-| `pattern_sharded_prefix`| idea 1 com bucketing pelo primeiro byte. Política que mais entrega speedup.   |
+| `pthread_chunked_v3_flat`| `pthread_chunked_v3` (topology + freq weights) + emissão flat (idea 5+7).    |
+| `pattern_sharded_prefix`| Sharding do dicionário (idea 1), bucketing pelo primeiro byte. K sub-autômatos.|
+| `pthread_2d_sharded_chunked`| idea 6 — 2-D K × N (prefix shards × text chunks); default K=2 (env `AC_2D_K`).|
 
 Documentação por searcher: `docs/searchers/<nome>.md`.
 
@@ -162,12 +163,16 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
 - `docs/searchers/pthread_chunked_v3.md` — topology-aware affinity +
   freq-weighted chunks.
 - `docs/searchers/pthread_dynamic.md` — dispatch dinâmico atômico.
-- `docs/searchers/pthread_block_cyclic.md` — distribuição cíclica
-  estática de blocos.
-- `docs/searchers/pthread_affinity.md` — pinning via
-  `pthread_setaffinity_np`.
 - `docs/searchers/pthread_prefetch.md` — software prefetch do stream
   de texto.
+- `docs/searchers/pthread_chunked_v3_flat.md` — composição v3 (topology
+  + freq weights) + flat output table (ideas 5 e 7).
+- `docs/searchers/pthread_2d_sharded_chunked.md` — 2-D K × N
+  (sharding por dicionário × chunking de texto), idea 6.
+- `runs/overnight/QUERY_GUIDE.md` — schema + views + queries do `sweep.db`
+  (forma token-efficient de consultar os resultados do sweep via `sqlite3`).
+- `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
+  (`methodology`, `results`, `conclusion`).
 
 ## Coisas que provavelmente NÃO devem mudar sem discussão
 

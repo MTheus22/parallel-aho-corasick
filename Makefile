@@ -18,7 +18,10 @@ STD     := -std=c11
 WARN    := -Wall -Wextra -Wpedantic -Wshadow -Wstrict-prototypes \
            -Wmissing-prototypes -Wpointer-arith -Wcast-align
 INC     := -Iinclude
-DEFS    := -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE
+# Embed the short git commit so every log/CSV row is self-describing.
+# Evaluated at make-parse time; degrades to "unknown" outside a git tree.
+GIT_HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+DEFS    := -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE -DAC_GIT_HASH=\"$(GIT_HASH)\"
 LIBS    := -lpthread -lm
 
 REL_FLAGS := -O3 -march=native -DNDEBUG

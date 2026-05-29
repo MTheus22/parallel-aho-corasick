@@ -14,6 +14,24 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#ifndef AC_GIT_HASH
+#  define AC_GIT_HASH "unknown"
+#endif
+
+/* Human-readable byte size. Auto-scales so a 515 MiB automaton no longer
+ * prints as "527616.00 KiB". Writes into a caller-supplied buffer to stay
+ * reentrant. */
+static const char *human_bytes(double bytes, char *buf, size_t buflen)
+{
+    const char *unit = "B";
+    double v = bytes;
+    if      (v >= (double)(1ull << 30)) { v /= (double)(1ull << 30); unit = "GiB"; }
+    else if (v >= (double)(1ull << 20)) { v /= (double)(1ull << 20); unit = "MiB"; }
+    else if (v >= (double)(1ull << 10)) { v /= (double)(1ull << 10); unit = "KiB"; }
+    snprintf(buf, buflen, "%.2f %s", v, unit);
+    return buf;
+}
+
 /* ---- File I/O ---------------------------------------------------------- */
 
 typedef struct {
@@ -131,6 +149,7 @@ static void usage(const char *p)
 "  --chunk    BYTES      Suggested chunk size (0 = auto)\n"
 "  --warmup   N          Warm-up iterations (default 1)\n"
 "  --iters    N          Timed iterations (default 5)\n"
+"  --format   text|csv   Output format (default text; csv for analysis pipelines)\n"
 "  --nocase              Case-insensitive scan (lowercases input and patterns)\n"
 "  --print-matches       Print every match (sorted)\n"
 "  --per-thread          Print per-thread metrics\n"
@@ -156,6 +175,7 @@ int main(int argc, char **argv)
     int    per_thread  = 0;
     int    list_only   = 0;
     int    nocase      = 0;
+    const char *format = "text";
 
     static struct option long_opts[] = {
         {"patterns",      required_argument, 0, 'p'},
@@ -165,6 +185,7 @@ int main(int argc, char **argv)
         {"chunk",         required_argument, 0, 'c'},
         {"warmup",        required_argument, 0, 'w'},
         {"iters",         required_argument, 0, 'n'},
+        {"format",        required_argument, 0, 'f'},
         {"nocase",        no_argument,       0, 'C'},
         {"print-matches", no_argument,       0, 'm'},
         {"per-thread",    no_argument,       0, 'T'},
@@ -173,7 +194,7 @@ int main(int argc, char **argv)
         {0,0,0,0}
     };
     int o;
-    while ((o = getopt_long(argc, argv, "p:i:s:t:c:w:n:CmTlh", long_opts, NULL)) != -1) {
+    while ((o = getopt_long(argc, argv, "p:i:s:t:c:w:n:f:CmTlh", long_opts, NULL)) != -1) {
         switch (o) {
         case 'p': patterns_path = optarg; break;
         case 'i': input_path    = optarg; break;
@@ -182,6 +203,7 @@ int main(int argc, char **argv)
         case 'c': chunk_size    = strtoull(optarg, NULL, 10); break;
         case 'w': warmup        = atoi(optarg); break;
         case 'n': iters         = atoi(optarg); break;
+        case 'f': format        = optarg; break;
         case 'C': nocase        = 1; break;
         case 'm': print_match   = 1; break;
         case 'T': per_thread    = 1; break;
@@ -189,6 +211,11 @@ int main(int argc, char **argv)
         case 'h': usage(argv[0]); return 0;
         default:  usage(argv[0]); return 2;
         }
+    }
+    int csv = (strcmp(format, "csv") == 0);
+    if (!csv && strcmp(format, "text") != 0) {
+        fprintf(stderr, "unknown --format '%s' (expected text|csv)\n", format);
+        return 2;
     }
 
     if (list_only) {
@@ -273,12 +300,15 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    char membuf[32];
     printf("# Aho-Corasick laboratory\n");
+    printf("# git:        %s\n", AC_GIT_HASH);
     printf("# patterns:   %zu (max len %d, min len %d)%s\n",
            npats, aut.max_pattern_len, aut.min_pattern_len,
            nocase ? " [nocase]" : "");
-    printf("# automaton:  %d states, %.2f KiB\n",
-           aut.num_states, ac_automaton_memory_bytes(&aut) / 1024.0);
+    printf("# automaton:  %d states, %s\n",
+           aut.num_states,
+           human_bytes((double)ac_automaton_memory_bytes(&aut), membuf, sizeof(membuf)));
     printf("# input:      %zu bytes (%.2f MiB) via %s\n",
            input.len, input.len / (double)(1u << 20),
            input.is_mmap ? "mmap" : "read");
@@ -287,7 +317,9 @@ int main(int argc, char **argv)
            build_par ? "" : "\n");
     if (build_par) printf(" [parallel T=%d]\n", build_par_threads);
     printf("# warmup=%d iters=%d threads=%d\n", warmup, iters, threads);
-    printf("\n");
+    /* In CSV mode keep the stream blank-line-free so naive consumers that
+     * only strip '#' comments still see the header as the first row. */
+    if (!csv) printf("\n");
 
     /* ---- Phase 3: run searcher(s) ------------------------------------- */
     ac_searcher_config_t cfg = {
@@ -297,9 +329,9 @@ int main(int argc, char **argv)
         .user        = NULL,
     };
 
-    bench_result_print_header();
+    if (csv) bench_result_print_csv_header();
+    else     bench_result_print_header();
 
-    int header_done = 1;
     int run_count   = 0;
     int any_failed  = 0;
 
@@ -319,11 +351,11 @@ int main(int argc, char **argv)
             any_failed = 1;
             continue;
         }
-        bench_result_print(&r, !header_done);
-        header_done = 1;
+        if (csv) bench_result_print_csv(&r, 0);
+        else     bench_result_print(&r, 0);
         run_count++;
 
-        if (per_thread) {
+        if (per_thread && !csv) {
             ac_thread_metric_t *tm = NULL; size_t ntm = 0;
             ac_match_list_t throwaway;
             ac_match_list_init(&throwaway);
@@ -340,6 +372,7 @@ int main(int argc, char **argv)
 
         if (print_match) print_matches(&aut, &last);
         ac_match_list_free(&last);
+        bench_result_free(&r);
     }
 
     if (run_count == 0) {

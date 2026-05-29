@@ -6,7 +6,7 @@
 #   make asan       - AddressSanitizer + UBSan
 #   make tsan       - ThreadSanitizer (verifies parallel correctness)
 #   make test       - run correctness tests
-#   make bench      - run the benchmark suite
+#   make bench      - run the canonical TCC sweep (scripts/run_overnight_sweep.sh)
 #   make clean
 #
 # To plug in a new parallel searcher, drop src/searchers/<name>.c
@@ -78,7 +78,9 @@ test: $(TESTBIN)
 	./$(TESTBIN)
 
 bench: $(BIN)
-	@./scripts/run_benchmarks.sh
+	@echo "Running canonical TCC sweep via scripts/run_overnight_sweep.sh."
+	@echo "Scope a subset with e.g. 'PHASES=\"A\" make bench'; the full run takes hours."
+	@./scripts/run_overnight_sweep.sh
 
 clean:
 	rm -rf $(BUILD)

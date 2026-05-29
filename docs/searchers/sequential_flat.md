@@ -10,7 +10,7 @@ threading.
 - Fonte: [`src/searchers/sequential_flat.c`](../../src/searchers/sequential_flat.c)
 - Registro: `__attribute__((constructor)) seq_flat_register()`
 - Descrição: *Sequential AC scan reading the flat output table (idea 5)*
-- Proposta: [`../proposals/idea_5.md`](../proposals/idea_5.md)
+- Notas do TCC: [`../../../tcc_notes/sections/notes/methodology.md`](../../../tcc_notes/sections/notes/methodology.md) e [`../../../tcc_notes/sections/notes/results.md`](../../../tcc_notes/sections/notes/results.md)
 - Layout transformado: [`../architecture/flat-outputs.md`](../architecture/flat-outputs.md)
 
 ## Quando usar
@@ -169,5 +169,5 @@ O ganho cresce com o tamanho do dicionário (mais misses em
   [`../architecture/automaton.md`](../architecture/automaton.md).
 - Para a variante paralela combinada, consulte
   [`pthread_chunked_flat.md`](pthread_chunked_flat.md).
-- Para a discussão original do trade-off de layout, consulte
-  [`../proposals/idea_5.md`](../proposals/idea_5.md).
+- Para o veredito consolidado da idea 5 no TCC, consulte
+  [`../../../tcc_notes/sections/notes/conclusion.md`](../../../tcc_notes/sections/notes/conclusion.md).

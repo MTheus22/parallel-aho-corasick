@@ -33,13 +33,12 @@ int (*search)(const ac_automaton_t *aut,
 | [`pthread_chunked_v2.md`](pthread_chunked_v2.md)     | `pthread_chunked_v2`    |
 | [`pthread_chunked_v3.md`](pthread_chunked_v3.md)     | `pthread_chunked_v3`    |
 | [`pthread_dynamic.md`](pthread_dynamic.md)           | `pthread_dynamic`       |
-| [`pthread_block_cyclic.md`](pthread_block_cyclic.md) | `pthread_block_cyclic`  |
-| [`pthread_affinity.md`](pthread_affinity.md)         | `pthread_affinity`      |
 | [`pthread_prefetch.md`](pthread_prefetch.md)         | `pthread_prefetch`      |
 | [`sequential_flat.md`](sequential_flat.md)           | `sequential_flat`       |
-| [`sequential_delta2.md`](sequential_delta2.md)       | `sequential_delta2`     |
 | [`pthread_chunked_flat.md`](pthread_chunked_flat.md) | `pthread_chunked_flat`  |
-| [`pattern_sharded.md`](pattern_sharded.md)           | `pattern_sharded` / `_lpt` / `_prefix` |
+| [`pthread_chunked_v3_flat.md`](pthread_chunked_v3_flat.md) | `pthread_chunked_v3_flat` |
+| [`pattern_sharded.md`](pattern_sharded.md)           | `pattern_sharded_prefix` |
+| [`pthread_2d_sharded_chunked.md`](pthread_2d_sharded_chunked.md) | `pthread_2d_sharded_chunked` |
 
 ## Comparação rápida
 
@@ -50,9 +49,9 @@ int (*search)(const ac_automaton_t *aut,
 | `pthread_chunked_v2`    | data-parallel | nenhum          | Loops separados warm-up/owned + cache-pad worker_t      | Hot path mais limpo, ganho de 3-4%        |
 | `pthread_chunked_v3`    | data-parallel | nenhum          | v2 + afinidade topológica + chunks freq-ponderados      | CPUs híbridas P+E-core; melhor em t=2     |
 | `pthread_dynamic`       | data-parallel | nenhum no byte   | Fila de tarefas via `atomic_fetch_add` (4N chunks)      | CPUs heterogêneas (P+E cores)             |
-| `pthread_block_cyclic`  | data-parallel | nenhum          | Blocos cíclicos round-robin (1 MiB)                     | Distribuir ruído sem custo de átomo       |
-| `pthread_affinity`      | data-parallel | nenhum          | Mesmo do v2 + `pthread_setaffinity_np`                  | Reduz migrações, melhora `mean(ms)`        |
 | `pthread_prefetch`      | data-parallel | nenhum          | `__builtin_prefetch(text + Δ)` no hot loop              | 1-2 threads, regime bandwidth-disponível |
+| `pthread_chunked_v3_flat` | data-parallel | nenhum        | v3 (topology + freq weights) + emissão flat (idea 5+7)   | Nicho: Snort + Enron (+2,6 %); regride fora |
+| `pthread_2d_sharded_chunked` | data + dict-parallel | nenhum   | 2-D: K shards × N chunks = T workers (idea 6)         | Comparação 2-D; perde p/ chunked_flat em desktop |
 
 ## Resultados (Snort + Enron, 1,36 GiB, i5-1235U)
 
@@ -66,10 +65,60 @@ int (*search)(const ac_automaton_t *aut,
 | `pthread_chunked_v2` | 7.306 / 183,9             | 4.507 / 295,4              | 1.766 / 732,4                | 3,74×        |
 | `pthread_chunked_v3` | 6,821 / 197,0             | **4,050** / 331,0          | **1,631** / 795,0            | 3,98×¹       |
 | `pthread_dynamic`    | 7.275 / 176,9             | 4.635 / 283,5              | **1.680** / 738,7            | 3,77×        |
-| `pthread_block_cyclic`| 7.288 / 183,4            | 4.597 / 282,6              | 1.692 / 736,1                | 3,76×        |
-| `pthread_affinity`   | 7.155 / 177,8             | **4.358** / 300,9          | **1.646** / 746,5            | 3,81×        |
 | `pthread_prefetch`   | **6.867** / 193,8         | 4.314 / 294,0              | 1.821 / 714,7                | 3,65×        |
 
 ¹ `pthread_chunked_v3` medido em sweep separado `--warmup 1 --iters 3`; demais searchers com `--iters 5`. Speedup calculado via `mean(sequential)/mean(t=12)` do mesmo sweep (seq mean 6,791 s, v3 mean 1,705 s).
+
+### Composições com flat — sweep multi-regime (2026-05-22)
+
+Sweep `scripts/run_multiregime_flat_compositions.sh` (`--warmup 1 --iters 3`), 4 combinações patterns × corpus, mesmo hardware. **`pthread_chunked_flat` continua sendo o melhor searcher em 3 dos 4 regimes**; F1 (`v3_flat`) só ganha em Snort + Enron (+2,6 %).
+
+| Regime | `chunked_flat` MB/s (T=12) | `v3_flat` Δ |
+|---|---:|---:|
+| **R1** Snort + SimpleWiki (low density) | **551,11** ⭐ | −0,7 % (empata) |
+| **R2** Snort + Enron (DRAM-bound) | 510,37 | **+2,6 %** ⭐ |
+| **R3** Snort-100 + SimpleWiki (cache-friendly) | **1.292,08** ⭐ | −26,3 % |
+| **R4** ET-32 + SimpleWiki (autômato >> L3) | **165,73** ⭐ | −9,5 % |
+
+`pthread_chunked_v3_flat` é útil apenas em regime DRAM-bound moderado (R2);
+fora desse nicho, o overhead de sondagem de sysfs (`cpufreq`,
+`thread_siblings_list`) supera o ganho. Doc detalhada em
+[`pthread_chunked_v3_flat.md`](pthread_chunked_v3_flat.md).
+
+> O primeiro sweep dedicado apenas ao regime R2
+> (`scripts/run_flat_compositions_sweep.sh`, `--iters 5`) havia reportado +15 % para
+> o `v3_flat`, mas era ruído térmico em uma janela fria de `chunked_flat`.
+> O sweep multi-regime acima é o canônico para o TCC.
+
+### F3 — Stack end-to-end sobre `enron_x8` (10,59 GiB, 2026-05-22)
+
+Sweep `scripts/run_f3_v3flat_build_par_sweep.sh` cronometra **build + search** sobre o corpus de escala, separando explicitamente as duas fases. Mede a tripla `AC_BUILD_PARALLEL=1` + `pthread_chunked_v3_flat` (ou `pthread_chunked_flat`) + `data/enron_x8.txt` em dois dicionários.
+
+| Dicionário | Configuração                                                           | Wall-clock E2E min (ms) | Speedup E2E |
+|------------|------------------------------------------------------------------------|------------------------:|------------:|
+| Snort      | baseline (build seq + sequential T=1)                                  | 94.706                  | 1,00×       |
+| Snort      | **Stack F3** (build par T=12 ⊕ `v3_flat` T=12 ⊕ flat)                  | **21.292**              | **4,45×** ⭐ |
+| ET-32      | baseline                                                               | 198.906                 | 1,00×       |
+| ET-32      | **Stack vencedor** (build par T=12 ⊕ `chunked_flat` T=12 ⊕ flat)       | **75.094**              | **2,65×**   |
+| ET-32      | `chunked_flat` + build seq (vencedor inequívoco no regime)             | 65.428                  | **3,04×** ⭐ |
+
+**Lições:** (a) em ET-32 + corpus grande, `chunked_flat` continua o default — `v3_flat` regrediu agudamente neste sweep, coerente com o resultado negativo observado para ET-32 no sweep multi-regime; (b) build paralelo contribui < 1 % do wall-clock E2E em sweep de 10 GiB — o ganho de 1,31× isolado é métrica operacional separada (recarga de regras). Doc canônica: [`results.md`](../../../tcc_notes/sections/notes/results.md) e [`conclusion.md`](../../../tcc_notes/sections/notes/conclusion.md).
+
+---
+
+## Searchers removidos do escopo
+
+Os seguintes searchers existiam no laboratório e foram removidos por não contribuírem para a narrativa do TCC (2026-05-28):
+
+| Searcher removido       | Motivo |
+|-------------------------|--------|
+| `pthread_block_cyclic`  | Empate com `pthread_chunked_v2` em todos os regimes; sem veredicto próprio para o TCC. |
+| `sequential_delta2`     | Só vence para dicionários < ~50 estados (fora do regime alvo Snort/ET). Em Snort full faz fallback automático para `sequential`. |
+| `pattern_sharded`       | Round-robin regride ~30% em todos os regimes; `pattern_sharded_prefix` cobre o mesmo eixo com resultado real. |
+| `pattern_sharded_lpt`   | LPT empiricamente equivale ao round-robin no hardware testado; descartável. |
+| `pthread_affinity`      | Pinning ingênuo `i % nproc`; subsumido por `pthread_chunked_v3` (afinidade topológica é estritamente superior). Sem veredicto próprio — mesmo critério do `pthread_block_cyclic`. |
+| `pthread_prefetch_flat` | Negativo-sobre-negativo: regride em 4/4 regimes e a lição "SW prefetch de texto não ajuda no x86 moderno" já é entregue pelo `pthread_prefetch` (não-flat). Redundante. |
+
+O código, docs e números dessas variantes estão preservados no histórico git se necessários futuramente.
 
 Detalhamento por searcher e análise nos respectivos docs.

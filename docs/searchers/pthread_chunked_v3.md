@@ -33,8 +33,8 @@ baseline `sequential`.
 
 ## Motivação
 
-O `pthread_affinity` (e implicitamente o `pthread_chunked` sob o
-scheduler do kernel) tem dois pontos cegos no i5-1235U:
+A afinidade ingênua `i % nproc` (e implicitamente o `pthread_chunked`
+sob o scheduler do kernel) tem dois pontos cegos no i5-1235U:
 
 ### 1. Em baixo *thread count*, joga threads no mesmo P-core
 
@@ -49,7 +49,7 @@ A enumeração lógica das CPUs no i5-1235U é
 | 3          | P-core 1 (HT slot B)       | P      | 4.4     |
 | 4 a 11     | E-cores 0 a 7 (sem SMT)    | E      | 3.3     |
 
-A política `cpu_id = i % nproc` do `pthread_affinity` faz com que com
+A política `cpu_id = i % nproc` faz com que com
 **2 threads** a primeira vá para CPU 0 e a segunda para CPU 1 — **o
 mesmo P-core físico**. As duas competem por L1, L2 e portas de
 execução. O ganho cai de "2× sobre 1 thread" para algo entre 1.4× e
@@ -182,8 +182,8 @@ wall: 988 ms (1372 MB/s)
 ```
 
 P-cores e E-cores convergem para tempos próximos (~800 ms vs ~880 ms),
-evitando o regime de "P-cores ociosos esperando E-cores" do
-`pthread_affinity` (que daria ~1026 ms para os E-cores e ~700 ms para
+evitando o regime de "P-cores ociosos esperando E-cores" da afinidade
+ingênua `i % nproc` (que daria ~1026 ms para os E-cores e ~700 ms para
 os P-cores HT-pareados — gap de ~330 ms).
 
 ## Resultados em `snort + enron_corpus.txt` (1.36 GiB)
@@ -198,31 +198,28 @@ máquina consegue produzir nessa configuração".
 | sequential            |   1     | 6.596    | 6.791     | 200         |
 | pthread_chunked_v2    |   1     | 6.779    | 6.885     | 197         |
 | pthread_chunked_v3    |   1     | 6.821    | 6.881     | 197         |
-| pthread_affinity      |   1     | 6.868    | 6.915     | 196         |
 | pthread_chunked_v2    |   2     | 4.085    | 4.235     | 320         |
 | **pthread_chunked_v3**|   2     | **4.050**| **4.098** | **331**     |
-| pthread_affinity      |   2     | 4.159    | 4.248     | 319         |
 | pthread_dynamic       |   2     | 4.188    | 4.267     | 318         |
 | pthread_chunked_v2    |  12     | 1.657    | 1.701     | 797         |
 | **pthread_chunked_v3**|  12     | **1.631**| 1.705     | 795         |
-| pthread_affinity      |  12     | 1.646    | 1.674     | 809         |
 | pthread_dynamic       |  12     | 1.672    | 1.712     | 792         |
 
 ### Em 2 threads
 
-`pthread_chunked_v3` é o melhor (3% melhor que `pthread_chunked_v2`,
-4% melhor que `pthread_affinity`) — é exatamente onde a *afinidade
-ciente de topologia* faz diferença: as duas threads vão para P-cores
-físicos **diferentes** (CPU 0 e CPU 2) em vez de compartilharem um
-par HT (CPU 0 e CPU 1). Sem contenção SMT no L1/L2 e portas de
-execução.
+`pthread_chunked_v3` é o melhor (3% melhor que `pthread_chunked_v2`) —
+é exatamente onde a *afinidade ciente de topologia* faz diferença: as
+duas threads vão para P-cores físicos **diferentes** (CPU 0 e CPU 2)
+em vez de compartilharem um par HT (CPU 0 e CPU 1). Sem contenção SMT
+no L1/L2 e portas de execução.
 
-A medição per-thread confirma:
+A medição per-thread confirma o contraste com o pinning ingênuo
+`i % nproc`:
 
 ```text
-pthread_chunked_v3  t=2:  [t00]@CPU0 149 MB/s   [t01]@CPU2 149 MB/s   → 4.6 s
-pthread_affinity    t=2:  [t00]@CPU0 131 MB/s   [t01]@CPU1 131 MB/s   → 5.2 s
-                                                       ^^^^ HT pair
+v3 (topology-aware)  t=2:  [t00]@CPU0 149 MB/s   [t01]@CPU2 149 MB/s   → 4.6 s
+i % nproc (naive)    t=2:  [t00]@CPU0 131 MB/s   [t01]@CPU1 131 MB/s   → 5.2 s
+                                                        ^^^^ HT pair
 ```
 
 Por thread, ir de 131 → 149 MB/s representa um ganho de 14% só pela
@@ -247,10 +244,10 @@ T_balanced = text_len / (4 * 170 + 8 * 115) MB/s
            = 1421 MB / 1600 MB/s ≈ 888 ms
 ```
 
-contra `pthread_affinity` com chunks iguais:
+contra afinidade ingênua `i % nproc` com chunks iguais:
 
 ```text
-T_affinity = 118 MB / 115 MB/s ≈ 1026 ms   (gated pelos E-cores)
+T_naive = 118 MB / 115 MB/s ≈ 1026 ms   (gated pelos E-cores)
 ```
 
 Empíricamente o gap se realiza apenas no min(ms) sob janelas frias; o
@@ -297,8 +294,6 @@ workers.
 
 - [`pthread_chunked_v2.md`](pthread_chunked_v2.md) — base direta
   (loops separados + cache-pad).
-- [`pthread_affinity.md`](pthread_affinity.md) — afinidade ingênua
-  (`i % nproc`) sem ordenação por topologia ou pesos.
 - [`pthread_dynamic.md`](pthread_dynamic.md) — alternativa via
   contador atômico, que também ataca assimetria de cores mas a custo
   de coordenação no hot path.

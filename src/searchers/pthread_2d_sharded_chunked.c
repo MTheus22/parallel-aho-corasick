@@ -96,7 +96,7 @@ typedef struct {
 
 /* Process-global cache of built shards. Fingerprinted by the unified
  * automaton plus K -- both must match for a cache hit. Same multi-field
- * fingerprint trick as `pattern_sharded.c` / `sequential_delta2.c`:
+ * fingerprint trick as `pattern_sharded.c`:
  * caching by `aut` pointer alone is unsafe because the test harness
  * stack-allocates an ac_automaton_t and reuses the address. */
 typedef struct {

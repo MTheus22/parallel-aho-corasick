@@ -10,7 +10,7 @@ de matches por estado.
 - Fonte: [`src/searchers/pthread_chunked_flat.c`](../../src/searchers/pthread_chunked_flat.c)
 - Registro: `__attribute__((constructor)) flat_register()`
 - Descrição: *Pthreads chunks (v2 layout) + flat output table (idea 5)*
-- Proposta: [`../proposals/idea_5.md`](../proposals/idea_5.md)
+- Notas do TCC: [`../../../tcc_notes/sections/notes/methodology.md`](../../../tcc_notes/sections/notes/methodology.md) e [`../../../tcc_notes/sections/notes/results.md`](../../../tcc_notes/sections/notes/results.md)
 - Layout transformado: [`../architecture/flat-outputs.md`](../architecture/flat-outputs.md)
 
 ## Quando usar
@@ -192,4 +192,4 @@ dicionários desta classe).
 - Para a variante chain-walk equivalente, [`pthread_chunked_v2.md`](pthread_chunked_v2.md).
 - Para o modelo de chunking e correção em fronteira, [`../architecture/parallelism.md`](../architecture/parallelism.md).
 - Para o layout do flat output table, [`../architecture/flat-outputs.md`](../architecture/flat-outputs.md).
-- Proposta original: [`../proposals/idea_5.md`](../proposals/idea_5.md).
+- Veredito consolidado da idea 5: [`../../../tcc_notes/sections/notes/conclusion.md`](../../../tcc_notes/sections/notes/conclusion.md).

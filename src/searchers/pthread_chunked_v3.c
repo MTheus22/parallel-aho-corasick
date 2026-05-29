@@ -1,15 +1,15 @@
 /* pthread_chunked_v3 — Topology-aware affinity + frequency-weighted chunks.
  *
  * Builds on pthread_chunked_v2 (split warm-up/owned loops, cache-padded
- * worker_t) and addresses two limitations of pthread_affinity:
+ * worker_t) and addresses two limitations of naive CPU pinning:
  *
  *   1. Naive affinity pins worker i to logical CPU i. On hybrid CPUs
  *      such as Alder Lake (i5-1235U) the logical-CPU layout is
  *        CPUs 0,1 = P-core 0 SMT siblings
  *        CPUs 2,3 = P-core 1 SMT siblings
  *        CPUs 4..N = E-cores (one thread each)
- *      So with only 2 threads, pthread_affinity puts both on CPUs 0,1
- *      — the same physical P-core — and they contend for L1/L2 and
+ *      So with only 2 threads, an `i % nproc` mapping puts both on CPUs
+ *      0,1 — the same physical P-core — and they contend for L1/L2 and
  *      execution ports. We instead build a topology-aware order that
  *      fills physical-core leaders first (sorted by max-frequency
  *      descending), and only spills into SMT siblings when nthreads
@@ -24,7 +24,7 @@
  *
  * Both adjustments are best-effort: missing or unreadable sysfs entries
  * degrade gracefully to pthread_chunked_v2 behaviour (equal-sized
- * chunks, identity-order affinity). The overlap rule, ownership rule,
+ * chunks, identity-order pinning). The overlap rule, ownership rule,
  * shared read-only automaton and thread-local match lists are inherited
  * unchanged from v2 — `make test` validates that v3 produces an
  * identical multiset of matches versus the `sequential` baseline.

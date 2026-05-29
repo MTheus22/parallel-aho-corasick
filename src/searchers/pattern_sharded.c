@@ -1,4 +1,4 @@
-/* pattern_sharded -- dictionary-level parallelism (idea 1).
+/* pattern_sharded_prefix -- dictionary-level parallelism (idea 1).
  *
  * Strategy
  * --------
@@ -13,19 +13,12 @@
  * is read but never re-used by the workers -- the workers see only
  * their own sub_aut.
  *
- * Sharding policies (registered as three searchers so the dissertation
- * can A/B them on the same automaton):
- *
- *   pattern_sharded         -- round-robin by pattern index. Balances
- *                              pattern count but not state count.
- *   pattern_sharded_lpt     -- longest-processing-time-first by length:
- *                              sort patterns by length descending, assign
- *                              each to the currently lightest shard. A
- *                              good proxy for state-count balance.
- *   pattern_sharded_prefix  -- bucket by first byte mod K. States branch
- *                              heavily near the root; this tends to
- *                              produce sub-automata of more uniform
- *                              footprint when the dictionary is biased.
+ * Sharding policy: bucket by first byte mod K. States branch heavily
+ * near the root; this tends to produce sub-automata of more uniform
+ * footprint when the dictionary is biased toward English text (Snort).
+ * The only policy retained after empirical evaluation showed it is the
+ * only one to achieve speedup in the target regime (large automaton,
+ * DRAM-bound).
  *
  * Each registration owns a private static cache keyed by a fingerprint
  * of the unified automaton + K + policy, so the warmup + iters loop in
@@ -73,9 +66,7 @@
 #define SHARD_CACHE_LINE 64
 
 typedef enum {
-    SHARD_POLICY_ROUND_ROBIN = 0,
-    SHARD_POLICY_LPT         = 1,
-    SHARD_POLICY_PREFIX      = 2,
+    SHARD_POLICY_PREFIX = 0,
 } shard_policy_t;
 
 /* One built shard: a self-contained sub-automaton plus a local-pid -> global-pid
@@ -90,7 +81,7 @@ typedef struct {
  * sharded searchers do not collide. Lazily filled on the first call
  * for a given (aut, K, policy) and reused across bench_run iterations. */
 typedef struct {
-    /* Fingerprint. Same multi-field trick as sequential_delta2.c:
+    /* Fingerprint. Multi-field trick to avoid false cache hits when
      * caching by aut pointer alone is unsafe because test_correctness.c
      * declares ac_automaton_t on the stack and reuses the address. */
     const int32_t *goto_tbl_ptr;
@@ -137,7 +128,7 @@ static int default_thread_count(void)
     return (int)n;
 }
 
-/* ---- Cache management ------------------------------------------------- */
+/* ---- Cache management -------------------------------------------------- */
 
 static void shard_release_cache(shard_cache_t *c)
 {
@@ -177,61 +168,7 @@ static int shard_cache_matches(const shard_cache_t *c,
         && c->K            == K;
 }
 
-/* ---- Sharding policies ------------------------------------------------ */
-
-/* Assign each pattern (0..num_patterns) to a shard in [0, K). Caller-
- * provided assignment[] is filled in. Each policy is deterministic
- * given (aut, K) so the cache fingerprint is sufficient. */
-static void policy_round_robin(const ac_automaton_t *aut, int K,
-                               int32_t *assignment)
-{
-    int32_t n = aut->num_patterns;
-    for (int32_t i = 0; i < n; i++) assignment[i] = i % K;
-}
-
-/* LPT bin-packing on pattern lengths. Sorts pattern indices by length
- * desc; assigns each to the bin with smallest current total length.
- * O((n + K) log n) overall (dominant cost is the qsort). */
-typedef struct {
-    int32_t pid;
-    int32_t length;
-} pid_len_t;
-
-static int lpt_cmp(const void *a, const void *b)
-{
-    const pid_len_t *x = a, *y = b;
-    /* desc by length; ties broken by pid asc for determinism */
-    if (x->length != y->length) return (y->length - x->length);
-    return (x->pid - y->pid);
-}
-
-static int policy_lpt(const ac_automaton_t *aut, int K, int32_t *assignment)
-{
-    int32_t n = aut->num_patterns;
-    pid_len_t *arr = malloc((size_t)n * sizeof(*arr));
-    int64_t   *bin_load = calloc((size_t)K, sizeof(*bin_load));
-    if (!arr || !bin_load) { free(arr); free(bin_load); return AC_E_NOMEM; }
-
-    for (int32_t i = 0; i < n; i++) {
-        arr[i].pid    = i;
-        arr[i].length = aut->patterns[i].length;
-    }
-    qsort(arr, (size_t)n, sizeof(*arr), lpt_cmp);
-
-    for (int32_t i = 0; i < n; i++) {
-        /* Find lightest bin. K is bounded by num_threads (<= 256), so
-         * a linear scan is faster than a heap and stays branch-friendly. */
-        int best = 0;
-        for (int k = 1; k < K; k++) {
-            if (bin_load[k] < bin_load[best]) best = k;
-        }
-        assignment[arr[i].pid] = best;
-        bin_load[best] += arr[i].length;
-    }
-    free(arr);
-    free(bin_load);
-    return AC_OK;
-}
+/* ---- Sharding policy -------------------------------------------------- */
 
 /* Bucket by first byte mod K. Empty patterns are not possible here
  * (ac_automaton_build rejects them with AC_E_PATTERN_EMPTY before this
@@ -264,19 +201,8 @@ static int shard_build(shard_cache_t *c,
         return AC_E_NOMEM;
     }
 
-    switch (policy) {
-    case SHARD_POLICY_ROUND_ROBIN:
-        policy_round_robin(aut, K, assignment);
-        break;
-    case SHARD_POLICY_LPT: {
-        int rc = policy_lpt(aut, K, assignment);
-        if (rc != AC_OK) { free(assignment); free(shard_count); return rc; }
-        break;
-    }
-    case SHARD_POLICY_PREFIX:
-        policy_prefix(aut, K, assignment);
-        break;
-    }
+    (void)policy;
+    policy_prefix(aut, K, assignment);
 
     for (int32_t i = 0; i < n; i++) shard_count[assignment[i]]++;
 
@@ -572,33 +498,9 @@ static int shard_search(const ac_automaton_t *aut,
     return rc;
 }
 
-/* ---- Three registered variants, one per sharding policy --------------- */
+/* ---- Registered searcher ---------------------------------------------- */
 
-static shard_cache_t g_cache_rr;
-static shard_cache_t g_cache_lpt;
 static shard_cache_t g_cache_prefix;
-
-static int search_rr(const ac_automaton_t *aut,
-                     const char *text, size_t text_len,
-                     const ac_searcher_config_t *cfg,
-                     ac_match_list_t *out,
-                     ac_thread_metric_t **m, size_t *nm)
-{
-    return shard_search(aut, text, text_len, cfg, out, m, nm,
-                        &g_cache_rr, SHARD_POLICY_ROUND_ROBIN,
-                        "pattern_sharded");
-}
-
-static int search_lpt(const ac_automaton_t *aut,
-                      const char *text, size_t text_len,
-                      const ac_searcher_config_t *cfg,
-                      ac_match_list_t *out,
-                      ac_thread_metric_t **m, size_t *nm)
-{
-    return shard_search(aut, text, text_len, cfg, out, m, nm,
-                        &g_cache_lpt, SHARD_POLICY_LPT,
-                        "pattern_sharded_lpt");
-}
 
 static int search_prefix(const ac_automaton_t *aut,
                          const char *text, size_t text_len,
@@ -611,18 +513,6 @@ static int search_prefix(const ac_automaton_t *aut,
                         "pattern_sharded_prefix");
 }
 
-static const ac_searcher_t k_sharded_rr = {
-    .name        = "pattern_sharded",
-    .description = "Dictionary-level parallelism (idea 1), round-robin shards",
-    .search      = search_rr,
-};
-
-static const ac_searcher_t k_sharded_lpt = {
-    .name        = "pattern_sharded_lpt",
-    .description = "Dictionary-level parallelism (idea 1), length-balanced (LPT) shards",
-    .search      = search_lpt,
-};
-
 static const ac_searcher_t k_sharded_prefix = {
     .name        = "pattern_sharded_prefix",
     .description = "Dictionary-level parallelism (idea 1), first-byte prefix shards",
@@ -632,7 +522,5 @@ static const ac_searcher_t k_sharded_prefix = {
 __attribute__((constructor))
 static void shard_register(void)
 {
-    ac_searcher_register(&k_sharded_rr);
-    ac_searcher_register(&k_sharded_lpt);
     ac_searcher_register(&k_sharded_prefix);
 }

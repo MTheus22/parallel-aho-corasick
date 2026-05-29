@@ -1,4 +1,4 @@
-# Searcher `pattern_sharded` (e variantes)
+# Searcher `pattern_sharded_prefix`
 
 Implementação da **idea 1** do roadmap (paralelismo a nível de
 dicionário): em vez de particionar o texto, particionamos o
@@ -10,24 +10,18 @@ concatena as listas — sem overlap entre regiões do texto, sem dedup
 de matches (shards têm pids globais disjuntos por construção).
 
 - Fonte: [`src/searchers/pattern_sharded.c`](../../src/searchers/pattern_sharded.c)
-- Registro: `__attribute__((constructor)) shard_register()` — três variantes
-- Proposta: [`../proposals/idea_1.md`](../proposals/idea_1.md)
+- Registro: `__attribute__((constructor)) shard_register()`
+- Notas do TCC: [`../../../tcc_notes/sections/notes/methodology.md`](../../../tcc_notes/sections/notes/methodology.md) e [`../../../tcc_notes/sections/notes/results.md`](../../../tcc_notes/sections/notes/results.md)
 
-## Três variantes registradas
+## Política de sharding
 
 | Nome                      | Política de sharding                                                                          |
 |---------------------------|-----------------------------------------------------------------------------------------------|
-| `pattern_sharded`         | Round-robin por índice (`shard = pid % K`). Balanceia contagem de padrões, não bytes/estados. |
-| `pattern_sharded_lpt`     | Longest-Processing-Time-first: ordena por `length` desc., atribui ao bin mais leve. Balanceia bytes-por-shard, que é uma boa proxy para state count. |
-| `pattern_sharded_prefix`  | Bucket pelo primeiro byte (`shard = text[0] % K`). Estados se ramificam fortemente perto da raiz; em práticas, dá sub-autômatos com hot path mais coerente em cache para textos de língua natural. |
+| `pattern_sharded_prefix`  | Bucket pelo primeiro byte (`shard = text[0] % K`). Estados se ramificam fortemente perto da raiz; dá sub-autômatos com hot path mais coerente em cache para textos de língua natural. Única política que entrega speedup real no regime alvo. |
 
-Cada variante mantém um **cache estático separado** (`g_cache_rr`,
-`g_cache_lpt`, `g_cache_prefix`), de modo que as três podem coexistir
-em uma mesma execução sem invalidar umas às outras. O cache é
-fingerprintado por `(aut->goto_tbl, num_states, num_outputs, num_patterns, K)`
-— mesmo motivo do `sequential_delta2`: `aut` por si só não basta
-quando a stack endereça é reusada entre casos do
-`tests/test_correctness.c`.
+O cache é fingerprintado por `(aut->goto_tbl, num_states, num_outputs, num_patterns, K)`
+— `aut` por si só não basta quando a stack address é reusada entre
+casos do `tests/test_correctness.c`.
 
 ## Modelo de execução
 
@@ -74,8 +68,9 @@ Características importantes:
 
 - **Dicionários muito grandes que estouram L3** (regime IDS:
   Snort full, ET-Open). É o único searcher do laboratório que ataca
-  diretamente o regime de cache blowout descrito em
-  `tcc_notes/tldr_metricas.md` §3 e em `idea_1.md` §"Why this is worth a chapter".
+  diretamente o regime de cache blowout descrito nas notas consolidadas
+  de [`methodology.md`](../../../tcc_notes/sections/notes/methodology.md)
+  e [`results.md`](../../../tcc_notes/sections/notes/results.md).
 - **Ortogonal ao chunking de texto.** Pode (em trabalho futuro) ser
   combinado com `pthread_chunked_v2`/`pthread_chunked_flat` para gerar
   uma curva 2-D de speedup `K × N` — nenhum dos searchers atuais
@@ -91,8 +86,8 @@ Características importantes:
   Cada worker re-escaneia o texto inteiro; o segundo (e o oitavo)
   acesso é hit-de-cache barato, mas não é grátis, e o overhead de
   *K* leituras do texto satura a banda de memória bem antes da
-  cache miss do autômato unificado. Documentado em `idea_1.md`
-  §"Failure modes". A regressão é esperada e clean.
+  cache miss do autômato unificado. Esse é o modo de falha esperado
+  da abordagem; a regressão é limpa e útil como cross-over experimental.
 - **Quando memory-bandwidth é o gargalo dominante** e o autômato
   unificado já mora em L3 — o ganho do sub-autômato menor não
   compensa o aumento de tráfego de texto.
@@ -213,11 +208,9 @@ Todos os números são `--warmup 1 --iters 3` (médias). Build usa
 | Searcher                     | K  | MB/s   | Speedup vs `sequential` |
 |------------------------------|----|--------|-------------------------|
 | `sequential`                 | —  | 184.80 | 1.00×                   |
-| `pattern_sharded`            | 8  | 134.74 | 0.73×                   |
-| `pattern_sharded_lpt`        | 8  | 126.60 | 0.69×                   |
 | `pattern_sharded_prefix`     | 8  | 124.59 | 0.67×                   |
 
-**Regressão esperada** (cf. `idea_1.md` "Failure modes"). O
+**Regressão esperada** pelo desenho original do experimento. O
 autômato unificado já cabe em L2; sharding paga *K* re-leituras do
 texto sem ganhar nada em cache de estados.
 
@@ -226,8 +219,6 @@ texto sem ganhar nada em cache de estados.
 | Searcher                     | K  | MB/s   | Speedup vs `sequential` |
 |------------------------------|----|--------|-------------------------|
 | `sequential`                 | —  | 135.60 | 1.00×                   |
-| `pattern_sharded`            | 4  | 122.93 | 0.91×                   |
-| `pattern_sharded_lpt`        | 4  | 111.24 | 0.82×                   |
 | `pattern_sharded_prefix`     | 4  | 135.62 | **1.00×** (empate)      |
 
 A política `prefix` empata o sequencial pela primeira vez — sinal de
@@ -238,13 +229,9 @@ que a fronteira do cross-over começa a aparecer.
 | Searcher                     | K  | MB/s   | Speedup vs `sequential` |
 |------------------------------|----|--------|-------------------------|
 | `sequential`                 | —  |  96.68 | 1.00×                   |
-| `pattern_sharded`            | 8  |  71.95 | 0.74×                   |
-| `pattern_sharded_lpt`        | 8  |  69.98 | 0.72×                   |
 | `pattern_sharded_prefix`     | 8  | **115.50** | **1.19×**           |
 
-**Cross-over confirmado** para `pattern_sharded_prefix`. As outras
-duas políticas continuam perdendo, então a escolha de política
-**importa muito** no regime grande. Hipótese: o bucketing por
+**Cross-over confirmado** para `pattern_sharded_prefix`. O bucketing por
 primeiro byte concentra prefixos similares em um mesmo shard,
 produzindo sub-autômatos com hot path mais denso em cache para o
 texto natural de língua inglesa (Wikipedia).
@@ -254,13 +241,12 @@ texto natural de língua inglesa (Wikipedia).
 | Searcher                     | K  | MB/s   | Speedup vs `sequential` |
 |------------------------------|----|--------|-------------------------|
 | `sequential`                 | —  |  41.19 | 1.00×                   |
-| `pattern_sharded`            | 12 |  23.74 | 0.58×                   |
 
 Aqui a banda de memória do texto é o gargalo: cada thread escaneia
 1.2 GiB e nenhuma combinação `(K, política)` consegue compensar.
-Com a variante 2-D **`K × N`** (sharding × chunking; ver "Trabalho
-futuro" abaixo) a hipótese de `idea_1.md` ainda pode ser falsificada
-positivamente, mas o searcher *standalone* não cobre esse regime.
+Essa motivação levou à variante 2-D **`K × N`** posteriormente
+implementada em [`pthread_2d_sharded_chunked.md`](pthread_2d_sharded_chunked.md),
+que acabou perdendo para `pthread_chunked_flat` neste hardware.
 
 ## Modos de falha (honestos)
 
@@ -273,11 +259,6 @@ positivamente, mas o searcher *standalone* não cobre esse regime.
   todos em um único shard (testado em `prefix_bias_h`). Correção
   é trivial (LPT ou round-robin como fallback automático); mantido
   em aberto porque o caso real é raro.
-- **`pattern_sharded_lpt` não venceu o round-robin** em nenhum
-  benchmark do TCC. A explicação provável é que o critério de
-  balanceamento (bytes-por-shard) é uma proxy ruim para custo de
-  steady-state quando o gargalo é a leitura do texto, não a
-  varredura do sub-autômato.
 - **Overhead de build** é `K`× o build sequencial. Para `K=12` no
   dicionário ET (~1.5 s sequencial), o build dos 12 sub-autômatos
   custa ~2-3 segundos. Amortizável em scans grandes, mas relevante
@@ -297,10 +278,9 @@ inteiro), `tm[k].matches_found` é a contagem do shard `k`.
 ## Trabalho futuro
 
 - **`K × N` 2-D**: combinar shard `K` com chunk `N` de texto, de modo
-  que `K · N = #cores`. Cada combinação `(K, N)` define um ponto na
-  curva de speedup; `idea_1.md` §"Metrics to report" deixa essa
-  variante explícita como o experimento que falsifica (ou confirma)
-  a hipótese do regime cache-blowout.
+  que `K · N = #cores`. Esse experimento já foi fechado em
+  [`pthread_2d_sharded_chunked.md`](pthread_2d_sharded_chunked.md) e,
+  no i5-1235U, falsificou a hipótese de composição positiva.
 - **Política adaptativa**: usar o histogram da árvore de prefixos
   para escolher entre LPT e prefix em tempo de build. Caro e
   provavelmente fora de escopo do TCC; cita como engenharia futura.
@@ -310,11 +290,9 @@ inteiro), `tm[k].matches_found` é a contagem do shard `k`.
 
 ## Leituras relacionadas
 
-- Proposta original: [`../proposals/idea_1.md`](../proposals/idea_1.md).
-- Roadmap completo: [`../proposals/parallelism-roadmap.md`](../proposals/parallelism-roadmap.md).
+- Consolidação metodológica e números: [`../../../tcc_notes/sections/notes/methodology.md`](../../../tcc_notes/sections/notes/methodology.md) e [`../../../tcc_notes/sections/notes/results.md`](../../../tcc_notes/sections/notes/results.md).
+- Composição 2-D já implementada: [`pthread_2d_sharded_chunked.md`](pthread_2d_sharded_chunked.md).
 - Para o eixo ortogonal (chunking de texto):
   [`pthread_chunked_flat.md`](pthread_chunked_flat.md),
   [`pthread_chunked_v2.md`](pthread_chunked_v2.md).
-- Para o cache fingerprint: ver `sequential_delta2.c:67-72` e
-  [`sequential_delta2.md`](sequential_delta2.md) §"Cache invalidado por fingerprint".
 - Sweep automatizado: `scripts/run_pattern_sharded_sweep.sh`.

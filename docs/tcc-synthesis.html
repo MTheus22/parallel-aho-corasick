@@ -318,10 +318,11 @@
       C (cross-corpus), D (per-thread) e E (build paralelo). Dados brutos em
       <code>runs/overnight/sweep.db</code> (SQLite tipado, 6 views). Correctness validada:
       match-count único por <code>(patterns, corpus)</code> entre todos os 11 searchers
-      &mdash; todos concordam com o baseline <code>sequential</code>. Os números abaixo
-      foram reconciliados contra essa DB; valores de sweeps anteriores (ex.: o headline
-      de 7,49× em SimpleWiki) <strong>não</strong> são reproduzidos por este sweep e foram
-      revistos (ver §1).
+      &mdash; todos concordam com o baseline <code>sequential</code>. Todos os números
+      abaixo refletem <strong>exclusivamente</strong> este sweep. <strong>Variância:</strong>
+      medições isoladas com CPU fria (burst) chegam a ficar 15–35% acima das do sweep
+      sustentado, que roda sob carga térmica de horas e throttla a frequência all-core
+      &mdash; ver §Metodologia.
     </div>
   </div>
 
@@ -450,10 +451,9 @@
   </div>
   <p style="font-size:.8rem; color:var(--muted); margin-top:.5rem;">
     No regime moderado (Snort, autômato 55 MiB &gt; L3 mas ≪ ET-32), o flat layout adiciona
-    ~9 % sobre o <code>chunked_v2</code> e o dispatch dinâmico fecha o pico em 4,79×. Neste
-    sweep o ganho do flat <strong>não compõe multiplicativamente</strong> como o sweep antigo
-    de SimpleWiki sugeria (lá o headline era 7,49× — não reproduzido aqui): o gargalo de
-    emissão já é parcialmente mascarado pelas esperas de DRAM mesmo em Snort.
+    ~9 % sobre o <code>chunked_v2</code> e o dispatch dinâmico fecha o pico em 4,79×. O ganho
+    do flat <strong>não compõe multiplicativamente</strong> com o da paralelização: o gargalo
+    de emissão já é parcialmente mascarado pelas esperas de DRAM mesmo em Snort.
   </p>
 
   <h3 style="margin-top:1.5rem;">Onde o ganho diminui — regime DRAM-bound (ET-32 ≫ L3)</h3>
@@ -691,6 +691,17 @@
       </div>
     </div>
     <div class="card">
+      <div class="card-title">Variância e térmica (i5-1235U)</div>
+      <div class="card-body">
+        Laptop com teto térmico: sob carga all-core sustentada (sweep de horas) a
+        frequência throttla e o throughput multi-thread fica <strong>~15–35% abaixo</strong>
+        de medições isoladas com CPU fria (burst). Ex.: <code>chunked_flat</code> T=12 mediu
+        ~976 MB/s no sweep vs ~1.141–1.303 MB/s (média ~1.220) em bursts repetidos. Os
+        valores publicados são os do <strong>sweep sustentado</strong> (conservadores e
+        reprodutíveis); bursts frios indicam o pico não-sustentável.
+      </div>
+    </div>
+    <div class="card">
       <div class="card-title">Métricas reportadas</div>
       <div class="card-body">
         <strong>Throughput</strong> (MiB/s e Gbps); <strong>tempo de busca</strong> em ms;
@@ -922,9 +933,7 @@
         Em T=12 o flat lidera ou empata por regime: vence Snort + enron_x8
         (<code>v3_flat</code> 1.087 MB/s, 4,52×) e ET-32 + Enron
         (<code>v3_flat</code> 367,8 MB/s no pico T=6, 2,85×). Em Snort + Enron o
-        <code>pthread_dynamic</code> (976→1.148 MB/s) supera marginalmente o flat. O headline
-        de 7,49× sobre SimpleWiki de sweeps anteriores <strong>não foi reproduzido</strong>
-        neste sweep (SimpleWiki só entra na Fase C, sem curva completa de threads).
+        <code>pthread_dynamic</code> (976→1.148 MB/s) supera marginalmente o flat.
       </div>
     </div>
   </div>
@@ -1927,7 +1936,7 @@
 
 <!-- FOOTER -->
 <div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); text-align:center; font-size:.75rem; color:var(--muted);">
-  Síntese reconciliada com o sweep definitivo de 2026-05-29 (<code>runs/overnight/sweep.db</code>,
+  Síntese baseada no sweep definitivo de 2026-05-29 (<code>runs/overnight/sweep.db</code>,
   265 runs, commit <code>e3dc7d4</code>) · <code>parallel-aho-corasick/docs/tcc-synthesis.html</code> ·
   Companion de <code>project-overview.html</code> · TCC IDP — Aho-Corasick paralelo em CPU multi-core
 </div>

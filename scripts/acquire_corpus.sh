@@ -5,8 +5,6 @@
 #   simplewiki.xml.bz2   - raw dump (kept for reproducibility)
 #   simplewiki_raw.xml   - decompressed XML
 #   simplewiki.txt       - plain text (XML tags stripped)
-#   patterns_en.txt      - realistic English pattern dictionary
-#   patterns_code.txt    - patterns mimicking security / log scanning
 #
 # Usage:
 #   ./scripts/acquire_corpus.sh               # default: Simple EN Wikipedia
@@ -83,158 +81,12 @@ PYEOF
 
 echo "# Text size: $(du -h "$DUMP_TXT" | cut -f1)"
 
-# ---- 4. Pattern dictionaries -------------------------------------------
-
-# English: mix of common words (high hit-rate) and rare ones (low hit-rate)
-cat > "$DATA/patterns_en.txt" <<'EOF'
-# High-frequency English words (dense matches expected)
-the
-of
-and
-to
-a
-in
-that
-is
-was
-for
-on
-as
-with
-his
-they
-be
-at
-one
-have
-this
-from
-or
-by
-an
-which
-not
-but
-what
-all
-were
-we
-when
-your
-can
-there
-use
-an
-each
-she
-do
-how
-their
-if
-will
-up
-other
-about
-out
-many
-then
-them
-these
-so
-some
-her
-would
-make
-like
-into
-him
-time
-has
-look
-two
-more
-write
-go
-see
-number
-no
-way
-could
-people
-my
-than
-first
-water
-been
-called
-who
-its
-now
-find
-long
-down
-day
-did
-get
-come
-made
-may
-part
-EOF
-
-# Code/security: patterns useful for log analysis and intrusion detection
-cat > "$DATA/patterns_code.txt" <<'EOF'
-# Security and log-analysis patterns
-error
-ERROR
-FATAL
-warning
-WARNING
-failed
-denied
-rejected
-unauthorized
-forbidden
-exception
-traceback
-segfault
-null pointer
-buffer overflow
-stack overflow
-out of memory
-timeout
-connection refused
-permission denied
-authentication failed
-login failed
-invalid password
-SQL syntax
-SELECT *
-DROP TABLE
-INSERT INTO
-<script>
-javascript:
-eval(
-document.cookie
-alert(
-onerror=
-onload=
-../../
-/etc/passwd
-/etc/shadow
-cmd.exe
-powershell
-wget http
-curl http
-base64_decode
-EOF
-
 echo
 echo "# Done. Files in $DATA/:"
 ls -lh "$DATA/"
 echo
 echo "# Quick benchmark:"
-echo "#   ./build/aclab --patterns $DATA/patterns_en.txt \\"
-echo "#                 --input    $DATA/simplewiki.txt  \\"
-echo "#                 --searcher pthread_chunked --threads $(nproc) \\"
+echo "#   ./build/aclab --patterns $DATA/patterns_snort.txt \\"
+echo "#                 --input    $DATA/simplewiki.txt      \\"
+echo "#                 --searcher pthread_chunked_v3 --threads $(nproc) \\"
 echo "#                 --warmup 1 --iters 3"

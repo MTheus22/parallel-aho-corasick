@@ -33,6 +33,7 @@ int (*search)(const ac_automaton_t *aut,
 | [`pthread_chunked_v2.md`](pthread_chunked_v2.md)     | `pthread_chunked_v2`    |
 | [`pthread_chunked_v3.md`](pthread_chunked_v3.md)     | `pthread_chunked_v3`    |
 | [`pthread_dynamic.md`](pthread_dynamic.md)           | `pthread_dynamic`       |
+| [`pthread_dynamic_flat.md`](pthread_dynamic_flat.md) | `pthread_dynamic_flat`  |
 | [`pthread_prefetch.md`](pthread_prefetch.md)         | `pthread_prefetch`      |
 | [`sequential_flat.md`](sequential_flat.md)           | `sequential_flat`       |
 | [`pthread_chunked_flat.md`](pthread_chunked_flat.md) | `pthread_chunked_flat`  |
@@ -49,6 +50,7 @@ int (*search)(const ac_automaton_t *aut,
 | `pthread_chunked_v2`    | data-parallel | nenhum          | Loops separados warm-up/owned + cache-pad worker_t      | Hot path mais limpo, ganho de 3-4%        |
 | `pthread_chunked_v3`    | data-parallel | nenhum          | v2 + afinidade topológica + chunks freq-ponderados      | CPUs híbridas P+E-core; melhor em t=2     |
 | `pthread_dynamic`       | data-parallel | nenhum no byte   | Fila de tarefas via `atomic_fetch_add` (4N chunks)      | CPUs heterogêneas (P+E cores)             |
+| `pthread_dynamic_flat`  | data-parallel | nenhum no byte   | bag of tasks (4N) + emissão flat (idea 5)               | Cores homogêneos (Zen 5/EPYC): dispatch dinâmico + flat |
 | `pthread_prefetch`      | data-parallel | nenhum          | `__builtin_prefetch(text + Δ)` no hot loop              | 1-2 threads, regime bandwidth-disponível |
 | `pthread_chunked_v3_flat` | data-parallel | nenhum        | v3 (topology + freq weights) + emissão flat (idea 5+7)   | Nicho: Snort + Enron (+2,6 %); regride fora |
 | `pthread_2d_sharded_chunked` | data + dict-parallel | nenhum   | 2-D: K shards × N chunks = T workers (idea 6)         | Comparação 2-D; perde p/ chunked_flat em desktop |

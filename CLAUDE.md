@@ -68,6 +68,7 @@ TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclus
 | `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
 | `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
 | `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico (4N tarefas).                  |
+| `pthread_dynamic_flat`| `pthread_dynamic` (bag of tasks) + emissão pela tabela achatada (idea 5). Candidato a campeão em cores homogêneos. |
 | `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
 | `sequential_flat`     | Sequential AC scan lendo a tabela achatada de saídas (idea 5).                  |
 | `pthread_chunked_flat`| `pthread_chunked_v2` + emissão pela tabela achatada (idea 5).                   |
@@ -163,6 +164,9 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
 - `docs/searchers/pthread_chunked_v3.md` — topology-aware affinity +
   freq-weighted chunks.
 - `docs/searchers/pthread_dynamic.md` — dispatch dinâmico atômico.
+- `docs/searchers/pthread_dynamic_flat.md` — bag of tasks (dispatch
+  dinâmico) + flat output table (idea 5); candidato a campeão em cores
+  homogêneos.
 - `docs/searchers/pthread_prefetch.md` — software prefetch do stream
   de texto.
 - `docs/searchers/pthread_chunked_v3_flat.md` — composição v3 (topology

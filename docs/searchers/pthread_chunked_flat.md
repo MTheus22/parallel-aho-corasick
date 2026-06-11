@@ -155,26 +155,31 @@ Reporta `ac_thread_metric_t` por worker (mesmo formato que v2):
 
 ## Headline benchmark
 
-Ambiente: 12-core x86_64, kernel 6.17, `-O3 -march=native`,
-`AC_BUILD_PARALLEL` ausente (build sequencial).
+> Fonte: sweep definitivo de **2026-05-29** (`runs/overnight/sweep.db`,
+> baseline `sequential` = 239,60 MB/s). Os números antigos desta tabela
+> (baseline lento 192,82 MB/s → 7,49×) foram **descartados**; ver memória
+> `speedup-7x-vs-5x-explained` e `docs/tcc-synthesis.html`.
 
-Corpus: `data/simplewiki.txt` (~1.2 GiB) com dicionário Snort
-(`data/patterns_snort.txt`, 4188 padrões, 55479 estados).
+Ambiente: i5-1235U (12 threads HW), `-O3 -march=native`, build sequencial.
+Cenário canônico: dicionário Snort (`patterns_snort.txt`, 4188 padrões,
+55479 estados) sobre `enron_corpus.txt` (~1,32 GiB), T=12.
 
-| Searcher                | T  | Throughput (MB/s) | Mean (ms) | Speedup vs. `sequential` |
-|-------------------------|----|-------------------|-----------|--------------------------|
-| `sequential`            | 1  | 192.82            | 6308.8    | 1.00×                    |
-| `sequential_flat`       | 1  | 244.16            | 4982.3    | 1.27×                    |
-| `pthread_chunked_v2`    | 12 | 791.11            | 1537.6    | 4.10×                    |
-| `pthread_chunked_flat`  | 12 | **1444.17**       | 842.3     | **7.49×**                |
+| Searcher                | T  | Throughput (MB/s) | Speedup vs. `sequential` |
+|-------------------------|----|-------------------|--------------------------|
+| `sequential`            | 0  | 239.60            | 1.00×                    |
+| `sequential_flat`       | 0  | 251.99            | 1.05×                    |
+| `pthread_chunked_v2`    | 12 | 891.97            | 3.72×                    |
+| `pthread_chunked_flat`  | 12 | **976.09**        | **4.07×**                |
 
-Speedup do flat sobre o v2 em **multi-thread**: **1.83×**. O ganho do
-layout é multiplicativo com o do chunking — exatamente o que a idea 5
-prevê.
+Ganho do flat sobre o `v2` em multi-thread neste regime: ~**1.09×** (+9%).
+O ganho do flat **não** compõe multiplicativamente com o chunking aqui — as
+esperas de DRAM da `goto_tbl` já mascaram parte do custo de emissão. O payoff
+do flat é maior single-thread e no regime memory-bound (ET-32: +13,0%). O
+campeão por cenário muda: em Snort + Enron T=12 o `pthread_dynamic` lidera
+(4,79×); o flat lidera em `enron_x8` e no pico de ET-32 (T=6).
 
-Build time: 50–60 ms (incluindo o pass extra da idea 5 sobre os
-~55k estados). O pass adicional fica abaixo do ruído (<1 ms em
-dicionários desta classe).
+Build time: 50–60 ms (incluindo o pass extra do flat sobre os ~55k estados),
+abaixo do ruído (<1 ms) em dicionários desta classe.
 
 ## Complexidade
 

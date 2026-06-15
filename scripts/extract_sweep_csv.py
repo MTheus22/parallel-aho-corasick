@@ -25,7 +25,7 @@ import sys
 KNOWN_SEARCHERS = {
     "sequential", "sequential_flat",
     "pthread_chunked", "pthread_chunked_v2", "pthread_chunked_v3",
-    "pthread_dynamic", "pthread_prefetch",
+    "pthread_dynamic", "pthread_dynamic_flat", "pthread_prefetch",
     "pthread_chunked_flat", "pthread_chunked_v3_flat",
     "pthread_2d_sharded_chunked", "pattern_sharded_prefix",
 }

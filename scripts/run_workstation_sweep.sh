@@ -51,12 +51,18 @@
 #   MAX_THREADS=32 scripts/run_workstation_sweep.sh  # fixa o teto de threads
 #   RUN_DIR=runs/teste scripts/run_workstation_sweep.sh
 #
-# Antes de iniciar (recomendado, ver pré-flight em docs/sweep-test-inventory.md):
-#   sudo cpupower frequency-set -g performance      # Zen 5 = amd-pstate
-#   lscpu | grep -E 'CPU\(s\)|Thread|Core|NUMA|L3'  # confirmar 16C/32T + 2 CCD
-#   make && make test                               # correção no chip-alvo
+# Antes de iniciar (ORDEM obrigatória — ver docs/sweep-test-inventory.md):
+#   ./scripts/prepare_workstation_data.sh           # PRÉ-FLIGHT DE DADOS (crítico)
+#       -> gera enron_x8 e dicts reduzidos; PARA se patterns_et_32.txt faltar
+#          (esse arquivo NÃO é regenerável: copie do laptop). Só siga se "PRONTO".
+#   sudo cpupower frequency-set -g performance       # Zen 5 = amd-pstate
+#   lscpu | grep -E 'CPU\(s\)|Thread|Core|NUMA|L3'   # confirmar 16C/32T + 2 CCD
+#   make && make test                                # correção no chip-alvo
 #   fechar IDEs/browsers
 #   nohup ./scripts/run_workstation_sweep.sh > workstation.out 2>&1 &
+#
+# Saída: runs/workstation/ é VERSIONÁVEL (exceção no .gitignore). O script já
+# roda os extratores ao fim → runs/workstation/sweep.{csv,db} prontos p/ commit.
 # =============================================================================
 
 set -uo pipefail
@@ -64,7 +70,7 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 BIN=build/aclab
-DATA=data
+DATA="${DATA_DIR:-data}"   # override p/ testes/datasets fora do default
 RUN_DIR="${RUN_DIR:-runs/workstation}"
 MAX_T="${MAX_THREADS:-$(nproc)}"
 
@@ -129,6 +135,11 @@ gen_threads() {
 }
 
 # -------- snapshot de ambiente ---------------------------------------------
+# Captura RICA de ambiente: numa máquina alugada a corrida é única e
+# irreproduzível, então registrar tudo (topologia CCD, banda/tipo de RAM,
+# compilador, mitigações de kernel, THP) é barato agora e impagável depois —
+# alimenta a tabela de hardware do TCC. Todo comando opcional é guardado com
+# `|| true` para nunca derrubar o sweep num host sem a ferramenta/root.
 snapshot_env() {
   local tag="$1"
   local f="$RUN_DIR/env/${tag}.txt"
@@ -137,16 +148,38 @@ snapshot_env() {
     echo
     echo "--- uname -a ---"; uname -a
     echo
-    echo "--- governor ---"
+    echo "--- nproc / governor ---"
+    echo "nproc=$(nproc)"
     cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null | sort -u
+    echo "scaling_driver: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_driver 2>/dev/null || echo n/a)"
     echo
     echo "--- cpufreq atual (cpu0..cpuN MHz) ---"; grep -E '^cpu MHz' /proc/cpuinfo
     echo
-    echo "--- lscpu (resumido) ---"
-    lscpu | grep -E 'Architecture|Model name|CPU\(s\)|Thread|Core|Socket|NUMA|MHz|cache|L3'
+    echo "--- lscpu (completo) ---"; lscpu 2>/dev/null || true
     echo
-    echo "--- topologia (CCD/cache) ---"
-    lscpu -C 2>/dev/null || true
+    echo "--- topologia de cache (lscpu -C) ---"; lscpu -C 2>/dev/null || true
+    echo
+    echo "--- topologia NUMA/CCD (numactl --hardware) ---"
+    numactl --hardware 2>/dev/null || echo "(numactl indisponível)"
+    echo
+    echo "--- topologia (lstopo) ---"
+    { lstopo-no-graphics --of console 2>/dev/null || lstopo --of console 2>/dev/null; } || echo "(lstopo indisponível)"
+    echo
+    echo "--- memória: tipo/velocidade (dmidecode -t memory; precisa root) ---"
+    sudo -n dmidecode -t memory 2>/dev/null | grep -E 'Size|Type:|Speed|Configured|Manufacturer|Rank' \
+      || echo "(dmidecode indisponível ou sem sudo -n — preencher 'Memória' do TCC manualmente)"
+    echo
+    echo "--- /proc/meminfo (resumo) ---"
+    grep -E 'MemTotal|MemFree|MemAvailable|Hugepagesize|HugePages_Total' /proc/meminfo 2>/dev/null || true
+    echo
+    echo "--- transparent hugepages (relevante p/ mmap de 10 GiB) ---"
+    echo "THP enabled: $(cat /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || echo n/a)"
+    echo
+    echo "--- kernel cmdline (mitigations/amd_pstate/isolcpus) ---"
+    cat /proc/cmdline 2>/dev/null || true
+    echo
+    echo "--- compilador (build usa -O3 -march=native, ver Makefile) ---"
+    { cc --version 2>/dev/null | head -1; cc -dumpmachine 2>/dev/null; } || true
     echo
     echo "--- thermal zones ---"
     for z in /sys/class/thermal/thermal_zone*/temp; do
@@ -376,8 +409,31 @@ MIN=$(((ELAPSED % 3600) / 60))
 log "=== Sweep workstation concluído ==="
 log "Resumo: ok=$OK skipped=$SKIPPED failed=$FAILED  duração=${HRS}h${MIN}m"
 
+# -------- finalize: gera sweep.csv + sweep.db (commitáveis) -----------------
+# Roda os extratores AGORA, ainda na máquina, para que o artefato analisável
+# (SQLite + CSV) já exista quando a workstation for devolvida. Não-fatal:
+# qualquer falha só loga; os .log brutos seguem como fonte de verdade.
+if command -v python3 >/dev/null 2>&1; then
+  log "finalize: extraindo CSV + SQLite de $RUN_DIR"
+  if python3 scripts/extract_sweep_csv.py "$RUN_DIR" -o "$RUN_DIR/sweep.csv" --known-only >>"$MASTER" 2>&1; then
+    if python3 scripts/build_sweep_db.py "$RUN_DIR/sweep.csv" -o "$RUN_DIR/sweep.db" >>"$MASTER" 2>&1; then
+      log "finalize: $RUN_DIR/sweep.db pronto (git add runs/workstation && commit)"
+    else
+      log "finalize: build_sweep_db falhou — rode manualmente (ver MASTER.log)"
+    fi
+  else
+    log "finalize: extract_sweep_csv falhou — rode manualmente (ver MASTER.log)"
+  fi
+else
+  log "finalize: python3 ausente — gere sweep.csv/sweep.db no laptop a partir dos .log"
+fi
+
 if (( FAILED > 0 )); then
   echo
   echo "Falhas (rerodar o script reexecuta apenas estas):"
   find "$RUN_DIR" -name '*.FAIL' -printf '  %p\n'
 fi
+
+echo
+echo "Resultados versionáveis em $RUN_DIR/ (logs + env + sweep.csv + sweep.db)."
+echo "  git add runs/workstation && git commit -m 'resultados: sweep workstation 9950X'"

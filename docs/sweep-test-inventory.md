@@ -239,14 +239,34 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 
 ## Pré-flight (antes do sweep grande)
 
+0. **Provisionamento de dados (CRÍTICO — corrida única).** `data/` é
+   gitignored: um `git clone` numa máquina alugada **não** traz os corpora.
+   Pior, **`enron_x8.txt` e `patterns_et_32.txt` não são gerados por nenhum
+   script** (o `prepare_datasets.sh` só cobre Snort + Enron 1×). Sem eles, as
+   fases A/D/E **falham em massa**. Use o pré-flight dedicado:
+
+   ```bash
+   ./scripts/prepare_workstation_data.sh
+   ```
+
+   Ele: (a) gera `enron_x8.txt` = `enron_corpus.txt` × 8 (checa disco e
+   tamanho exato); (b) gera `patterns_snort_100/1k.txt` via `head`; (c) baixa
+   Snort/Enron se faltarem (`AUTO_DOWNLOAD=1`); (d) **PARA** se
+   `patterns_et_32.txt` faltar — esse arquivo **não é regenerável**, copie do
+   laptop (`scp laptop:.../data/patterns_et_32.txt data/`). Só siga adiante
+   quando o veredito for **PRONTO**. Transferência mínima recomendada:
+   `enron_corpus.txt` + `patterns_*.txt` (~1,42 GiB) e gerar `enron_x8` no
+   host (evita mover 10,6 GiB).
 1. `lscpu` / `lstopo` — confirmar 16C/32T e o layout **2 CCDs × 32 MiB L3**
-   (relevante para interpretar o cross-over de footprint).
+   (relevante para interpretar o cross-over de footprint). O sweep já captura
+   `lscpu` completo, `numactl --hardware`, `lstopo`, `dmidecode -t memory`,
+   THP e cmdline em `runs/workstation/env/` (alimenta a tabela de hardware).
 2. `make && make test` — correção em `{1,2,4,8,16,24,32}` neste chip.
 3. Governor de performance: no Zen 5 é `amd-pstate`; use
    `sudo cpupower frequency-set -g performance` (ou `performance` via
-   `amd_pstate=active`). Fechar IDE/browser.
-4. Gerar `patterns_snort_100/1k` (o script faz via `head` se ausentes).
-5. `pthread_dynamic_flat` já registrado e validado (test + tsan em
+   `amd_pstate=active`). Fechar IDE/browser. RAM: garanta ≳12–16 GiB livres
+   (`enron_x8` é mmap'd com `MAP_POPULATE` → 10,6 GiB residentes).
+4. `pthread_dynamic_flat` já registrado e validado (test + tsan em
    2026-06-05); reconfirmar `make test` no chip-alvo basta.
 
 ## Como rodar (driver enxuto)
@@ -256,6 +276,7 @@ herda lock/resume/env-snapshot/thermal). Implementa exatamente esta grade
 e descarta `v3`/`v3_flat`.
 
 ```bash
+./scripts/prepare_workstation_data.sh            # PRÉ-FLIGHT DE DADOS (deve dar PRONTO)
 sudo cpupower frequency-set -g performance       # Zen 5 = amd-pstate
 make && make test                                # correção no chip-alvo
 nohup ./scripts/run_workstation_sweep.sh > workstation.out 2>&1 &
@@ -266,6 +287,14 @@ nohup ./scripts/run_workstation_sweep.sh > workstation.out 2>&1 &
 - Os pontos de thread se adaptam ao `nproc` (ou a `MAX_THREADS=…`): em 32
   threads a curva é `{1,2,4,8,16,24,32}`.
 - Saída em `runs/workstation/<fase>/`; rerodar pula o que já completou.
+- **Versionável:** `runs/workstation/` tem exceção no `.gitignore` (o resto de
+  `runs/` segue ignorado). Ao terminar, o script roda os extratores e deixa
+  `runs/workstation/sweep.{csv,db}` prontos; basta
+  `git add runs/workstation && git commit`.
+- **Análise:** consulte via `sqlite3 runs/workstation/sweep.db` com as mesmas
+  views do overnight (`v_speedup`, `v_self_speedup`, `v_footprint`, `v_build`,
+  `v_best`, `v_correctness`). A correção é auto-checada: `v_correctness` deve
+  dar `distinct_match_counts = 1` por `(patterns, corpus)`.
 
 ## Estimativa de custo (ordem de grandeza)
 

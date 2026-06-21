@@ -35,6 +35,7 @@ CFLAGS  += $(STD) $(WARN) $(INC) $(DEFS)
 BUILD   := build
 BIN     := $(BUILD)/aclab
 TESTBIN := $(BUILD)/test_correctness
+DIGESTBIN := $(BUILD)/test_digest
 
 # Pick up every searcher module automatically.
 CORE_SRCS := $(wildcard src/*.c)
@@ -46,8 +47,9 @@ LIB_SRCS  := $(filter-out src/main.c, $(ALL_SRCS))
 LIB_OBJS  := $(LIB_SRCS:%.c=$(BUILD)/%.o)
 MAIN_OBJ  := $(BUILD)/src/main.o
 TEST_OBJ  := $(BUILD)/tests/test_correctness.o
+DIGEST_OBJ := $(BUILD)/tests/test_digest.o
 
-.PHONY: all debug asan tsan test bench clean dirs
+.PHONY: all debug asan tsan test digest bench clean dirs
 
 all: $(BIN)
 
@@ -74,8 +76,15 @@ $(BUILD)/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
 
+$(DIGESTBIN): $(LIB_OBJS) $(DIGEST_OBJ)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
 test: $(TESTBIN)
 	./$(TESTBIN)
+
+digest: $(DIGESTBIN)
+	./$(DIGESTBIN)
 
 bench: $(BIN)
 	@echo "Running canonical TCC sweep via scripts/run_overnight_sweep.sh."
@@ -85,4 +94,4 @@ bench: $(BIN)
 clean:
 	rm -rf $(BUILD)
 
--include $(LIB_OBJS:.o=.d) $(MAIN_OBJ:.o=.d) $(TEST_OBJ:.o=.d)
+-include $(LIB_OBJS:.o=.d) $(MAIN_OBJ:.o=.d) $(TEST_OBJ:.o=.d) $(DIGEST_OBJ:.o=.d)

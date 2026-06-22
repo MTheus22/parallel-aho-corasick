@@ -1090,27 +1090,17 @@
   </p>
 
   <!-- 3.9 F3 stack end-to-end -->
-  <h3 style="margin-top:1.5rem;">3.9 · Stack F3 (Build paralelo ⊕ Flat ⊕ v3) — headline end-to-end sobre <code>enron_x8</code> (10,59 GiB)</h3>
+  <h3 style="margin-top:1.5rem;">3.9 · Stack end-to-end sobre <code>enron_x8</code> (10,59 GiB) — reconstruído do sweep canônico</h3>
   <div class="alert alert-green">
     <div class="alert-icon">⭐</div>
     <div>
-      A composição final do TCC cronometra <strong>build + search</strong> sobre o corpus
-      de escala (10,59 GiB), separando explicitamente as duas fases para que o leitor
-      avalie cada contribuição de forma independente. 5 configurações × 2 dicionários.
-      Sweep canônico: <code>scripts/run_f3_v3flat_build_par_sweep.sh</code> · log
-      <code>f3_sweep.log</code> · doc detalhada
-      <code>tcc_notes/tldr_metricas.md §13</code>.
-    </div>
-  </div>
-  <div class="alert alert-blue">
-    <div class="alert-icon">ℹ️</div>
-    <div>
-      <strong>Esta tabela é do sweep F3 dedicado (2026-05-22), não do sweep de 2026-05-29.</strong>
-      O sweep definitivo de 2026-05-29 (<code>sweep.db</code>) mede o <em>search</em> em fases
-      A–E mas não cronometra o pipeline build+search end-to-end sobre <code>enron_x8</code>.
-      Os números de wall-clock E2E abaixo permanecem como o headline E2E histórico; a Fase A
-      deste sweep confirma a <em>direção</em> (em Snort + enron_x8, <code>v3_flat</code> e
-      <code>chunked_flat</code> empatam dentro de ~1,3 %: 1.087 vs 1.073 MB/s em T=12).
+      O wall-clock end-to-end é <strong>reconstruído do sweep canônico de 2026-05-29</strong>
+      (<code>runs/overnight/sweep.db</code>): para cada execução o banco já registra a
+      construção (<code>build_ms</code>) e um passe completo de busca sobre o corpus
+      (<code>mean_ms</code>), de modo que E2E&nbsp;=&nbsp;<code>build_ms&nbsp;+&nbsp;mean_ms</code>.
+      Cada célula é auditável via <code>sqlite3</code> e usa o <strong>mesmo baseline</strong>
+      da análise de busca (§3.2) — não depende mais de um sweep dedicado nem de um
+      log/script externo.
     </div>
   </div>
   <div style="overflow-x:auto;">
@@ -1121,63 +1111,42 @@
           <th>Configuração</th>
           <th>Build (ms)</th>
           <th>Search mean (ms)</th>
-          <th>MB/s</th>
-          <th>Wall-clock E2E (min)</th>
+          <th>Wall-clock E2E (ms)</th>
           <th>Speedup E2E</th>
         </tr>
       </thead>
       <tbody>
-        <tr><td colspan="7" style="color:var(--muted); font-size:.75rem;">Snort full · 142,8 M matches/iter</td></tr>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem;">Snort full · autômato 55 MiB</td></tr>
         <tr>
-          <td>Snort</td><td>full sequential (build seq + T=1)</td>
-          <td class="num">99,7</td><td class="num">157.669</td><td class="num">68,77</td>
-          <td class="num">94.706</td><td class="num">1,00×</td>
-        </tr>
-        <tr>
-          <td>Snort</td><td><code>chunked_flat</code> T=12, build seq</td>
-          <td class="num">93,2</td><td class="num">22.075</td><td class="num">491,19</td>
-          <td class="num">21.545</td><td class="num">4,40×</td>
+          <td>Snort</td><td>baseline (build seq + sequential T=1)</td>
+          <td class="num">49,2</td><td class="num">45.125</td>
+          <td class="num">45.174</td><td class="num">1,00×</td>
         </tr>
         <tr style="background:#0a2a1a;">
           <td>Snort</td><td><code>v3_flat</code> T=12, build seq ⭐</td>
-          <td class="num">86,6</td><td class="num winner">21.327</td><td class="num winner">508,40</td>
-          <td class="num winner">21.158</td><td class="num winner">4,48×</td>
+          <td class="num">53,7</td><td class="num winner">9.974</td>
+          <td class="num winner">10.027</td><td class="num winner">4,50×</td>
         </tr>
         <tr>
-          <td>Snort</td><td><code>chunked_flat</code> T=12, build par(12)</td>
-          <td class="num">99,8</td><td class="num">21.421</td><td class="num">506,18</td>
-          <td class="num">21.351</td><td class="num">4,44×</td>
+          <td>Snort</td><td><code>chunked_flat</code> T=12, build seq</td>
+          <td class="num">43,6</td><td class="num">10.102</td>
+          <td class="num">10.146</td><td class="num">4,45×</td>
         </tr>
-        <tr style="background:#0a2a1a;">
-          <td>Snort</td><td>Stack F3 — <code>v3_flat</code> T=12, build par(12)</td>
-          <td class="num">92,6</td><td class="num">21.823</td><td class="num">496,85</td>
-          <td class="num">21.292</td><td class="num winner">4,45×</td>
-        </tr>
-        <tr><td colspan="7" style="color:var(--muted); font-size:.75rem;">ET-32 · 466,9 M matches/iter · autômato 515 MiB ≫ L3</td></tr>
+        <tr><td colspan="6" style="color:var(--muted); font-size:.75rem;">ET-32 · autômato 515 MiB ≫ L3</td></tr>
         <tr>
-          <td>ET-32</td><td>full sequential</td>
-          <td class="num">929,6</td><td class="num">342.312</td><td class="num">31,68</td>
-          <td class="num">198.906</td><td class="num">1,00×</td>
+          <td>ET-32</td><td>baseline (build seq + sequential T=1)</td>
+          <td class="num">541,4</td><td class="num">86.457</td>
+          <td class="num">86.998</td><td class="num">1,00×</td>
         </tr>
         <tr style="background:#0a2a1a;">
           <td>ET-32</td><td><code>chunked_flat</code> T=12, build seq ⭐</td>
-          <td class="num">1.077,5</td><td class="num winner">66.759</td><td class="num winner">162,42</td>
-          <td class="num winner">65.428</td><td class="num winner">3,04×</td>
+          <td class="num">538,3</td><td class="num winner">30.979</td>
+          <td class="num winner">31.517</td><td class="num winner">2,76×</td>
         </tr>
         <tr>
-          <td>ET-32</td><td><code>v3_flat</code> T=12, build seq</td>
-          <td class="num">1.188,0</td><td class="num warn">141.998</td><td class="num warn">76,36</td>
-          <td class="num warn">131.059</td><td class="num warn">1,52×</td>
-        </tr>
-        <tr>
-          <td>ET-32</td><td><code>chunked_flat</code> T=12, build par(12)</td>
-          <td class="num">1.327,0</td><td class="num">85.387</td><td class="num">126,98</td>
-          <td class="num">75.094</td><td class="num">2,65×</td>
-        </tr>
-        <tr>
-          <td>ET-32</td><td>Stack F3 — <code>v3_flat</code> T=12, build par(12)</td>
-          <td class="num">807,1</td><td class="num">86.839</td><td class="num">124,86</td>
-          <td class="num">85.736</td><td class="num">2,32×</td>
+          <td>ET-32</td><td><code>v3_flat</code> T=12, build seq (empata)</td>
+          <td class="num">536,3</td><td class="num">31.093</td>
+          <td class="num">31.629</td><td class="num">2,75×</td>
         </tr>
       </tbody>
     </table>
@@ -1186,22 +1155,21 @@
   <div class="alert alert-orange" style="margin-top:.6rem;">
     <div class="alert-icon">📊</div>
     <div>
-      <strong>Leituras do F3:</strong>
-      <strong>(1)</strong> Em Snort + <code>enron_x8</code>, todas as 4 variantes paralelas
-      ficam dentro de 1,8 % uma da outra — confirma estatisticamente que <code>v3_flat</code>
-      e <code>chunked_flat</code> são equivalentes no regime Snort + corpus médio-grande
-      (mesma direção do R2 do §12, com magnitude reduzida).
-      <strong>(2)</strong> Em ET-32 + <code>enron_x8</code>, <code>chunked_flat</code>
-      (build seq) é o vencedor inequívoco com 3,04× wall-clock; <code>v3_flat</code>
-      regrediu agudamente (−53 % mean) — direção consistente com R4 do §12 (−9,5 %)
-      mas amplificada por throttling térmico sob carga sustentada de ~64 min.
-      <strong>(3)</strong> O build paralelo (Idea 4) contribui &lt; 1 % ao wall-clock E2E
-      neste regime — o ganho de 1,31× do §3.5 é uma métrica operacional separada
-      (latência de recarga de regras), não componente do throughput de scan.
-      <strong>(4)</strong> O <code>mean(sequential)</code> medido aqui foi ~3,3× mais
-      lento que o reportado em §3.2 — evidência de saturação térmica/sistêmica após
-      ~30 min de varredura contínua, prova adicional de que o regime real de IDS-scale
-      é dominado por restrições físicas (banda DRAM + thermal envelope).
+      <strong>Leituras:</strong>
+      <strong>(1)</strong> O build contribui &lt; 1 % do wall-clock E2E
+      (Snort 49/45.174; ET 541/86.998) — o ganho do build paralelo (§3.5) é uma
+      métrica operacional separada (latência de recarga de regras), não componente
+      do throughput de scan.
+      <strong>(2)</strong> Como o build é desprezível, o E2E acompanha a busca quase
+      exatamente: 4,50× vs 4,52× (Snort) e 2,76× vs 2,79× (ET-32) — confirma, não
+      refina, os speedups de busca de §3.2.
+      <strong>(3)</strong> Em ET-32 + <code>enron_x8</code>, <code>chunked_flat</code> e
+      <code>v3_flat</code> empatam dentro de ~0,4 % (350,0 vs 348,7 MB/s em T=12 →
+      2,76× vs 2,75×): <code>chunked_flat</code> é o default por margem mínima, sem
+      regressão aguda — coerente com o R2/R4 do sweep multi-regime.
+      <strong>(4)</strong> Todos os números são reproduzíveis diretamente do
+      <code>sweep.db</code> canônico via a query do apêndice do TCC — sem dependência
+      de log/script externo.
     </div>
   </div>
 </section>
@@ -1670,29 +1638,28 @@
     </div>
 
     <div class="card future-card high" style="border-color:#1a4a1a;">
-      <div class="card-title">F3 · v3 + Flat + Build paralelo ✅ <span class="effort s">implementado · 4,45× end-to-end</span></div>
-      <div class="card-meta">Sweep concluído 2026-05-22 · <code>scripts/run_f3_v3flat_build_par_sweep.sh</code> · log <code>f3_sweep.log</code></div>
+      <div class="card-title">F3 · End-to-end (build ⊕ search ⊕ flat) ✅ <span class="effort s">4,50× end-to-end</span></div>
+      <div class="card-meta">Reconstruído do sweep canônico 2026-05-29 (<code>runs/overnight/sweep.db</code>): E2E = <code>build_ms + mean_ms</code>, auditável via <code>sqlite3</code>.</div>
       <div class="card-body">
-        Sweep formal cronometrando <strong>build + search end-to-end</strong> sobre o corpus
-        de escala <code>enron_x8</code> (10,59 GiB) com 5 configurações (build seq vs par(T=12)
-        × searcher <code>chunked_flat</code> / <code>v3_flat</code>) em dois dicionários
-        (Snort full, ET-32).
+        Wall-clock <strong>build + search end-to-end</strong> sobre o corpus de escala
+        <code>enron_x8</code> (10,59 GiB), derivado do mesmo sweep da análise de busca
+        (sem campanha dedicada): cada número é a construção (<code>build_ms</code>) mais
+        um passe completo de varredura (<code>mean_ms</code>).
         <br><br>
         <strong>Headline:</strong>
-        <span class="winner">stack F3 (build par T=12 ⊕ <code>v3_flat</code> T=12 ⊕ flat)
-        entrega 4,45× wall-clock em Snort + enron_x8</span>; o pipeline alternativo
-        (build par T=12 ⊕ <code>chunked_flat</code> T=12) é o vencedor em ET-32
-        + enron_x8 com 2,65× wall-clock end-to-end. <code>v3_flat</code> degrada sob
-        carga sustentada em ET-32 (DRAM-bound), confirmando direção de R4 (§3 / §12) com
-        magnitude amplificada por throttling térmico. <strong>Default
-        recomendado:</strong> <code>pthread_chunked_flat</code>; <code>v3_flat</code>
-        permanece registrado como variante de nicho para Snort-class + corpus high-density.
+        <span class="winner"><code>v3_flat</code> T=12 + build seq entrega 4,50× wall-clock
+        em Snort + enron_x8</span> (45,2 s → 10,0 s); em ET-32 + enron_x8 o vencedor é
+        <code>chunked_flat</code> T=12 + build seq com 2,76× (87,0 s → 31,5 s), com
+        <code>v3_flat</code> estatisticamente empatado (2,75×). Como o build é &lt; 1 % do
+        tempo, o E2E acompanha a busca quase exatamente (4,50× vs 4,52×; 2,76× vs 2,79×) —
+        confirma, não refina. <strong>Default recomendado:</strong>
+        <code>pthread_chunked_flat</code> no regime memory-bound.
         Doc completa: <a href="../../tcc_notes/tldr_metricas.md">tldr_metricas.md §13</a>.
       </div>
       <div class="card-footer">
         <span class="pill pill-green">Headline do TCC ⭐</span>
-        <span class="pill pill-blue">4,45× E2E (Snort)</span>
-        <span class="pill pill-orange">3,04× E2E (ET-32, chunked_flat vence)</span>
+        <span class="pill pill-blue">4,50× E2E (Snort)</span>
+        <span class="pill pill-orange">2,76× E2E (ET-32, chunked_flat vence)</span>
       </div>
     </div>
 
@@ -1815,10 +1782,10 @@
       build + search end-to-end em <code>enron_x8</code> (10,59 GiB) confirma o vencedor
       empírico:
       <strong>(a)</strong> Snort + enron_x8: stack completo
-      <code>v3_flat</code> + build par T=12 entrega <strong>4,45× wall-clock</strong>;
-      <strong>(b)</strong> ET-32 + enron_x8: stack <code>chunked_flat</code> + build par T=12
-      entrega <strong>3,04× wall-clock</strong> (v3_flat regride neste regime, consistente
-      com §3.8 / §12 R4); <strong>(c)</strong> a contribuição absoluta do build paralelo
+      <code>v3_flat</code> T=12 + build seq entrega <strong>4,50× wall-clock</strong>;
+      <strong>(b)</strong> ET-32 + enron_x8: stack <code>chunked_flat</code> T=12 + build seq
+      entrega <strong>2,76× wall-clock</strong> (<code>v3_flat</code> empata em 2,75×, sem
+      regressão aguda no sweep canônico); <strong>(c)</strong> a contribuição absoluta do build
       ao orçamento end-to-end é &lt;1 % em sweep de 10 GiB — o ganho de 1,31× do §3.5
       é relevante apenas como métrica operacional separada (latência de recarga de regras).
       Doc canônica: <code>tcc_notes/tldr_metricas.md §13</code>.</li>
@@ -1912,11 +1879,10 @@
       <div class="tl-label">✅ 2026-05-22 · headline final do TCC</div>
       <div class="tl-title">F3 — Stack end-to-end (Build paralelo ⊕ Flat ⊕ v3) sobre <code>enron_x8</code></div>
       <div class="tl-sub">
-        Sweep formal de 5 configurações × 2 dicionários × 10,59 GiB de corpus
-        (<code>scripts/run_f3_v3flat_build_par_sweep.sh</code>, log <code>f3_sweep.log</code>).
-        Confirma <strong>4,45× wall-clock end-to-end em Snort + <code>enron_x8</code></strong>
-        (stack <code>v3_flat</code> + build par T=12), <strong>3,04× em ET-32</strong> com
-        <code>chunked_flat</code> (v3_flat regride neste regime). Build paralelo contribui
+        End-to-end reconstruído do sweep canônico 2026-05-29 (E2E = <code>build_ms + mean_ms</code>).
+        Confirma <strong>4,50× wall-clock end-to-end em Snort + <code>enron_x8</code></strong>
+        (stack <code>v3_flat</code> T=12 + build seq), <strong>2,76× em ET-32</strong> com
+        <code>chunked_flat</code> (<code>v3_flat</code> empata em 2,75×). O build contribui
         &lt; 1 % do orçamento end-to-end; ganho operacional permanece relevante para
         recarga de regras (latência, §3.5). Vencedor default: <code>pthread_chunked_flat</code>.
         Doc canônica em <code>tcc_notes/tldr_metricas.md §13</code>.

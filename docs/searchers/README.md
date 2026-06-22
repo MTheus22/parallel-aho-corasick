@@ -92,19 +92,26 @@ fora desse nicho, o overhead de sondagem de sysfs (`cpufreq`,
 > o `v3_flat`, mas era ruído térmico em uma janela fria de `chunked_flat`.
 > O sweep multi-regime acima é o canônico para o TCC.
 
-### F3 — Stack end-to-end sobre `enron_x8` (10,59 GiB, 2026-05-22)
+### F3 — Stack end-to-end sobre `enron_x8` (10,59 GiB)
 
-Sweep `scripts/run_f3_v3flat_build_par_sweep.sh` cronometra **build + search** sobre o corpus de escala, separando explicitamente as duas fases. Mede a tripla `AC_BUILD_PARALLEL=1` + `pthread_chunked_v3_flat` (ou `pthread_chunked_flat`) + `data/enron_x8.txt` em dois dicionários.
+O wall-clock end-to-end é **reconstruído do sweep canônico 2026-05-29** (não de um
+sweep dedicado): para cada execução o banco já registra a construção (`build_ms`) e
+um passe completo de busca sobre o corpus (`mean_ms`), então E2E = `build_ms + mean_ms`.
+Isso é auditável via `sqlite3` e usa o **mesmo baseline** da análise de busca.
 
-| Dicionário | Configuração                                                           | Wall-clock E2E min (ms) | Speedup E2E |
-|------------|------------------------------------------------------------------------|------------------------:|------------:|
-| Snort      | baseline (build seq + sequential T=1)                                  | 94.706                  | 1,00×       |
-| Snort      | **Stack F3** (build par T=12 ⊕ `v3_flat` T=12 ⊕ flat)                  | **21.292**              | **4,45×** ⭐ |
-| ET-32      | baseline                                                               | 198.906                 | 1,00×       |
-| ET-32      | **Stack vencedor** (build par T=12 ⊕ `chunked_flat` T=12 ⊕ flat)       | **75.094**              | **2,65×**   |
-| ET-32      | `chunked_flat` + build seq (vencedor inequívoco no regime)             | 65.428                  | **3,04×** ⭐ |
+| Dicionário | Configuração                                          | Wall-clock E2E (ms) | Speedup E2E |
+|------------|-------------------------------------------------------|--------------------:|------------:|
+| Snort      | baseline (build seq `49` + sequential T=1 `45.125`)   | 45.174              | 1,00×       |
+| Snort      | **build seq `54` ⊕ `v3_flat` T=12 `9.974`**           | **10.027**          | **4,50×** ⭐ |
+| ET-32      | baseline (build seq `541` + sequential T=1 `86.457`)  | 86.998              | 1,00×       |
+| ET-32      | **build seq `538` ⊕ `chunked_flat` T=12 `30.979`**    | **31.517**          | **2,76×** ⭐ |
 
-**Lições:** (a) em ET-32 + corpus grande, `chunked_flat` continua o default — `v3_flat` regrediu agudamente neste sweep, coerente com o resultado negativo observado para ET-32 no sweep multi-regime; (b) build paralelo contribui < 1 % do wall-clock E2E em sweep de 10 GiB — o ganho de 1,31× isolado é métrica operacional separada (recarga de regras). Doc canônica: [`results.md`](../../../tcc_notes/sections/notes/results.md) e [`conclusion.md`](../../../tcc_notes/sections/notes/conclusion.md).
+**Lições:** (a) em ET-32 + corpus grande, `chunked_flat` é o default — `v3_flat`
+regride agudamente sob carga, coerente com o resultado negativo de ET-32 no sweep
+multi-regime; (b) build paralelo contribui < 1 % do wall-clock E2E (Snort `49`/`45.174`;
+ET `541`/`86.998`), métrica operacional separada (recarga de regras); (c) como o build é
+desprezível, o E2E acompanha a busca (4,50× vs 4,52×; 2,76× vs 2,79×) — confirma, não
+refina. Query auditável em [`apendicei.tex`]; doc canônica: [`results.md`](../../../tcc_notes/sections/notes/results.md) e [`conclusion.md`](../../../tcc_notes/sections/notes/conclusion.md).
 
 ---
 

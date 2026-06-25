@@ -1,0 +1,144 @@
+=== start 2026-06-25T18:10:32-03:00 ===
+
+--- uname -a ---
+Linux idealab-X870E-AORUS-MASTER 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+--- nproc / governor ---
+nproc=32
+performance
+scaling_driver: amd-pstate-epp
+
+--- cpufreq atual (cpu0..cpuN MHz) ---
+cpu MHz		: 5660.236
+cpu MHz		: 5665.375
+cpu MHz		: 5647.454
+cpu MHz		: 5658.922
+cpu MHz		: 5637.315
+cpu MHz		: 5665.675
+cpu MHz		: 5654.646
+cpu MHz		: 5596.466
+cpu MHz		: 5481.092
+cpu MHz		: 5485.169
+cpu MHz		: 4394.263
+cpu MHz		: 5424.546
+cpu MHz		: 5478.768
+cpu MHz		: 5477.520
+cpu MHz		: 5345.896
+cpu MHz		: 4904.045
+cpu MHz		: 5633.168
+cpu MHz		: 5664.716
+cpu MHz		: 5617.382
+cpu MHz		: 5670.274
+cpu MHz		: 5667.273
+cpu MHz		: 5625.428
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 5485.147
+cpu MHz		: 5479.657
+cpu MHz		: 5453.867
+cpu MHz		: 5473.208
+cpu MHz		: 5473.991
+cpu MHz		: 5486.928
+cpu MHz		: 5422.979
+cpu MHz		: 5465.756
+
+--- lscpu (completo) ---
+Arquitetura:                               x86_64
+Modo(s) operacional da CPU:                32-bit, 64-bit
+Tamanhos de endereço:                      48 bits physical, 48 bits virtual
+Ordem dos bytes:                           Little Endian
+CPU(s):                                    32
+Lista de CPU(s) on-line:                   0-31
+ID de fornecedor:                          AuthenticAMD
+Nome do modelo:                            AMD Ryzen 9 9950X 16-Core Processor
+Família da CPU:                            26
+Modelo:                                    68
+Thread(s) per núcleo:                      2
+Núcleo(s) por soquete:                     16
+Soquete(s):                                1
+Step:                                      0
+Aumento de frequência:                     habilitado
+CPU(s) MHz de escala:                      87%
+CPU MHz máx.:                              5756,4521
+CPU MHz mín.:                              624,1940
+BogoMIPS:                                  8599,98
+Opções:                                    fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze
+Virtualização:                             AMD-V
+cache de L1d:                              768 KiB (16 instâncias)
+cache de L1i:                              512 KiB (16 instâncias)
+cache de L2:                               16 MiB (16 instâncias)
+cache de L3:                               64 MiB (2 instâncias)
+Nó(s) de NUMA:                             1
+CPU(s) de nó0 NUMA:                        0-31
+Vulnerabilidade Gather data sampling:      Not affected
+Vulnerabilidade Ghostwrite:                Not affected
+Vulnerabilidade Indirect target selection: Not affected
+Vulnerabilidade Itlb multihit:             Not affected
+Vulnerabilidade L1tf:                      Not affected
+Vulnerabilidade Mds:                       Not affected
+Vulnerabilidade Meltdown:                  Not affected
+Vulnerabilidade Mmio stale data:           Not affected
+Vulnerabilidade Old microcode:             Not affected
+Vulnerabilidade Reg file data sampling:    Not affected
+Vulnerabilidade Retbleed:                  Not affected
+Vulnerabilidade Spec rstack overflow:      Mitigation; IBPB on VMEXIT only
+Vulnerabilidade Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl
+Vulnerabilidade Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerabilidade Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected
+Vulnerabilidade Srbds:                     Not affected
+Vulnerabilidade Tsa:                       Not affected
+Vulnerabilidade Tsx async abort:           Not affected
+Vulnerabilidade Vmscape:                   Mitigation; IBPB on VMEXIT
+
+--- topologia de cache (lscpu -C) ---
+NAME ONE-SIZE ALL-SIZE WAYS TYPE        LEVEL  SETS PHY-LINE COHERENCY-SIZE
+L1d       48K     768K   12 Data            1    64        1             64
+L1i       32K     512K    8 Instruction     1    64        1             64
+L2         1M      16M   16 Unified         2  1024        1             64
+L3        32M      64M   16 Unified         3 32768        1             64
+
+--- topologia NUMA/CCD (numactl --hardware) ---
+available: 1 nodes (0)
+node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
+node 0 size: 126396 MB
+node 0 free: 106961 MB
+node distances:
+node   0 
+  0:  10 
+
+--- topologia (lstopo) ---
+(lstopo indisponível)
+
+--- memória: tipo/velocidade (dmidecode -t memory; precisa root) ---
+(dmidecode indisponível ou sem sudo -n — preencher 'Memória' do TCC manualmente)
+
+--- /proc/meminfo (resumo) ---
+MemTotal:       129429760 kB
+MemFree:        109529048 kB
+MemAvailable:   126538328 kB
+HugePages_Total:       0
+Hugepagesize:       2048 kB
+
+--- transparent hugepages (relevante p/ mmap de 10 GiB) ---
+THP enabled: always [madvise] never
+
+--- kernel cmdline (mitigations/amd_pstate/isolcpus) ---
+BOOT_IMAGE=/boot/vmlinuz-6.17.0-35-generic root=UUID=7fe2965f-796e-4c49-9029-aef68571b40a ro quiet splash vt.handoff=7
+
+--- compilador (build usa -O3 -march=native, ver Makefile) ---
+cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+x86_64-linux-gnu
+
+--- thermal zones ---
+  /sys/class/thermal/thermal_zone*/temp: n/a mC
+
+--- free -h ---
+               total       usada       livre    compart.  buff/cache  disponível
+Mem.:          123Gi       2,8Gi       104Gi        52Mi        17Gi       120Gi
+Swap:          8,0Gi          0B       8,0Gi
+
+--- loadavg ---
+0.00 0.01 0.00 2/896 8121
+
+--- aclab commit ---
+4831be1 feat: workstation_all.sh aceita PAT via WS_GH_PAT (git push sem depender de gh)

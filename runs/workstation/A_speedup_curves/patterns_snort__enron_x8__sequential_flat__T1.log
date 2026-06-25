@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_x8.txt --searcher sequential_flat --threads 1 --warmup 2 --iters 8 
+# started: 2026-06-25T18:16:02-03:00
+# phase:   A_speedup_curves
+# label:   patterns_snort__enron_x8__sequential_flat__T1
+
+# Aho-Corasick laboratory
+# git:        4831be1
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      11369469888 bytes (10842.77 MiB) via mmap
+# build time: 26.724 ms
+# warmup=2 iters=8 threads=1
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+sequential_flat           1  11369469888      31442.618      31483.875      31515.147       344.39  142831896      31498.872     0.11     2.8890      1
+#   iter_ms: 31515.147 31514.288 31513.604 31509.088 31488.657 31444.084 31442.618 31443.515
+#   workers=1  median_MB/s=344.23  ns/byte=2.7692  stdev_ms=34.558
+
+# finished:        2026-06-25T18:21:18-03:00
+# elapsed_seconds: 316
+# exit_code:       0

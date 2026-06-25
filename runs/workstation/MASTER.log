@@ -1,0 +1,252 @@
+[2026-06-25 18:10:31] === Sweep workstation iniciado ===
+[2026-06-25 18:10:32] RUN_DIR=runs/workstation  PHASES=A B D E S  MAX_T=32
+[2026-06-25 18:10:32] snapshot env -> runs/workstation/env/start.txt
+[2026-06-25 18:10:32] ===== Fase A — escalonamento (enron_x8) =====
+[2026-06-25 18:10:32] Fase A: T = 1 2 4 8 16 24 32
+[2026-06-25 18:10:32] RUN   A_speedup_curves/patterns_snort__enron_x8__sequential__T1
+[2026-06-25 18:16:02] OK    A_speedup_curves/patterns_snort__enron_x8__sequential__T1 (330s)
+[2026-06-25 18:16:02] RUN   A_speedup_curves/patterns_snort__enron_x8__sequential_flat__T1
+[2026-06-25 18:21:18] OK    A_speedup_curves/patterns_snort__enron_x8__sequential_flat__T1 (316s)
+[2026-06-25 18:21:18] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T1
+[2026-06-25 18:26:47] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T1 (329s)
+[2026-06-25 18:26:47] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T1
+[2026-06-25 18:32:03] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T1 (316s)
+[2026-06-25 18:32:03] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T1
+[2026-06-25 18:37:34] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T1 (331s)
+[2026-06-25 18:37:34] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T1
+[2026-06-25 18:42:50] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T1 (316s)
+[2026-06-25 18:42:50] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T2
+[2026-06-25 18:45:39] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T2 (169s)
+[2026-06-25 18:45:39] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T2
+[2026-06-25 18:48:21] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T2 (162s)
+[2026-06-25 18:48:21] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T2
+[2026-06-25 18:51:10] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T2 (169s)
+[2026-06-25 18:51:10] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T2
+[2026-06-25 18:53:52] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T2 (162s)
+[2026-06-25 18:53:52] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T4
+[2026-06-25 18:55:18] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T4 (86s)
+[2026-06-25 18:55:18] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T4
+[2026-06-25 18:56:41] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T4 (83s)
+[2026-06-25 18:56:41] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T4
+[2026-06-25 18:58:08] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T4 (87s)
+[2026-06-25 18:58:08] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T4
+[2026-06-25 18:59:31] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T4 (83s)
+[2026-06-25 18:59:31] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T8
+[2026-06-25 19:00:16] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T8 (45s)
+[2026-06-25 19:00:16] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T8
+[2026-06-25 19:00:59] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T8 (43s)
+[2026-06-25 19:00:59] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T8
+[2026-06-25 19:01:44] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T8 (45s)
+[2026-06-25 19:01:44] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T8
+[2026-06-25 19:02:27] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T8 (43s)
+[2026-06-25 19:02:27] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T16
+[2026-06-25 19:02:52] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T16 (25s)
+[2026-06-25 19:02:52] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T16
+[2026-06-25 19:03:16] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T16 (24s)
+[2026-06-25 19:03:16] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T16
+[2026-06-25 19:03:40] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T16 (24s)
+[2026-06-25 19:03:40] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T16
+[2026-06-25 19:04:04] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T16 (24s)
+[2026-06-25 19:04:04] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T24
+[2026-06-25 19:04:24] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T24 (20s)
+[2026-06-25 19:04:24] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T24
+[2026-06-25 19:04:42] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T24 (18s)
+[2026-06-25 19:04:42] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T24
+[2026-06-25 19:05:02] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T24 (20s)
+[2026-06-25 19:05:02] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T24
+[2026-06-25 19:05:21] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T24 (19s)
+[2026-06-25 19:05:21] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T32
+[2026-06-25 19:05:37] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_v2__T32 (16s)
+[2026-06-25 19:05:37] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T32
+[2026-06-25 19:05:52] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_chunked_flat__T32 (15s)
+[2026-06-25 19:05:52] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T32
+[2026-06-25 19:06:08] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic__T32 (16s)
+[2026-06-25 19:06:08] RUN   A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T32
+[2026-06-25 19:06:23] OK    A_speedup_curves/patterns_snort__enron_x8__pthread_dynamic_flat__T32 (15s)
+[2026-06-25 19:06:23] RUN   A_speedup_curves/patterns_et_32__enron_x8__sequential__T1
+[2026-06-25 19:14:57] OK    A_speedup_curves/patterns_et_32__enron_x8__sequential__T1 (514s)
+[2026-06-25 19:14:57] RUN   A_speedup_curves/patterns_et_32__enron_x8__sequential_flat__T1
+[2026-06-25 19:23:00] OK    A_speedup_curves/patterns_et_32__enron_x8__sequential_flat__T1 (483s)
+[2026-06-25 19:23:00] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T1
+[2026-06-25 19:31:37] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T1 (517s)
+[2026-06-25 19:31:37] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T1
+[2026-06-25 19:39:43] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T1 (486s)
+[2026-06-25 19:39:43] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T1
+[2026-06-25 19:48:21] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T1 (518s)
+[2026-06-25 19:48:21] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T1
+[2026-06-25 19:56:23] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T1 (482s)
+[2026-06-25 19:56:23] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T2
+[2026-06-25 20:00:51] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T2 (268s)
+[2026-06-25 20:00:51] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T2
+[2026-06-25 20:05:02] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T2 (251s)
+[2026-06-25 20:05:02] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T2
+[2026-06-25 20:09:31] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T2 (269s)
+[2026-06-25 20:09:31] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T2
+[2026-06-25 20:13:42] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T2 (251s)
+[2026-06-25 20:13:42] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T4
+[2026-06-25 20:16:06] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T4 (144s)
+[2026-06-25 20:16:06] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T4
+[2026-06-25 20:18:21] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T4 (135s)
+[2026-06-25 20:18:21] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T4
+[2026-06-25 20:20:43] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T4 (142s)
+[2026-06-25 20:20:43] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T4
+[2026-06-25 20:22:58] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T4 (135s)
+[2026-06-25 20:22:58] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T8
+[2026-06-25 20:24:14] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T8 (76s)
+[2026-06-25 20:24:14] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T8
+[2026-06-25 20:25:25] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T8 (71s)
+[2026-06-25 20:25:25] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T8
+[2026-06-25 20:26:42] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T8 (77s)
+[2026-06-25 20:26:42] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T8
+[2026-06-25 20:27:54] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T8 (72s)
+[2026-06-25 20:27:54] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T16
+[2026-06-25 20:28:37] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T16 (43s)
+[2026-06-25 20:28:37] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T16
+[2026-06-25 20:29:18] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T16 (41s)
+[2026-06-25 20:29:18] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T16
+[2026-06-25 20:30:00] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T16 (42s)
+[2026-06-25 20:30:00] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T16
+[2026-06-25 20:30:41] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T16 (41s)
+[2026-06-25 20:30:41] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T24
+[2026-06-25 20:31:16] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T24 (35s)
+[2026-06-25 20:31:16] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T24
+[2026-06-25 20:31:49] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T24 (33s)
+[2026-06-25 20:31:49] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T24
+[2026-06-25 20:32:24] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T24 (35s)
+[2026-06-25 20:32:24] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T24
+[2026-06-25 20:32:58] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T24 (34s)
+[2026-06-25 20:32:58] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T32
+[2026-06-25 20:33:27] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_v2__T32 (29s)
+[2026-06-25 20:33:27] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T32
+[2026-06-25 20:33:54] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_chunked_flat__T32 (27s)
+[2026-06-25 20:33:54] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T32
+[2026-06-25 20:34:23] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic__T32 (29s)
+[2026-06-25 20:34:23] RUN   A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T32
+[2026-06-25 20:34:50] OK    A_speedup_curves/patterns_et_32__enron_x8__pthread_dynamic_flat__T32 (27s)
+[2026-06-25 20:34:50] ===== Fase B — footprint sweep (enron_corpus) =====
+[2026-06-25 20:34:50] RUN   B_footprint/patterns_snort_100__enron_corpus__sequential__T1
+[2026-06-25 20:35:05] OK    B_footprint/patterns_snort_100__enron_corpus__sequential__T1 (15s)
+[2026-06-25 20:35:05] RUN   B_footprint/patterns_snort_100__enron_corpus__sequential_flat__T1
+[2026-06-25 20:35:20] OK    B_footprint/patterns_snort_100__enron_corpus__sequential_flat__T1 (15s)
+[2026-06-25 20:35:20] RUN   B_footprint/patterns_snort_100__enron_corpus__pthread_chunked_flat__T1
+[2026-06-25 20:35:35] OK    B_footprint/patterns_snort_100__enron_corpus__pthread_chunked_flat__T1 (15s)
+[2026-06-25 20:35:35] RUN   B_footprint/patterns_snort_100__enron_corpus__pthread_chunked_flat__T32
+[2026-06-25 20:35:35] OK    B_footprint/patterns_snort_100__enron_corpus__pthread_chunked_flat__T32 (0s)
+[2026-06-25 20:35:35] RUN   B_footprint/patterns_snort_100__enron_corpus__pthread_dynamic_flat__T1
+[2026-06-25 20:35:50] OK    B_footprint/patterns_snort_100__enron_corpus__pthread_dynamic_flat__T1 (15s)
+[2026-06-25 20:35:50] RUN   B_footprint/patterns_snort_100__enron_corpus__pthread_dynamic_flat__T32
+[2026-06-25 20:35:51] OK    B_footprint/patterns_snort_100__enron_corpus__pthread_dynamic_flat__T32 (1s)
+[2026-06-25 20:35:51] RUN   B_footprint/patterns_snort_1k__enron_corpus__sequential__T1
+[2026-06-25 20:36:12] OK    B_footprint/patterns_snort_1k__enron_corpus__sequential__T1 (21s)
+[2026-06-25 20:36:12] RUN   B_footprint/patterns_snort_1k__enron_corpus__sequential_flat__T1
+[2026-06-25 20:36:32] OK    B_footprint/patterns_snort_1k__enron_corpus__sequential_flat__T1 (20s)
+[2026-06-25 20:36:32] RUN   B_footprint/patterns_snort_1k__enron_corpus__pthread_chunked_flat__T1
+[2026-06-25 20:36:52] OK    B_footprint/patterns_snort_1k__enron_corpus__pthread_chunked_flat__T1 (20s)
+[2026-06-25 20:36:52] RUN   B_footprint/patterns_snort_1k__enron_corpus__pthread_chunked_flat__T32
+[2026-06-25 20:36:53] OK    B_footprint/patterns_snort_1k__enron_corpus__pthread_chunked_flat__T32 (1s)
+[2026-06-25 20:36:53] RUN   B_footprint/patterns_snort_1k__enron_corpus__pthread_dynamic_flat__T1
+[2026-06-25 20:37:14] OK    B_footprint/patterns_snort_1k__enron_corpus__pthread_dynamic_flat__T1 (21s)
+[2026-06-25 20:37:14] RUN   B_footprint/patterns_snort_1k__enron_corpus__pthread_dynamic_flat__T32
+[2026-06-25 20:37:15] OK    B_footprint/patterns_snort_1k__enron_corpus__pthread_dynamic_flat__T32 (1s)
+[2026-06-25 20:37:15] RUN   B_footprint/patterns_snort__enron_corpus__sequential__T1
+[2026-06-25 20:37:44] OK    B_footprint/patterns_snort__enron_corpus__sequential__T1 (29s)
+[2026-06-25 20:37:44] RUN   B_footprint/patterns_snort__enron_corpus__sequential_flat__T1
+[2026-06-25 20:38:11] OK    B_footprint/patterns_snort__enron_corpus__sequential_flat__T1 (27s)
+[2026-06-25 20:38:12] RUN   B_footprint/patterns_snort__enron_corpus__pthread_chunked_flat__T1
+[2026-06-25 20:38:39] OK    B_footprint/patterns_snort__enron_corpus__pthread_chunked_flat__T1 (27s)
+[2026-06-25 20:38:39] RUN   B_footprint/patterns_snort__enron_corpus__pthread_chunked_flat__T32
+[2026-06-25 20:38:41] OK    B_footprint/patterns_snort__enron_corpus__pthread_chunked_flat__T32 (2s)
+[2026-06-25 20:38:41] RUN   B_footprint/patterns_snort__enron_corpus__pthread_dynamic_flat__T1
+[2026-06-25 20:39:09] OK    B_footprint/patterns_snort__enron_corpus__pthread_dynamic_flat__T1 (28s)
+[2026-06-25 20:39:09] RUN   B_footprint/patterns_snort__enron_corpus__pthread_dynamic_flat__T32
+[2026-06-25 20:39:10] OK    B_footprint/patterns_snort__enron_corpus__pthread_dynamic_flat__T32 (1s)
+[2026-06-25 20:39:10] RUN   B_footprint/patterns_et_32__enron_corpus__sequential__T1
+[2026-06-25 20:39:55] OK    B_footprint/patterns_et_32__enron_corpus__sequential__T1 (45s)
+[2026-06-25 20:39:55] RUN   B_footprint/patterns_et_32__enron_corpus__sequential_flat__T1
+[2026-06-25 20:40:38] OK    B_footprint/patterns_et_32__enron_corpus__sequential_flat__T1 (43s)
+[2026-06-25 20:40:38] RUN   B_footprint/patterns_et_32__enron_corpus__pthread_chunked_flat__T1
+[2026-06-25 20:41:20] OK    B_footprint/patterns_et_32__enron_corpus__pthread_chunked_flat__T1 (42s)
+[2026-06-25 20:41:20] RUN   B_footprint/patterns_et_32__enron_corpus__pthread_chunked_flat__T32
+[2026-06-25 20:41:23] OK    B_footprint/patterns_et_32__enron_corpus__pthread_chunked_flat__T32 (3s)
+[2026-06-25 20:41:23] RUN   B_footprint/patterns_et_32__enron_corpus__pthread_dynamic_flat__T1
+[2026-06-25 20:42:06] OK    B_footprint/patterns_et_32__enron_corpus__pthread_dynamic_flat__T1 (43s)
+[2026-06-25 20:42:06] RUN   B_footprint/patterns_et_32__enron_corpus__pthread_dynamic_flat__T32
+[2026-06-25 20:42:08] OK    B_footprint/patterns_et_32__enron_corpus__pthread_dynamic_flat__T32 (2s)
+[2026-06-25 20:42:08] ===== Fase D — per-thread (T=32, enron_x8) =====
+[2026-06-25 20:42:08] RUN   D_per_thread/patterns_snort__enron_x8__pthread_chunked_v2__T32_perthread
+[2026-06-25 20:42:17] OK    D_per_thread/patterns_snort__enron_x8__pthread_chunked_v2__T32_perthread (9s)
+[2026-06-25 20:42:17] RUN   D_per_thread/patterns_snort__enron_x8__pthread_chunked_flat__T32_perthread
+[2026-06-25 20:42:25] OK    D_per_thread/patterns_snort__enron_x8__pthread_chunked_flat__T32_perthread (8s)
+[2026-06-25 20:42:25] RUN   D_per_thread/patterns_snort__enron_x8__pthread_dynamic__T32_perthread
+[2026-06-25 20:42:33] OK    D_per_thread/patterns_snort__enron_x8__pthread_dynamic__T32_perthread (8s)
+[2026-06-25 20:42:33] RUN   D_per_thread/patterns_snort__enron_x8__pthread_dynamic_flat__T32_perthread
+[2026-06-25 20:42:41] OK    D_per_thread/patterns_snort__enron_x8__pthread_dynamic_flat__T32_perthread (8s)
+[2026-06-25 20:42:41] ===== Fase E — build-time paralelo vs. sequencial (idea 4) =====
+[2026-06-25 20:42:41] Fase E: build T = 2 4 8 16 32
+[2026-06-25 20:42:41] RUN   E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildseq
+[2026-06-25 20:42:44] OK    E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildseq (3s)
+[2026-06-25 20:42:44] RUN   E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T2
+[2026-06-25 20:42:46] OK    E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T2 (2s)
+[2026-06-25 20:42:46] RUN   E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T4
+[2026-06-25 20:42:48] OK    E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T4 (2s)
+[2026-06-25 20:42:48] RUN   E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T8
+[2026-06-25 20:42:50] OK    E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T8 (2s)
+[2026-06-25 20:42:50] RUN   E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T16
+[2026-06-25 20:42:52] OK    E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T16 (2s)
+[2026-06-25 20:42:52] RUN   E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T32
+[2026-06-25 20:42:54] OK    E_build_par/patterns_snort_100__enron_corpus__sequential__T1_buildpar_T32 (2s)
+[2026-06-25 20:42:54] RUN   E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildseq
+[2026-06-25 20:42:57] OK    E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildseq (3s)
+[2026-06-25 20:42:57] RUN   E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T2
+[2026-06-25 20:43:00] OK    E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T2 (3s)
+[2026-06-25 20:43:00] RUN   E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T4
+[2026-06-25 20:43:03] OK    E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T4 (3s)
+[2026-06-25 20:43:03] RUN   E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T8
+[2026-06-25 20:43:07] OK    E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T8 (4s)
+[2026-06-25 20:43:07] RUN   E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T16
+[2026-06-25 20:43:10] OK    E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T16 (3s)
+[2026-06-25 20:43:10] RUN   E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T32
+[2026-06-25 20:43:13] OK    E_build_par/patterns_snort_1k__enron_corpus__sequential__T1_buildpar_T32 (3s)
+[2026-06-25 20:43:13] RUN   E_build_par/patterns_snort__enron_corpus__sequential__T1_buildseq
+[2026-06-25 20:43:17] OK    E_build_par/patterns_snort__enron_corpus__sequential__T1_buildseq (4s)
+[2026-06-25 20:43:17] RUN   E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T2
+[2026-06-25 20:43:21] OK    E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T2 (4s)
+[2026-06-25 20:43:21] RUN   E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T4
+[2026-06-25 20:43:25] OK    E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T4 (4s)
+[2026-06-25 20:43:25] RUN   E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T8
+[2026-06-25 20:43:30] OK    E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T8 (5s)
+[2026-06-25 20:43:30] RUN   E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T16
+[2026-06-25 20:43:34] OK    E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T16 (4s)
+[2026-06-25 20:43:34] RUN   E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T32
+[2026-06-25 20:43:38] OK    E_build_par/patterns_snort__enron_corpus__sequential__T1_buildpar_T32 (4s)
+[2026-06-25 20:43:38] RUN   E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildseq
+[2026-06-25 20:43:45] OK    E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildseq (7s)
+[2026-06-25 20:43:45] RUN   E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T2
+[2026-06-25 20:43:52] OK    E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T2 (7s)
+[2026-06-25 20:43:52] RUN   E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T4
+[2026-06-25 20:43:59] OK    E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T4 (7s)
+[2026-06-25 20:43:59] RUN   E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T8
+[2026-06-25 20:44:06] OK    E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T8 (7s)
+[2026-06-25 20:44:06] RUN   E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T16
+[2026-06-25 20:44:12] OK    E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T16 (6s)
+[2026-06-25 20:44:12] RUN   E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T32
+[2026-06-25 20:44:19] OK    E_build_par/patterns_et_32__enron_corpus__sequential__T1_buildpar_T32 (7s)
+[2026-06-25 20:44:19] ===== Fase S (opcional) — 2-D / sharding (enron_x8) =====
+[2026-06-25 20:44:19] RUN   S_2d_sharding/patterns_snort__enron_x8__pthread_2d_sharded_chunked__T1
+[2026-06-25 20:48:01] OK    S_2d_sharding/patterns_snort__enron_x8__pthread_2d_sharded_chunked__T1 (222s)
+[2026-06-25 20:48:01] RUN   S_2d_sharding/patterns_snort__enron_x8__pthread_2d_sharded_chunked__T32
+[2026-06-25 20:48:15] OK    S_2d_sharding/patterns_snort__enron_x8__pthread_2d_sharded_chunked__T32 (14s)
+[2026-06-25 20:48:15] RUN   S_2d_sharding/patterns_snort__enron_x8__pattern_sharded_prefix__T1
+[2026-06-25 20:51:57] OK    S_2d_sharding/patterns_snort__enron_x8__pattern_sharded_prefix__T1 (222s)
+[2026-06-25 20:51:57] RUN   S_2d_sharding/patterns_snort__enron_x8__pattern_sharded_prefix__T32
+[2026-06-25 20:54:07] OK    S_2d_sharding/patterns_snort__enron_x8__pattern_sharded_prefix__T32 (130s)
+[2026-06-25 20:54:07] snapshot env -> runs/workstation/env/end.txt
+[2026-06-25 20:54:07] === Sweep workstation concluído ===
+[2026-06-25 20:54:07] Resumo: ok=96 skipped=0 failed=0  duração=2h43m
+[2026-06-25 20:54:07] finalize: extraindo CSV + SQLite de runs/workstation
+[extract] 116 logs lidos -> 116 linhas em runs/workstation/sweep.csv
+[extract] searchers no CSV: pattern_sharded_prefix, pthread_2d_sharded_chunked, pthread_chunked_flat, pthread_chunked_v2, pthread_dynamic, pthread_dynamic_flat, sequential, sequential_flat
+[db] 116 runs -> runs/workstation/sweep.db
+[db] views: v_speedup, v_self_speedup, v_footprint, v_build, v_correctness, v_best
+[db] correctness OK — match-count único por (patterns,corpus)
+[2026-06-25 20:54:07] finalize: runs/workstation/sweep.db pronto (git add runs/workstation && commit)

@@ -21,11 +21,13 @@
 # Os resultados são minúsculos (logs + sweep.db, poucos MB). Escolha um canal
 # que você CONTROLA e cujo endereço você conhece:
 #
-#   # (a) git push de runs/workstation (você mencionou "commitar o sweep"):
-#   #     autentique uma vez antes (gh já está instalado):
-#   #       gh auth login                 # GitHub.com, HTTPS, device flow
-#   #       git remote set-url origin https://github.com/MTheus22/parallel-aho-corasick.git
-#   WS_GIT_PUSH=1 ./scripts/workstation_all.sh
+#   # (a) git push de runs/workstation (você mencionou "commitar o sweep").
+#   #     git PURO + PAT (não depende de `gh`; o token vai por AMBIENTE, não
+#   #     fica gravado em disco nem em ps). Gere um PAT fine-grained com escopo
+#   #     "Contents: write" SÓ neste repo, e revogue depois da corrida:
+#   WS_GIT_PUSH=1 WS_GH_PAT=github_pat_xxx ./scripts/workstation_all.sh
+#   #     (sem WS_GH_PAT, faz `git push` simples — exige auth já configurada
+#   #      no host: remote HTTPS com PAT embutido, chave SSH, ou credential helper.)
 #
 #   # (b) sua VPS (scp):
 #   WS_UPLOAD_CMD='scp "$WS_RESULTS" usuario@suavps:~/' ./scripts/workstation_all.sh
@@ -67,11 +69,27 @@ if [[ "${WS_SWEEP_ONLY:-0}" == "1" ]]; then
     git add runs/workstation 2>/dev/null
     if git -c user.name="${WS_GIT_NAME:-workstation}" \
            -c user.email="${WS_GIT_EMAIL:-tcc@workstation}" \
-           commit -q -m "resultados: sweep workstation $(date +%F)" 2>/dev/null \
-       && git push 2>&1 | tail -3; then
-      echo "[upload] git push OK"
+           commit -q -m "resultados: sweep workstation $(date +%F)" 2>/dev/null; then
+      if [[ -n "${WS_GH_PAT:-}" ]]; then
+        # PAT via AMBIENTE: não grava o token em disco (.git/config) nem em argv/ps.
+        # Deriva a URL HTTPS a partir do origin (aceita origin SSH ou HTTPS).
+        purl="$(git remote get-url origin 2>/dev/null)"
+        purl="${purl/git@github.com:/https://github.com/}"
+        purl="${purl%.git}.git"
+        if git -c credential.helper= \
+               -c credential.helper='!f(){ echo username=x-access-token; echo "password=$WS_GH_PAT"; };f' \
+               push "$purl" HEAD:main 2>&1 | tail -3; then
+          echo "[upload] git push OK (PAT)"
+        else
+          echo "[upload] git push FALHOU (PAT/rede?) — use o .tgz ou WS_UPLOAD_CMD"
+        fi
+      elif git push 2>&1 | tail -3; then
+        echo "[upload] git push OK"
+      else
+        echo "[upload] git push FALHOU — defina WS_GH_PAT, ou use o .tgz / WS_UPLOAD_CMD"
+      fi
     else
-      echo "[upload] git push FALHOU (auth/rede?) — use o .tgz ou WS_UPLOAD_CMD"
+      echo "[upload] git commit: nada novo a enviar (ou falhou) — confira o .tgz"
     fi
   fi
   if [[ -n "${WS_UPLOAD_CMD:-}" ]]; then

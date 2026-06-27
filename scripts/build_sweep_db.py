@@ -4,7 +4,7 @@
 # por LLMs (rodar SELECTs e receber só o que precisa, em vez de ler CSV inteiro).
 #
 # Uso:
-#   scripts/build_sweep_db.py runs/overnight/sweep.csv -o runs/overnight/sweep.db
+#   scripts/build_sweep_db.py runs/i5/sweep.csv -o runs/i5/sweep.db
 #
 # Gera a tabela `runs` (tipada) + views derivadas:
 #   v_speedup        — speedup vs baseline sequential (fase A)
@@ -142,7 +142,7 @@ VIEWS = {
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("csv_path", nargs="?", default="runs/overnight/sweep.csv")
+    ap.add_argument("csv_path", nargs="?", default="runs/i5/sweep.csv")
     ap.add_argument("-o", "--output", default=None)
     args = ap.parse_args()
     db_path = args.output or os.path.splitext(args.csv_path)[0] + ".db"

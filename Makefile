@@ -6,7 +6,7 @@
 #   make asan       - AddressSanitizer + UBSan
 #   make tsan       - ThreadSanitizer (verifies parallel correctness)
 #   make test       - run correctness tests
-#   make bench      - run the canonical TCC sweep (scripts/run_overnight_sweep.sh)
+#   make bench      - run the canonical TCC sweep (scripts/run_i5_sweep.sh)
 #   make clean
 #
 # To plug in a new parallel searcher, drop src/searchers/<name>.c
@@ -87,9 +87,9 @@ digest: $(DIGESTBIN)
 	./$(DIGESTBIN)
 
 bench: $(BIN)
-	@echo "Running canonical TCC sweep via scripts/run_overnight_sweep.sh."
+	@echo "Running canonical TCC sweep via scripts/run_i5_sweep.sh."
 	@echo "Scope a subset with e.g. 'PHASES=\"A\" make bench'; the full run takes hours."
-	@./scripts/run_overnight_sweep.sh
+	@./scripts/run_i5_sweep.sh
 
 clean:
 	rm -rf $(BUILD)

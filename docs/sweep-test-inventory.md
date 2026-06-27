@@ -1,10 +1,10 @@
-# Inventário do sweep noturno (`scripts/run_overnight_sweep.sh`)
+# Inventário do sweep do i5 (`scripts/run_i5_sweep.sh`)
 
 Relação **exata** de execuções disparadas pelo sweep canônico do TCC.
-Fonte: `scripts/run_overnight_sweep.sh`. Cada execução é uma chamada de
+Fonte: `scripts/run_i5_sweep.sh`. Cada execução é uma chamada de
 `build/aclab` com `--patterns`, `--input`, `--searcher`, `--threads`,
 `--warmup` e `--iters`. O total bate com os **265 runs** do
-`runs/overnight/sweep.db` (sweep de 2026-05-29, 0 falhas).
+`runs/i5/sweep.db` (sweep de 2026-05-29, 0 falhas).
 
 > Nota: o cabeçalho-comentário do script (linhas 27-39) está **desatualizado**
 > em relação ao corpo. Onde houver divergência, vale o código. Ex.: o comentário
@@ -95,6 +95,30 @@ sempre `sequential`, corpus `enron_corpus`.
 
 ---
 
+## Fase G — granularidade da fila dinâmica (tasks-per-thread) — **20 runs** · OPT-IN
+
+> **Fora do default** (`PHASES` padrão = `A B C D E`). **Não** entra nos 265
+> runs do `sweep.db` 2026-05-29 — foi adicionada depois (P0/P1), ainda **não
+> rodada** no i5. Rode com `PHASES="G" scripts/run_i5_sweep.sh`.
+
+Responde à pergunta em aberto do P1 ("tarefas menores ajudariam a dinâmica?").
+Usa a alavanca de runtime `AC_DYN_TASKS_PER_THREAD` (P0) para variar
+`num_tasks = k · T` sem recompilar.
+
+- Searchers: `pthread_dynamic`, `pthread_dynamic_flat` (2).
+- Dict `snort`, corpus `enron_corpus`, `T = MAX_T` (12 no i5).
+- Grade `k = tasks_per_thread ∈ {1, 4, 16, 64, 256}` (5).
+- Por `(searcher, k)`: 2 passadas —
+  - timing `warmup=2 iters=5` (tag `tpt<NNN>`) → curva vazão × k;
+  - per-thread `warmup=1 iters=3 --per-thread` (tag `tpt<NNN>_perthread`) →
+    spread de tempo entre workers.
+- Subtotal = 2 searchers × 5 k × 2 passadas = **20 runs.**
+
+O `k` efetivo de cada run fica no header do `.log` como `tasks_per_thread=N`
+(além do tag no nome do arquivo). Saída em `runs/i5/G_granularity/`.
+
+---
+
 ## Total
 
 | Fase | Foco | Runs |
@@ -104,7 +128,8 @@ sempre `sequential`, corpus `enron_corpus`.
 | C | sensibilidade ao corpus | 6 |
 | D | per-thread / balanceamento | 9 |
 | E | build paralelo (idea 4) | 20 |
-| **Total** | | **265** |
+| **Total (sweep 2026-05-29)** | | **265** |
+| G | granularidade tasks-per-thread (opt-in, não rodada) | 20 |
 
 Resiliência: cada run grava 1 `.log`; rerodar pula o que já completou
 (grep pela linha de resultado do searcher). Falhas viram `.FAIL` sem
@@ -271,7 +296,7 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 
 ## Como rodar (driver enxuto)
 
-Script dedicado: **`scripts/run_workstation_sweep.sh`** (irmão do overnight,
+Script dedicado: **`scripts/run_workstation_sweep.sh`** (irmão do sweep do i5,
 herda lock/resume/env-snapshot/thermal). Implementa exatamente esta grade
 e descarta `v3`/`v3_flat`.
 
@@ -292,7 +317,7 @@ nohup ./scripts/run_workstation_sweep.sh > workstation.out 2>&1 &
   `runs/workstation/sweep.{csv,db}` prontos; basta
   `git add runs/workstation && git commit`.
 - **Análise:** consulte via `sqlite3 runs/workstation/sweep.db` com as mesmas
-  views do overnight (`v_speedup`, `v_self_speedup`, `v_footprint`, `v_build`,
+  views do sweep do i5 (`v_speedup`, `v_self_speedup`, `v_footprint`, `v_build`,
   `v_best`, `v_correctness`). A correção é auto-checada: `v_correctness` deve
   dar `distinct_match_counts = 1` por `(patterns, corpus)`.
 

@@ -157,7 +157,7 @@ int bench_run(const ac_searcher_t *s,
 
 void bench_result_print_header(void)
 {
-    /* The first 8 columns are FROZEN: run_overnight_sweep.sh extracts them
+    /* The first 8 columns are FROZEN: run_i5_sweep.sh extracts them
      * positionally ($1..$8) and detects completion via `grep "^<name>\s"`.
      * Everything after `matches` is appended and safe to evolve. */
     printf("%-22s %4s %12s %14s %14s %14s %12s %10s %14s %8s %10s %6s\n",

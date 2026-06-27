@@ -6,7 +6,7 @@
 # Alvo: AMD Ryzen 9 9950X (Zen 5), 16 núcleos HOMOGÊNEOS / 32 threads,
 #       L3 64 MiB (2 CCDs × 32 MiB, não unificado), DDR5-5600, muita RAM.
 #
-# Por que este script existe (e difere de run_overnight_sweep.sh):
+# Por que este script existe (e difere de run_i5_sweep.sh):
 #   O sweep canônico foi calibrado para o i5-1235U HÍBRIDO (P/E). Em cores
 #   homogêneos os searchers topology-aware (pthread_chunked_v3 / v3_flat)
 #   perdem o sentido (peso por cpufreq colapsa para uniforme), e o
@@ -19,7 +19,7 @@
 #     - corta a Fase C (sensibilidade ao corpus, já estabelecida).
 #   Justificativa completa: docs/sweep-test-inventory.md.
 #
-# Reutiliza a infraestrutura resiliente do overnight:
+# Reutiliza a infraestrutura resiliente do sweep do i5:
 #   - 1 arquivo .log por run em runs/workstation/<fase>/; rerodar PULA o
 #     que já completou (resume-from-crash).
 #   - falhas individuais viram .FAIL sem derrubar o sweep.

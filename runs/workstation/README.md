@@ -19,13 +19,13 @@ sequencial; métricas em **MB/s, Gbps e speedup vs. nº de threads**.
 
 Este diretório (`runs/workstation/`) guarda **uma corrida única** numa
 **máquina alugada** com o `scripts/run_workstation_sweep.sh`. Diferente do
-sweep canônico do laptop (`runs/overnight/`, i5-1235U híbrido), o alvo aqui é
+sweep canônico do laptop (`runs/i5/`, i5-1235U híbrido), o alvo aqui é
 um chip de **núcleos homogêneos**, para medir **portabilidade/generalização**
 das contribuições.
 
 | Por quê duas máquinas | Resumo |
 |---|---|
-| `runs/overnight/` (i5-1235U, **híbrido** P/E, L3 12 MiB) | Sweep definitivo de 2026-05-29, **fonte de verdade atual da tese** (265 runs). Inclui os searchers topology-aware (`v3`, `v3_flat`). |
+| `runs/i5/` (i5-1235U, **híbrido** P/E, L3 12 MiB) | Sweep definitivo de 2026-05-29, **fonte de verdade atual da tese** (265 runs). Inclui os searchers topology-aware (`v3`, `v3_flat`). |
 | `runs/workstation/` (9950X, **homogêneo**, L3 2×32 MiB) | Esta corrida. **Descarta** `v3`/`v3_flat` (sem P/E para balancear → viram `v2`/`chunked_flat`) e foca o contraste **estático vs. dinâmico**. |
 
 ---
@@ -237,7 +237,7 @@ python3 scripts/build_sweep_db.py    runs/workstation/sweep.csv -o runs/workstat
 ## 6. Relação com a tese e fontes canônicas
 
 - **Antes de citar qualquer número da workstation**, confronte `sweep.db` (aqui)
-  com o sweep do laptop (`runs/overnight/sweep.db`). Os números do i5 são a
+  com o sweep do laptop (`runs/i5/sweep.db`). Os números do i5 são a
   fonte de verdade atual da tese; **estes resultados entram como seção de
   portabilidade/generalização** (homogêneo + SMT + L3 por-CCD), não substituem
   os do i5.
@@ -268,5 +268,5 @@ python3 scripts/build_sweep_db.py    runs/workstation/sweep.csv -o runs/workstat
 - Extratores: `scripts/extract_sweep_csv.py`, `scripts/build_sweep_db.py`
 - Plano/justificativa: `docs/sweep-test-inventory.md`, `docs/testes-workstation.md`
 - Searchers (técnico): `docs/searchers/<nome>.md`
-- Guia de consulta do sweep do laptop (views idênticas): `runs/overnight/QUERY_GUIDE.md`
+- Guia de consulta do sweep do laptop (views idênticas): `runs/i5/QUERY_GUIDE.md`
 - Visão geral do projeto: `CLAUDE.md` (raiz do repo) e `../CLAUDE.md` (workspace)

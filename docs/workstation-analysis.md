@@ -2,7 +2,7 @@
 
 Análise consolidada e objetiva da corrida de portabilidade na **AMD Ryzen 9
 9950X** (`runs/workstation/sweep.db`, 2026-06-25) confrontada com o sweep
-canônico do **Intel i5-1235U** (`runs/overnight/sweep.db`, 2026-05-29). Ambos:
+canônico do **Intel i5-1235U** (`runs/i5/sweep.db`, 2026-05-29). Ambos:
 governador `performance`, binário nativo (`-O3 -march=native`), corpus Enron ×8
 (10,6 GiB), dicionários Snort (55 MiB) e ET-32 (507 MiB), correção validada
 (match-count único por `(dicionário, corpus)`: 142.831.896 em Snort,

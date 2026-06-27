@@ -396,33 +396,52 @@ taskset -c 0,4 ./build/aclab --patterns data/patterns_snort.txt \
 
 ---
 
-## §14 · Sweep canônico (`run_overnight_sweep.sh`)
+## §14 · Sweep canônico do i5 (`run_i5_sweep.sh`)
 
-O único script de sweep que existe. Tem resume automático — pula runs já
-concluídas.
+Motor do sweep do i5. Resume automático — pula runs já concluídas. Fases default
+`A B C D E`; `G` (granularidade) é opt-in. Para a corrida real em máquina quieta,
+prefira o wrapper `i5_all.sh` (pré-flight + build + test + governador, depois
+**desacopla** — sobrevive a logout/suspensão; ver §14b).
 
 ```bash
 # Fase A: curvas de speedup (todas as combinações snort/et_32 × enron/x8)
-PHASES="A" nohup scripts/run_overnight_sweep.sh > overnight.out 2>&1 &
+PHASES="A" nohup scripts/run_i5_sweep.sh > i5.out 2>&1 &
 
 # Fases específicas
-PHASES="B C D" scripts/run_overnight_sweep.sh
+PHASES="B C D" scripts/run_i5_sweep.sh
 
 # Tudo (~6h30)
-nohup scripts/run_overnight_sweep.sh > overnight.out 2>&1 &
+nohup scripts/run_i5_sweep.sh > i5.out 2>&1 &
+
+# Fase G (opt-in): granularidade da fila dinâmica — varre tasks-per-thread
+# {1,4,16,64,256} para dynamic/dynamic_flat (P1). Saída em runs/i5/G_granularity/.
+PHASES="G" nohup scripts/run_i5_sweep.sh > i5.out 2>&1 &
 
 # Acompanhar progresso
-tail -f runs/overnight/MASTER.log
+tail -f runs/i5/MASTER.log
 ```
 
-Pós-sweep — gerar artefatos de análise e consultar (ver `runs/overnight/QUERY_GUIDE.md`):
+### §14b · Corrida "um comando" desacoplada (`i5_all.sh`)
+
+Para rodar em TTY texto pós-reboot (protocolo de máquina quieta). Faz pré-flight
+de dados, build, `make test`, governador `performance` e então desacopla o sweep
+(imune a logout/suspensão), imprimindo os comandos de log.
 
 ```bash
-python3 scripts/extract_sweep_csv.py runs/overnight -o runs/overnight/sweep.csv --known-only
-python3 scripts/build_sweep_db.py    runs/overnight/sweep.csv -o runs/overnight/sweep.db
+# reboot -> Ctrl+Alt+F3 -> login -> cd .../parallel-aho-corasick
+./scripts/i5_all.sh                                   # default A B C D E
+PHASES="G" ./scripts/i5_all.sh                        # só granularidade
+RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/i5_all.sh   # em dir separado
+```
+
+Pós-sweep — gerar artefatos de análise e consultar (ver `runs/i5/QUERY_GUIDE.md`):
+
+```bash
+python3 scripts/extract_sweep_csv.py runs/i5 -o runs/i5/sweep.csv --known-only
+python3 scripts/build_sweep_db.py    runs/i5/sweep.csv -o runs/i5/sweep.db
 
 # Token-efficient: rode SELECTs nas views (v_speedup, v_footprint, v_build, …)
-sqlite3 -header -column runs/overnight/sweep.db \
+sqlite3 -header -column runs/i5/sweep.db \
     "SELECT thr, searcher, speedup_vs_seq FROM v_speedup
      WHERE patterns='patterns_snort' AND corpus='enron_corpus'
      ORDER BY thr, speedup_vs_seq DESC;"
@@ -519,7 +538,7 @@ ls src/**/*.c src/*.c | entr -c sh -c \
 | Sanitizers (asan/tsan) | §11 |
 | Cache miss rate via perf | §12 |
 | Pinning manual P/E-cores | §13 |
-| Sweep automatizado (overnight) | §14 |
+| Sweep automatizado (i5) | §14 |
 | Analisar resultados (CSV/SQLite) | §14 |
 | Matriz canônica do TCC | §15 |
 | Stack maximalista | §16 |

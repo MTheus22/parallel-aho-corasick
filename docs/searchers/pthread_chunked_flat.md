@@ -155,7 +155,7 @@ Reporta `ac_thread_metric_t` por worker (mesmo formato que v2):
 
 ## Headline benchmark
 
-> Fonte: sweep definitivo de **2026-05-29** (`runs/overnight/sweep.db`,
+> Fonte: sweep definitivo de **2026-05-29** (`runs/i5/sweep.db`,
 > baseline `sequential` = 239,60 MB/s). Os números antigos desta tabela
 > (baseline lento 192,82 MB/s → 7,49×) foram **descartados**; ver memória
 > `speedup-7x-vs-5x-explained` e `docs/tcc-synthesis.html`.

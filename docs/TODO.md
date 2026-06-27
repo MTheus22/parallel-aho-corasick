@@ -6,23 +6,26 @@ Prioridades: **P0** = necessário p/ rigor/justeza · **P1** = fortalece achados
 **P2** = futuro / nice-to-have.
 
 Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
-`parallel-aho-corasick/runs/overnight/sweep.db` (i5). Doc de resultados:
+`parallel-aho-corasick/runs/i5/sweep.db` (i5). Doc de resultados:
 `testes-workstation.md`.
 
 ---
 
-## P0 — Tornar o tamanho de tarefa configurável em runtime
+## P0 — Tornar o tamanho de tarefa configurável em runtime ✅ FEITO (2026-06-27)
 
 - **Objetivo:** poder variar a granularidade da fila dinâmica sem recompilar.
-- **Por quê:** hoje `K_PER_THREAD` é `#define 4` em
-  `parallel-aho-corasick/src/searchers/pthread_dynamic.c:39` **e**
-  `pthread_dynamic_flat.c:44`. Qualquer sweep de granularidade exigiria N
-  recompilações — inviável de automatizar.
-- **Como:** expor via CLI (`--tasks-per-thread N` em `src/main.c`, junto das
-  flags atuais ~linhas 143–156) ou env (`AC_DYN_TASKS_PER_THREAD`). Ler nos dois
-  searchers com fallback para 4. Manter `--per-thread` funcionando.
-- **Pronto quando:** `build/aclab --searcher pthread_dynamic_flat
-  --tasks-per-thread 64 ...` muda `num_tasks` e o valor aparece no log/CSV.
+- **Por quê:** antes `K_PER_THREAD` era `#define 4` em
+  `pthread_dynamic.c` **e** `pthread_dynamic_flat.c`. Qualquer sweep de
+  granularidade exigiria N recompilações — inviável de automatizar.
+- **Como (implementado):** CLI `--tasks-per-thread N` em `src/main.c`
+  (passa por `cfg->tasks_per_thread`, novo campo em `ac_searcher_config_t`)
+  **e** env `AC_DYN_TASKS_PER_THREAD`. Ambos os searchers resolvem
+  CLI → env → default 4 via `resolve_tasks_per_thread()`. `--per-thread`
+  continua funcionando.
+- **Pronto quando:** ✔ `build/aclab --searcher pthread_dynamic_flat
+  --tasks-per-thread 64 ...` faz `num_tasks = 64·nthreads` e o header ecoa
+  `tasks_per_thread=64` (texto e CSV). Correção idêntica (`make test`) e
+  TSan-clean nas duas variantes. Desbloqueia o item P1 (sweep de granularidade).
 
 ## P0 — Rodar `dynamic_flat` no i5 (fechar lacuna da comparação)
 
@@ -30,24 +33,30 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 - **Por quê:** o sweep do i5 só tem `pthread_dynamic` (sem flat). Hoje a 9.6
   compara `v3_flat` (i5) com `dynamic_flat` (Ryzen) — conjuntos diferentes.
 - **Como:** acrescentar `pthread_dynamic_flat` ao set de variantes do
-  `scripts/run_overnight_sweep.sh` (i5) nas fases A (escalabilidade) e B
+  `scripts/run_i5_sweep.sh` (i5) nas fases A (escalabilidade) e B
   (footprint); rerodar essas fases. **Não** rodar `v3/v3_flat` no Ryzen (colapsam
   em `v2`).
 - **Pronto quando:** `v_speedup`/`v_best` do i5 incluem `pthread_dynamic_flat`;
   atualizar 9.5/9.6 com a coluna.
 
-## P1 — Sweep de granularidade da fila dinâmica
+## P1 — Sweep de granularidade da fila dinâmica · INFRA PRONTA, falta rodar
 
 - **Objetivo:** achar o ponto ótimo tarefas/thread e medir o trade-off
   (balanceamento vs. contenção no contador atômico + re-leitura de overlap).
 - **Por quê:** com 4 tarefas/thread a dinâmica é quase estática (ver 9.8b). É a
   dúvida em aberto: "tarefas menores ajudariam?".
-- **Como:** depende do P0. Varrer `tasks_per_thread ∈ {1, 4, 16, 64, 256}`
-  (≈ 88 MB → ~350 KB/tarefa em Enron×8) para `dynamic` e `dynamic_flat`, em
-  **i5 e Ryzen**, dicionário Snort, `--per-thread`. Registrar vazão + spread de
-  tempo por worker.
+- **Infra (feita 2026-06-27):** `phase_G` em `scripts/run_i5_sweep.sh` varre
+  `tasks_per_thread ∈ {1,4,16,64,256}` (via `AC_DYN_TASKS_PER_THREAD`, P0) para
+  `dynamic` e `dynamic_flat`, Snort + `enron_corpus`, `T=MAX_T`, com timing +
+  `--per-thread` por k. Opt-in: `PHASES="G" scripts/run_i5_sweep.sh`
+  (ou `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/i5_all.sh`).
+  Inventário: `docs/sweep-test-inventory.md` §"Fase G".
+- **Falta:** rodar no **i5** (`PHASES="G"`) e no **Ryzen** (adicionar `phase_G`
+  análoga a `run_workstation_sweep.sh`, ou rodar via env); consolidar a curva.
 - **Expectativa:** ganho pequeno no Ryzen (homogêneo+uniforme); ganho maior no
   **i5** (P/E heterogêneo, onde a dinâmica tem desbalanceamento real a explorar).
+  Sanidade preliminar (slice 100 MB, T=12, `dynamic_flat`): k=1 → 1288 MB/s,
+  k=64 → 1506 MB/s (≈+17%), coerente com a hipótese.
 - **Pronto quando:** nova subseção (ex. 9.8c) com curva vazão × tarefas/thread
   nas duas máquinas.
 
@@ -114,9 +123,9 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 
 | # | Item | Prioridade | Bloqueia |
 |---|---|---|---|
-| 1 | Tamanho de tarefa em runtime | P0 | sweep de granularidade |
+| 1 | Tamanho de tarefa em runtime ✅ | P0 (feito) | sweep de granularidade |
 | 2 | `dynamic_flat` no i5 | P0 | — |
-| 3 | Sweep de granularidade (i5 + Ryzen) | P1 | item 1 |
+| 3 | Sweep de granularidade (i5 + Ryzen) — infra pronta (`phase_G`), falta rodar | P1 | item 1 |
 | 4 | Corpus de carga desigual | P1 | — |
 | 5 | Mais réplicas no Teste 3 | P1 | — |
 | 6 | Mesmo binário/commit nas 2 máquinas | P1 | — |

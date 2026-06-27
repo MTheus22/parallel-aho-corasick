@@ -54,7 +54,8 @@ TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclus
 | `make asan`                | AddressSanitizer + UBSan                                               |
 | `make tsan`                | ThreadSanitizer — verifica ausência de data races na fase paralela     |
 | `make test`                | Executa `tests/test_correctness.c` contra todos os searchers          |
-| `scripts/run_overnight_sweep.sh` | Sweep canônico do TCC (i5, fases A–E, resume automático) → `runs/overnight/` |
+| `scripts/run_i5_sweep.sh` | Motor do sweep canônico do TCC (i5, fases A–E, resume automático) → `runs/i5/` |
+| `scripts/i5_all.sh` | Wrapper "um comando" do i5: pré-flight + build + test + governador, depois **desacopla** o sweep (sobrevive a logout/suspensão). Para rodar em TTY texto pós-reboot. |
 | `scripts/run_workstation_sweep.sh` (`workstation_all.sh`) | Sweep de portabilidade (Ryzen 9 9950X, cores homogêneos) → `runs/workstation/` |
 | `scripts/extract_sweep_csv.py` + `build_sweep_db.py` | Pós-sweep: logs → `sweep.csv` → SQLite `sweep.db` (consulta token-efficient) |
 | `./build/aclab --list`     | Lista todos os searchers registrados                                   |
@@ -174,7 +175,7 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
   + freq weights) + flat output table (ideas 5 e 7).
 - `docs/searchers/pthread_2d_sharded_chunked.md` — 2-D K × N
   (sharding por dicionário × chunking de texto), idea 6.
-- `runs/overnight/QUERY_GUIDE.md` — schema + views + queries do `sweep.db`
+- `runs/i5/QUERY_GUIDE.md` — schema + views + queries do `sweep.db`
   (forma token-efficient de consultar os resultados do sweep via `sqlite3`).
 - `docs/testes-workstation.md` — plano de testes + resultados (§9) da corrida
   na workstation (Ryzen 9 9950X). Mesmas views do `sweep.db`.
@@ -186,7 +187,7 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 
-> Fonte de verdade do TCC = `runs/overnight/sweep.db` (i5). A workstation é
+> Fonte de verdade do TCC = `runs/i5/sweep.db` (i5). A workstation é
 > **portabilidade**, não a substitui. `pthread_dynamic_flat` só foi medido no
 > Ryzen; `v3`/`v3_flat`/`prefetch` só no i5 (no Ryzen colapsam em `v2`).
 

@@ -213,4 +213,4 @@ Origem, scripts e tamanhos detalhados em
 - [`docs/testes-workstation.md`](docs/testes-workstation.md) e
   [`docs/workstation-analysis.md`](docs/workstation-analysis.md) — corrida de
   portabilidade na workstation (Ryzen 9 9950X) e comparação com o i5. A fonte de
-  verdade do TCC continua sendo `runs/overnight/sweep.db` (i5).
+  verdade do TCC continua sendo `runs/i5/sweep.db` (i5).

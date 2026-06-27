@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =============================================================================
-# Extrai os .log do sweep noturno (run_overnight_sweep.sh) para um CSV único.
+# Extrai os .log do sweep do i5 (run_i5_sweep.sh) para um CSV único.
 #
 # Robusto:
 #   - Lê o cabeçalho da tabela de cada log para mapear colunas por NOME
@@ -11,7 +11,7 @@
 #
 # Uso:
 #   scripts/extract_sweep_csv.py [RUN_DIR] [-o saida.csv] [--known-only]
-#   scripts/extract_sweep_csv.py runs/overnight -o runs/overnight/sweep.csv
+#   scripts/extract_sweep_csv.py runs/i5 -o runs/i5/sweep.csv
 # =============================================================================
 import argparse
 import csv
@@ -141,7 +141,7 @@ def parse_log(path, phase):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("run_dir", nargs="?", default="runs/overnight")
+    ap.add_argument("run_dir", nargs="?", default="runs/i5")
     ap.add_argument("-o", "--output", default=None)
     ap.add_argument("--known-only", action="store_true",
                     help="ignora logs de searchers fora do registry atual")

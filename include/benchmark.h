@@ -24,7 +24,7 @@ double bench_marker_seconds(const bench_marker_t *m);
  * kept in its original order on purpose: the text table emitted by
  * bench_result_print() preserves the historical 8-column layout
  * (searcher, thr, bytes, min, mean, max, MB/s, matches) so that
- * scripts/run_overnight_sweep.sh -- which detects a completed run with
+ * scripts/run_i5_sweep.sh -- which detects a completed run with
  * `grep "^<searcher>\s"` and extracts positional columns $1..$8 -- keeps
  * working unchanged. New metrics are appended as trailing table columns
  * and as `#`-prefixed comment lines, both of which the sweep ignores. */

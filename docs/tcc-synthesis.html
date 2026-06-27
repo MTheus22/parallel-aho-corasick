@@ -316,7 +316,7 @@
       265 runs, 0 falhas, ~7h29m, commit <code>e3dc7d4</code>, i5-1235U (12 threads HW),
       governor <code>performance</code>. Fases A (curvas de speedup), B (footprint × throughput),
       C (cross-corpus), D (per-thread) e E (build paralelo). Dados brutos em
-      <code>runs/overnight/sweep.db</code> (SQLite tipado, 6 views). Correctness validada:
+      <code>runs/i5/sweep.db</code> (SQLite tipado, 6 views). Correctness validada:
       match-count único por <code>(patterns, corpus)</code> entre todos os 11 searchers
       &mdash; todos concordam com o baseline <code>sequential</code>. Todos os números
       abaixo refletem <strong>exclusivamente</strong> este sweep. <strong>Variância:</strong>
@@ -1095,7 +1095,7 @@
     <div class="alert-icon">⭐</div>
     <div>
       O wall-clock end-to-end é <strong>reconstruído do sweep canônico de 2026-05-29</strong>
-      (<code>runs/overnight/sweep.db</code>): para cada execução o banco já registra a
+      (<code>runs/i5/sweep.db</code>): para cada execução o banco já registra a
       construção (<code>build_ms</code>) e um passe completo de busca sobre o corpus
       (<code>mean_ms</code>), de modo que E2E&nbsp;=&nbsp;<code>build_ms&nbsp;+&nbsp;mean_ms</code>.
       Cada célula é auditável via <code>sqlite3</code> e usa o <strong>mesmo baseline</strong>
@@ -1639,7 +1639,7 @@
 
     <div class="card future-card high" style="border-color:#1a4a1a;">
       <div class="card-title">F3 · End-to-end (build ⊕ search ⊕ flat) ✅ <span class="effort s">4,50× end-to-end</span></div>
-      <div class="card-meta">Reconstruído do sweep canônico 2026-05-29 (<code>runs/overnight/sweep.db</code>): E2E = <code>build_ms + mean_ms</code>, auditável via <code>sqlite3</code>.</div>
+      <div class="card-meta">Reconstruído do sweep canônico 2026-05-29 (<code>runs/i5/sweep.db</code>): E2E = <code>build_ms + mean_ms</code>, auditável via <code>sqlite3</code>.</div>
       <div class="card-body">
         Wall-clock <strong>build + search end-to-end</strong> sobre o corpus de escala
         <code>enron_x8</code> (10,59 GiB), derivado do mesmo sweep da análise de busca
@@ -1902,7 +1902,7 @@
 
 <!-- FOOTER -->
 <div style="margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); text-align:center; font-size:.75rem; color:var(--muted);">
-  Síntese baseada no sweep definitivo de 2026-05-29 (<code>runs/overnight/sweep.db</code>,
+  Síntese baseada no sweep definitivo de 2026-05-29 (<code>runs/i5/sweep.db</code>,
   265 runs, commit <code>e3dc7d4</code>) · <code>parallel-aho-corasick/docs/tcc-synthesis.html</code> ·
   TCC IDP — Aho-Corasick paralelo em CPU multi-core
 </div>

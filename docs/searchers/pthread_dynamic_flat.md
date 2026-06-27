@@ -64,6 +64,16 @@ Idêntico ao [`pthread_dynamic`](pthread_dynamic.md) — `K = 4·N` tarefas
 `(flat_offset[state], flat_count[state], flat_pids[])` em vez de
 caminhar `(own_out_head, dict_suffix, outputs)`.
 
+## Tunables
+
+`K = N · tasks_per_thread` é configurável **em runtime, sem recompilar**
+(mesmo mecanismo do [`pthread_dynamic`](pthread_dynamic.md#tunables)).
+Resolução: CLI `--tasks-per-thread N` → env `AC_DYN_TASKS_PER_THREAD=N`
+→ default `4`. O valor efetivo aparece no header (`# … tasks_per_thread=N`),
+texto e CSV. É a alavanca da **fase G** (`phase_G` em
+[`scripts/run_i5_sweep.sh`](../../scripts/run_i5_sweep.sh)) — o sweep de
+granularidade do P1 ([`../TODO.md`](../TODO.md)).
+
 ## Estruturas consumidas
 
 Da `ac_automaton_t` (read-only):

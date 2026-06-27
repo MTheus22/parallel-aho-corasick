@@ -56,7 +56,7 @@ varrendo corpus Enron em escala de GiB). Métricas: **MB/s, Gbps, speedup vs. n�
 de threads**, mais tempo por thread e tempo de construção do autômato.
 
 Esta corrida **não substitui** a fonte de verdade da tese (o sweep do laptop
-i5-1235U, `runs/overnight/sweep.db`, 2026-05-29). Ela entra como **seção de
+i5-1235U, `runs/i5/sweep.db`, 2026-05-29). Ela entra como **seção de
 portabilidade/generalização**: o mesmo experimento num chip de **16 núcleos
 homogêneos / 32 threads, L3 de 64 MiB *não unificado* (2 CCDs × 32 MiB),
 DDR5-5600**. Três coisas novas e citáveis que só este hardware dá:
@@ -200,7 +200,7 @@ risco de binário velho.
 ### O que levar
 | Arquivo/dir | Tamanho | Por quê |
 |---|---|---|
-| repo `parallel-aho-corasick/` (fonte) | ~poucos MB | scripts, Makefile, src, docs, `runs/overnight` (logs pequenos). |
+| repo `parallel-aho-corasick/` (fonte) | ~poucos MB | scripts, Makefile, src, docs, `runs/i5` (logs pequenos). |
 | `data/enron_corpus.txt` | 1,42 GB | base do `enron_x8` (regenerado) e corpus das fases B/E. |
 | `data/patterns_snort.txt` | 87 KiB | fases A/B/D/E. |
 | `data/patterns_et_32.txt` | 797 KiB | **insubstituível — sem ele, fases A/B/E falham em massa.** |
@@ -396,7 +396,7 @@ python3 scripts/build_sweep_db.py    runs/workstation/sweep.csv -o runs/workstat
 (Pode rodar isso no laptop a partir dos `.log` trazidos no pendrive.)
 
 ### 9.4 Sanity vs. o laptop (a corrida é de *portabilidade*, não de recorde)
-Confronte com `runs/overnight/sweep.db` usando as **mesmas views**
+Confronte com `runs/i5/sweep.db` usando as **mesmas views**
 (`v_speedup`, `v_self_speedup`, `v_footprint`, `v_build`, `v_best`). Espere:
 - speedups iguais ou **maiores** (16 cores físicos homogêneos + DDR5);
 - joelho da curva visível em 8→16 (fronteira de CCD) e 16→32 (SMT);
@@ -456,4 +456,4 @@ cp -a runs/workstation /media/matheusbarros/2776-BEDC/workstation-results       
 - Scripts: **`scripts/workstation_all.sh`** (wrapper "um comando"),
   `scripts/run_workstation_sweep.sh`, `scripts/prepare_workstation_data.sh`,
   `scripts/extract_sweep_csv.py`, `scripts/build_sweep_db.py`.
-- Fonte de verdade do TCC (laptop): `runs/overnight/sweep.db`, `docs/tcc-synthesis.html`.
+- Fonte de verdade do TCC (laptop): `runs/i5/sweep.db`, `docs/tcc-synthesis.html`.

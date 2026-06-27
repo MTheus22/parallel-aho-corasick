@@ -202,7 +202,7 @@ divergência no número de casamentos entre variantes bloqueia o uso dos número
 
 Fonte: `parallel-aho-corasick/runs/workstation/sweep.db` (corrida de
 2026-06-25, Ryzen 9 9950X, 32 threads). Comparativos com i5 vêm de
-`runs/overnight/sweep.db` (i5-1235U, 12 threads). Correção confirmada:
+`runs/i5/sweep.db` (i5-1235U, 12 threads). Correção confirmada:
 contagem de casamentos idêntica entre todas as variantes (Snort = 142.831.896;
 ET-32 = 466.943.872 sobre Enron ×8).
 

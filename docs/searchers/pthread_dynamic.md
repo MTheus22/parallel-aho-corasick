@@ -233,12 +233,26 @@ afunda o dynamic atual.
 
 ## Tunables
 
-| Macro              | Default | Significado                                              |
-|--------------------|--------:|-----------------------------------------------------------|
-| `K_PER_THREAD`     | `4`     | Multiplicador para o número total de tarefas              |
+| Tunable                              | Default | Significado                                  |
+|--------------------------------------|--------:|----------------------------------------------|
+| tasks/thread (`--tasks-per-thread N` / `AC_DYN_TASKS_PER_THREAD`) | `4` | Multiplicador `num_tasks = N · nthreads` |
 
-Para experimentar, edite `K_PER_THREAD` em `pthread_dynamic.c` e
-recompile. Valores razoáveis: 2, 4, 8.
+`num_tasks` é configurável **em runtime, sem recompilar** — exatamente
+para automatizar o sweep de granularidade. Ordem de resolução:
+
+1. CLI `--tasks-per-thread N` (passa via `cfg->tasks_per_thread`);
+2. env `AC_DYN_TASKS_PER_THREAD=N`;
+3. fallback `K_PER_THREAD_DEFAULT = 4`.
+
+O valor efetivo é ecoado no header do run
+(`# warmup=… tasks_per_thread=N`), em texto e CSV. Valores razoáveis:
+2, 4, 8, 16, 32, 64 (ver §"Tarefas mais finas" acima). É a alavanca da
+**fase G** (`phase_G` em
+[`scripts/run_i5_sweep.sh`](../../scripts/run_i5_sweep.sh)), o sweep de
+granularidade do P1 ([`../TODO.md`](../TODO.md)).
+
+> Histórico: antes era o `#define K_PER_THREAD 4`, que exigia uma
+> recompilação por ponto de sweep.
 
 ## Correção
 

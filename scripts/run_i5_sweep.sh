@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Sweep noturno — coleta para o relatório de resultados do TCC.
+# Sweep do i5 — coleta para o relatório de resultados do TCC.
 # =============================================================================
 #
 # Resiliente:
-#   - Cada run grava em um arquivo próprio em runs/overnight/<fase>/.
+#   - Cada run grava em um arquivo próprio em runs/i5/<fase>/.
 #   - Rerodar o script PULA runs já concluídas (resume-from-crash).
 #   - Falhas individuais não derrubam o sweep; ficam marcadas com sufixo .FAIL.
 #   - SIGINT / SIGTERM são tratados: tmp files limpos, MASTER.log finalizado.
 #   - flock impede duas instâncias simultâneas (mediria com ruído).
 #
 # Estrutura de saída:
-#   runs/overnight/
+#   runs/i5/
 #     MASTER.log                # event log timestampado (append-only)
 #     env/start.txt             # lscpu, governor, free, /proc/cpuinfo MHz
 #     env/end.txt               # idem no fim do sweep
@@ -20,6 +20,8 @@
 #     B_footprint/<run>.log
 #     C_cross_corpus/<run>.log
 #     D_per_thread/<run>.log
+#     E_build_par/<run>.log
+#     G_granularity/<run>.log     # opt-in (PHASES="G")
 #
 # Convenção de nome dos .log:
 #   <patterns_basename>__<corpus_basename>__<searcher>__T<n>[_<tag>].log
@@ -36,24 +38,30 @@
 #       (snort) × {simplewiki, enron_corpus} × {seq, v3} × T ∈ {1, 12}
 #   D — per-thread em T=12 (para tabela de balanceamento)
 #       1 run por searcher paralelo em (snort, enron_corpus, T=12, --per-thread)
+#   E — build-time paralelo vs. sequencial (idea 4)
+#       dicts ∈ {snort_100, snort_1k, snort, et_32}, build seq vs. par
+#   G — granularidade da fila dinâmica (OPT-IN, fora do default)
+#       AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} × {dynamic, dynamic_flat}
+#       (snort, enron_corpus, T=12); timing + --per-thread por k
 #
 # Uso:
-#   scripts/run_overnight_sweep.sh                    # roda tudo (~6h30)
-#   scripts/run_overnight_sweep.sh A                  # roda só fase A
-#   PHASES="A C" scripts/run_overnight_sweep.sh       # roda fases A e C
-#   RUN_DIR=runs/teste scripts/run_overnight_sweep.sh # dir custom
+#   scripts/run_i5_sweep.sh                    # roda o default (A B C D E, ~6h30)
+#   scripts/run_i5_sweep.sh A                  # roda só fase A
+#   PHASES="A C" scripts/run_i5_sweep.sh       # roda fases A e C
+#   PHASES="G" scripts/run_i5_sweep.sh         # só o sweep de granularidade (P1)
+#   RUN_DIR=runs/teste scripts/run_i5_sweep.sh # dir custom
 #
 # Antes de iniciar (recomendado):
 #   sudo cpupower frequency-set -g performance
 #   fechar IDEs/browsers
-#   nohup ./scripts/run_overnight_sweep.sh > overnight.out 2>&1 &
+#   nohup ./scripts/run_i5_sweep.sh > i5.out 2>&1 &
 #
 # Análise pós-execução:
 #   Cada .log começa com header `# command: ...` e `# started: ...`, depois
 #   contém a saída completa do aclab. A linha de resultado é a do searcher
 #   na tabela final. Exemplo de extrator (TSV: pat, cor, searcher, T, min, mean, MBps, matches):
 #
-#   for f in runs/overnight/A_speedup_curves/*.log; do
+#   for f in runs/i5/A_speedup_curves/*.log; do
 #     base=$(basename "$f" .log)
 #     IFS='__' read -ra parts <<< "$base"
 #     # parts[0]=pat parts[2]=cor parts[4]=searcher parts[6]=T...
@@ -62,7 +70,7 @@
 #         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 #                b, $1, $2, $4, $5, $6, $7, $8
 #       }' "$f"
-#   done > runs/overnight/phase_A.tsv
+#   done > runs/i5/phase_A.tsv
 # =============================================================================
 
 set -uo pipefail
@@ -71,7 +79,7 @@ cd "$(dirname "$0")/.."
 
 BIN=build/aclab
 DATA=data
-RUN_DIR="${RUN_DIR:-runs/overnight}"
+RUN_DIR="${RUN_DIR:-runs/i5}"
 MAX_T="${MAX_THREADS:-$(nproc)}"
 
 # -------- build se necessário ----------------------------------------------
@@ -413,11 +421,48 @@ phase_E() {
 }
 
 # =============================================================================
+# Fase G — granularidade da fila dinâmica (tasks-per-thread)   [OPT-IN]
+# =============================================================================
+# Responde à pergunta em aberto do P1 ("tarefas menores ajudariam a dinâmica?").
+# Varre AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} (num_tasks = k·T) para os dois
+# searchers de dispatch dinâmico, no regime headline do i5 (Snort + enron_corpus,
+# T=MAX_T). Duas passadas por k: (i) timing → curva vazão × k; (ii) --per-thread
+# → spread de tempo entre workers (o que a granularidade de fato rebalanceia).
+#
+# Depende do P0 (binário lê --tasks-per-thread / AC_DYN_TASKS_PER_THREAD; o valor
+# efetivo aparece no header do log como `tasks_per_thread=N`). NÃO faz parte do
+# PHASES default — rode com:  PHASES="G" scripts/run_i5_sweep.sh
+phase_G() {
+  log "===== Fase G — granularidade tasks-per-thread (T=$MAX_T) ====="
+  local phase="G_granularity"
+  local searchers=(pthread_dynamic pthread_dynamic_flat)
+  local pat="patterns_snort.txt"
+  local cor="enron_corpus.txt"
+  local tpts=(1 4 16 64 256)
+
+  for s in "${searchers[@]}"; do
+    for k in "${tpts[@]}"; do
+      local ktag; ktag="tpt$(printf '%03d' "$k")"   # tpt001..tpt256 (ordena bem)
+      # (i) timing: ponto da curva vazão × tasks/thread
+      (
+        export AC_DYN_TASKS_PER_THREAD="$k"
+        run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" "$MAX_T" 2 5 "$ktag"
+      )
+      # (ii) per-thread: spread de tempo entre workers nesse k
+      (
+        export AC_DYN_TASKS_PER_THREAD="$k"
+        run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" "$MAX_T" 1 3 "${ktag}_perthread" --per-thread
+      )
+    done
+  done
+}
+
+# =============================================================================
 # Orquestração
 # =============================================================================
 PHASES="${PHASES:-${1:-A B C D E}}"
 
-log "=== Sweep noturno iniciado ==="
+log "=== Sweep do i5 iniciado ==="
 log "RUN_DIR=$RUN_DIR  PHASES=$PHASES"
 snapshot_env start
 
@@ -428,6 +473,7 @@ for p in $PHASES; do
     C) phase_C ;;
     D) phase_D ;;
     E) phase_E ;;
+    G) phase_G ;;
     *) log "WARN  fase desconhecida ignorada: $p" ;;
   esac
 done
@@ -436,7 +482,7 @@ snapshot_env end
 ELAPSED=$(($(date +%s) - START_TS))
 HRS=$((ELAPSED / 3600))
 MIN=$(((ELAPSED % 3600) / 60))
-log "=== Sweep noturno concluído ==="
+log "=== Sweep do i5 concluído ==="
 log "Resumo: ok=$OK skipped=$SKIPPED failed=$FAILED  duração=${HRS}h${MIN}m"
 
 # Atalho rápido para o usuário ao acordar:

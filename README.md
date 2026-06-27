@@ -210,3 +210,7 @@ Origem, scripts e tamanhos detalhados em
 - [`docs/architecture/parallelism.md`](docs/architecture/parallelism.md)
   — modelo de paralelismo e argumento de correção.
 - [`docs/searchers/`](docs/searchers/) — documentação por searcher.
+- [`docs/testes-workstation.md`](docs/testes-workstation.md) e
+  [`docs/workstation-analysis.md`](docs/workstation-analysis.md) — corrida de
+  portabilidade na workstation (Ryzen 9 9950X) e comparação com o i5. A fonte de
+  verdade do TCC continua sendo `runs/overnight/sweep.db` (i5).

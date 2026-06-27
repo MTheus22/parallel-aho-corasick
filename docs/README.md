@@ -20,6 +20,7 @@ no Capítulo de Proposta da dissertação.
 |----------------------------------|-------------------------------------------------------------------|
 | [`architecture/`](architecture/) | Arquitetura do sistema, autômato, modelo de paralelismo, harness de benchmark, protocolo experimental do TCC e datasets. |
 | [`searchers/`](searchers/)       | Uma página por implementação registrada do contrato `ac_searcher_t` (`sequential`, `pthread_chunked`). |
+| `testes-workstation.md` · `workstation-analysis.md` · `workstation.md` · `TODO.md` | Corrida de portabilidade na workstation (Ryzen 9 9950X): plano + resultados (§9), análise i5 × Ryzen, parecer de execução e melhorias pendentes. Fonte de verdade do TCC continua sendo `runs/overnight/sweep.db` (i5). |
 
 ## Ordem sugerida de leitura
 

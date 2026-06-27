@@ -38,10 +38,25 @@
 #include <string.h>
 #include <unistd.h>
 
-/* Tunables. K_PER_THREAD = number of dynamic tasks per thread; larger
- * gives finer balancing but more atomic ops and more warm-up work. 4
- * matches pthread_dynamic (a common work-stealing literature value). */
-#define K_PER_THREAD 4
+/* Tunables. tasks-per-thread = number of dynamic tasks per thread; larger
+ * gives finer balancing but more atomic ops and more warm-up work. 4 matches
+ * pthread_dynamic (a common work-stealing literature value) and is the default.
+ *
+ * Configurable at runtime (no recompile) so a granularity sweep can be
+ * automated. Resolution order: cfg->tasks_per_thread (CLI --tasks-per-thread)
+ * if > 0, else env AC_DYN_TASKS_PER_THREAD if set/positive, else the default. */
+#define K_PER_THREAD_DEFAULT 4
+
+static int resolve_tasks_per_thread(const ac_searcher_config_t *cfg)
+{
+    if (cfg && cfg->tasks_per_thread > 0) return cfg->tasks_per_thread;
+    const char *env = getenv("AC_DYN_TASKS_PER_THREAD");
+    if (env && env[0]) {
+        int v = atoi(env);
+        if (v > 0) return v;
+    }
+    return K_PER_THREAD_DEFAULT;
+}
 
 typedef struct {
     size_t core_start;   /* inclusive, first byte the task owns */
@@ -148,9 +163,10 @@ static int dyn_flat_search(const ac_automaton_t *aut,
         return fb->search(aut, text, text_len, cfg, out, out_metrics, out_num_metrics);
     }
 
-    /* Build the task list. K = nthreads * K_PER_THREAD chunks, sized
+    /* Build the task list. K = nthreads * tasks_per_thread chunks, sized
      * roughly equally. Last chunk eats the remainder. */
-    size_t num_tasks = (size_t)nthreads * K_PER_THREAD;
+    int k_per_thread = resolve_tasks_per_thread(cfg);
+    size_t num_tasks = (size_t)nthreads * (size_t)k_per_thread;
     if (num_tasks > text_len / 64) {
         num_tasks = text_len / 64;
         if (num_tasks < (size_t)nthreads) num_tasks = (size_t)nthreads;

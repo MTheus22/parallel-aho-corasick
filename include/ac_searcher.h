@@ -23,6 +23,7 @@ typedef struct {
 typedef struct {
     int    num_threads;        /* honoured by parallel searchers; 0 = auto */
     size_t chunk_size;         /* 0 = derive from text/num_threads        */
+    int    tasks_per_thread;   /* dynamic-dispatch granularity; 0 = default */
     int    verbose;
     void  *user;               /* implementation-specific extension hook  */
 } ac_searcher_config_t;

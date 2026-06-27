@@ -147,6 +147,8 @@ static void usage(const char *p)
 "  --searcher NAME       Searcher to run (default: all registered)\n"
 "  --threads  N          Threads for parallel searchers (default: nproc)\n"
 "  --chunk    BYTES      Suggested chunk size (0 = auto)\n"
+"  --tasks-per-thread N  Dynamic-dispatch tasks per thread (pthread_dynamic[_flat];\n"
+"                        0 = default 4; env AC_DYN_TASKS_PER_THREAD also honoured)\n"
 "  --warmup   N          Warm-up iterations (default 1)\n"
 "  --iters    N          Timed iterations (default 5)\n"
 "  --format   text|csv   Output format (default text; csv for analysis pipelines)\n"
@@ -169,6 +171,7 @@ int main(int argc, char **argv)
     const char *searcher_name = NULL;
     int    threads     = 0;
     size_t chunk_size  = 0;
+    int    tasks_per_thread = 0;   /* 0 = searcher default (4) */
     int    warmup      = 1;
     int    iters       = 5;
     int    print_match = 0;
@@ -183,6 +186,7 @@ int main(int argc, char **argv)
         {"searcher",      required_argument, 0, 's'},
         {"threads",       required_argument, 0, 't'},
         {"chunk",         required_argument, 0, 'c'},
+        {"tasks-per-thread", required_argument, 0, 'K'},
         {"warmup",        required_argument, 0, 'w'},
         {"iters",         required_argument, 0, 'n'},
         {"format",        required_argument, 0, 'f'},
@@ -194,13 +198,14 @@ int main(int argc, char **argv)
         {0,0,0,0}
     };
     int o;
-    while ((o = getopt_long(argc, argv, "p:i:s:t:c:w:n:f:CmTlh", long_opts, NULL)) != -1) {
+    while ((o = getopt_long(argc, argv, "p:i:s:t:c:K:w:n:f:CmTlh", long_opts, NULL)) != -1) {
         switch (o) {
         case 'p': patterns_path = optarg; break;
         case 'i': input_path    = optarg; break;
         case 's': searcher_name = optarg; break;
         case 't': threads       = atoi(optarg); break;
         case 'c': chunk_size    = strtoull(optarg, NULL, 10); break;
+        case 'K': tasks_per_thread = atoi(optarg); break;
         case 'w': warmup        = atoi(optarg); break;
         case 'n': iters         = atoi(optarg); break;
         case 'f': format        = optarg; break;
@@ -316,17 +321,28 @@ int main(int argc, char **argv)
            bench_marker_seconds(&build_m) * 1000.0,
            build_par ? "" : "\n");
     if (build_par) printf(" [parallel T=%d]\n", build_par_threads);
-    printf("# warmup=%d iters=%d threads=%d\n", warmup, iters, threads);
+    /* Effective dynamic-dispatch granularity (pthread_dynamic[_flat]):
+     * CLI flag wins, else env AC_DYN_TASKS_PER_THREAD, else default 4. Shown
+     * so a granularity sweep can confirm the value it actually ran with. */
+    int tpt_effective = tasks_per_thread;
+    if (tpt_effective <= 0) {
+        const char *tpt_env = getenv("AC_DYN_TASKS_PER_THREAD");
+        if (tpt_env && tpt_env[0]) tpt_effective = atoi(tpt_env);
+    }
+    if (tpt_effective <= 0) tpt_effective = 4;
+    printf("# warmup=%d iters=%d threads=%d tasks_per_thread=%d\n",
+           warmup, iters, threads, tpt_effective);
     /* In CSV mode keep the stream blank-line-free so naive consumers that
      * only strip '#' comments still see the header as the first row. */
     if (!csv) printf("\n");
 
     /* ---- Phase 3: run searcher(s) ------------------------------------- */
     ac_searcher_config_t cfg = {
-        .num_threads = threads,
-        .chunk_size  = chunk_size,
-        .verbose     = 0,
-        .user        = NULL,
+        .num_threads      = threads,
+        .chunk_size       = chunk_size,
+        .tasks_per_thread = tasks_per_thread,
+        .verbose          = 0,
+        .user             = NULL,
     };
 
     if (csv) bench_result_print_csv_header();

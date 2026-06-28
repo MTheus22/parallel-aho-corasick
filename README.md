@@ -15,7 +15,7 @@ I/O ou pelo custo de criação de threads.
 > Para o material conceitual completo (arquitetura, decisões de
 > projeto, fluxos e diagramas), veja [`docs/`](docs/). Para um
 > arranque rápido como agente do repositório, veja
-> [`CLAUDE.md`](CLAUDE.md).
+> [`AGENTS.md`](AGENTS.md).
 
 ## Objetivos do laboratório
 
@@ -202,7 +202,7 @@ Origem, scripts e tamanhos detalhados em
 
 ## Documentação adicional
 
-- [`CLAUDE.md`](CLAUDE.md) — guia rápido para agentes (Claude e afins).
+- [`AGENTS.md`](AGENTS.md) — guia rápido para agentes (Claude e afins).
 - [`docs/architecture/overview.md`](docs/architecture/overview.md) —
   visão de sistema com diagramas.
 - [`docs/architecture/automaton.md`](docs/architecture/automaton.md) —

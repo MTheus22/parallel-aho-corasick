@@ -1,0 +1,6 @@
+# Project-level Codex settings live here.
+# Keep repo-specific agent definitions in .codex/agents/ and MCP definitions in
+# .codex/mcps/.
+
+[mcp_servers]
+

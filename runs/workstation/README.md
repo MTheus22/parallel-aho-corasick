@@ -269,4 +269,4 @@ python3 scripts/build_sweep_db.py    runs/workstation/sweep.csv -o runs/workstat
 - Plano/justificativa: `docs/sweep-test-inventory.md`, `docs/testes-workstation.md`
 - Searchers (técnico): `docs/searchers/<nome>.md`
 - Guia de consulta do sweep do laptop (views idênticas): `runs/i5/QUERY_GUIDE.md`
-- Visão geral do projeto: `CLAUDE.md` (raiz do repo) e `../CLAUDE.md` (workspace)
+- Visão geral do projeto: `AGENTS.md` (raiz do repo) e `../AGENTS.md` (workspace)

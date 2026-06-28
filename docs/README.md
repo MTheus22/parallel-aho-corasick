@@ -3,7 +3,7 @@
 Material conceitual completo do laboratório. Para o arranque rápido
 (o que é, como builda, como roda), comece pelo
 [`../README.md`](../README.md). Para agentes (Claude e afins), use
-[`../CLAUDE.md`](../CLAUDE.md).
+[`../AGENTS.md`](../AGENTS.md).
 
 Este conjunto de documentos é também a fonte de verdade dos
 fundamentos descritos no TCC

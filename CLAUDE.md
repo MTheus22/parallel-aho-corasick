@@ -183,13 +183,23 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
   cache cliff, balanceamento, confronto com a tese).
 - `docs/TODO.md` — melhorias pendentes do estudo (ex.: `dynamic_flat` no i5,
   sweep de granularidade, corpus de carga desigual).
+- `docs/i5-rerun-2026-06-28.md` — 2ª corrida do i5 (headless, fria) em
+  `runs/i5_2026-06-28/sweep.db`. **Não** é canônica (reprodutibilidade + 1ª
+  fase G). Achado: o pico de speedup no i5 saturado (T=12) tem ±40–65% de
+  variância **entre corridas**, invisível ao cv intra-run; fase G precisa de
+  repetições por `k`.
 - `runs/workstation/README.md` — execução/risco da corrida da workstation.
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 
-> Fonte de verdade do TCC = `runs/i5/sweep.db` (i5). A workstation é
-> **portabilidade**, não a substitui. `pthread_dynamic_flat` só foi medido no
+> Fonte de verdade do TCC = `runs/i5/sweep.db` (i5, **2026-05-29**). A workstation
+> é **portabilidade**, não a substitui. `pthread_dynamic_flat` só foi medido no
 > Ryzen; `v3`/`v3_flat`/`prefetch` só no i5 (no Ryzen colapsam em `v2`).
+>
+> Existe uma **2ª corrida do i5** em `runs/i5_2026-06-28/sweep.db` (headless,
+> A–E+G). É **reprodutibilidade/fase G**, **NÃO** canônica — não cite os números
+> dela como headline. Ela reproduz o baseline mas mostra que o pico de speedup
+> a T=12 oscila ±40–65% entre corridas. Detalhes: `docs/i5-rerun-2026-06-28.md`.
 
 ## Coisas que provavelmente NÃO devem mudar sem discussão
 

@@ -39,7 +39,7 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 - **Pronto quando:** `v_speedup`/`v_best` do i5 incluem `pthread_dynamic_flat`;
   atualizar 9.5/9.6 com a coluna.
 
-## P1 — Sweep de granularidade da fila dinâmica · INFRA PRONTA, falta rodar
+## P1 — Sweep de granularidade da fila dinâmica · RODOU 1×, ainda inconclusivo
 
 - **Objetivo:** achar o ponto ótimo tarefas/thread e medir o trade-off
   (balanceamento vs. contenção no contador atômico + re-leitura de overlap).
@@ -51,14 +51,60 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   `--per-thread` por k. Opt-in: `PHASES="G" scripts/run_i5_sweep.sh`
   (ou `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/i5_all.sh`).
   Inventário: `docs/sweep-test-inventory.md` §"Fase G".
-- **Falta:** rodar no **i5** (`PHASES="G"`) e no **Ryzen** (adicionar `phase_G`
-  análoga a `run_workstation_sweep.sh`, ou rodar via env); consolidar a curva.
+- **Rodou no i5 (2026-06-28):** fase G executada em `runs/i5_2026-06-28/`
+  (parte do re-run completo A–E+G). **Resultado inconclusivo:** com 1 invocação
+  por `k`, a curva é não-física (`dynamic` cai 1362→748 MB/s de k=1→k=4) —
+  dominada pela variância **entre invocações** no i5 saturado, não por
+  granularidade. cv intra-run baixo (0,3–2%) **não** captura esse ruído. Parecer
+  completo: [`i5-rerun-2026-06-28.md`](i5-rerun-2026-06-28.md).
+- **Falta:** repetir cada `k` **N≈5×** (mediana) para mediar o ruído de regime;
+  idealmente sobre um corpus de **carga desigual** (ver P1 abaixo), senão prova
+  pouco. Depois rodar no **Ryzen** (adicionar `phase_G` análoga a
+  `run_workstation_sweep.sh`, ou via env) e consolidar a curva.
 - **Expectativa:** ganho pequeno no Ryzen (homogêneo+uniforme); ganho maior no
-  **i5** (P/E heterogêneo, onde a dinâmica tem desbalanceamento real a explorar).
-  Sanidade preliminar (slice 100 MB, T=12, `dynamic_flat`): k=1 → 1288 MB/s,
-  k=64 → 1506 MB/s (≈+17%), coerente com a hipótese.
+  **i5** (P/E heterogêneo). Sanidade preliminar (slice 100 MB, T=12,
+  `dynamic_flat`): k=1 → 1288 MB/s, k=64 → 1506 MB/s (≈+17%) — mas o re-run
+  completo mostra que **1 amostra por k é ruído**; tratar como hipótese.
 - **Pronto quando:** nova subseção (ex. 9.8c) com curva vazão × tarefas/thread
-  nas duas máquinas.
+  (com repetições/mediana) nas duas máquinas.
+
+## P1 — Métricas dos testes: medir/explicar a variância entre corridas
+
+- **Objetivo:** tornar os números do i5 saturado (T=12) defensáveis, separando
+  **precisão** (iter-a-iter) de **reprodutibilidade** (run-a-run).
+- **Por quê:** o cv reportado é `stdev/mean` das iterações **dentro de um mesmo
+  processo** — vê só `σ²_within`. As alavancas grandes (núcleo P/E em que a
+  thread pousou, turbo, colocação de páginas) são fixas dentro de um run e mudam
+  **entre** runs → `σ²_between`, que **não medimos**. No i5
+  `σ²_between ≫ σ²_within` (cv intra ~1–4% vs. swing entre corridas ~40–65%): por
+  isso a fase G saiu inconclusiva (cada `k` com n=1 confunde granularidade com
+  regime). Ver `i5-rerun-2026-06-28.md`.
+- **Como (em ordem de prioridade):**
+  - **(A) Replicar invocações.** Rodar cada config como **N≥5 processos
+    independentes** (não N iterações no mesmo processo) e reportar **mediana +
+    IQR / min–max** (ou IC não-paramétrico). É o único jeito de estimar
+    `σ²_between`. Aplica-se à fase G e ao Teste 3.
+  - **(B) Instrumentar o `--per-thread`** (hoje só `thread_id, seconds, bytes,
+    matches`) para **explicar** a variância:
+    - **CPU físico + classe P/E** por worker (`sched_getcpu()` amostrado ou campo
+      `processor` de `/proc/<tid>/stat`) — a variável escondida nº 1 no híbrido.
+    - **Frequência efetiva no laço quente** via `APERF/MPERF` (o `thermal.tsv`
+      amostra só pre/post ociosos; perde o clock em-loop).
+    - **Migrações / context switches involuntários** (`getrusage.ru_nivcsw`,
+      `nonvoluntary_ctxt_switches` em `/proc/<tid>/status`, ou
+      `perf stat cpu-migrations,context-switches`) — mede a interferência do
+      escalonador, a causa suspeita.
+  - **(C) Opcional — controlar** em vez de só medir: fixar as threads num cpuset
+    determinístico no harness (`taskset`/`pthread_setaffinity`/cgroup `cpuset`)
+    para todo run pegar o mesmo mapeamento P/E. Colapsa `σ²_between`, mas muda o
+    que se mede (melhor-caso vs. realista) — declarar na metodologia.
+  - **(D) Opcional — atribuir o teto:** contadores `perf` de LLC-miss e banda de
+    DRAM (uncore) para fechar a narrativa memory-bound (autômato ≫ L3).
+- **Nota:** o Ryzen homogêneo provavelmente quase não precisa de (B)/(C) —
+  `σ²_between` deve ser pequeno por não haver heterogeneidade P/E para o
+  escalonador embaralhar. O foco é o **i5**.
+- **Pronto quando:** fase G e Teste 3 reportam mediana+spread sobre N réplicas; o
+  `--per-thread` registra CPU/P-E (e, idealmente, freq efetiva) por worker.
 
 ## P1 — Corpus de carga desigual (exercitar de fato o balanceamento)
 
@@ -126,8 +172,9 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 | 1 | Tamanho de tarefa em runtime ✅ | P0 (feito) | sweep de granularidade |
 | 2 | `dynamic_flat` no i5 | P0 | — |
 | 3 | Sweep de granularidade (i5 + Ryzen) — infra pronta (`phase_G`), falta rodar | P1 | item 1 |
-| 4 | Corpus de carga desigual | P1 | — |
-| 5 | Mais réplicas no Teste 3 | P1 | — |
-| 6 | Mesmo binário/commit nas 2 máquinas | P1 | — |
-| 7 | Variante CCD-aware (Ryzen) | P2 | — |
-| 8 | Integrar ao TCC + slides | P2 | itens 2–6 idealmente |
+| 4 | Métricas: replicar invocações + instrumentar `--per-thread` (CPU/P-E, freq, migrações) | P1 | conclui itens 3 e 6 |
+| 5 | Corpus de carga desigual | P1 | — |
+| 6 | Mais réplicas no Teste 3 | P1 | — |
+| 7 | Mesmo binário/commit nas 2 máquinas | P1 | — |
+| 8 | Variante CCD-aware (Ryzen) | P2 | — |
+| 9 | Integrar ao TCC + slides | P2 | itens 2–7 idealmente |

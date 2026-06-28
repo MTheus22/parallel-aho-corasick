@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_corpus.txt --searcher pthread_chunked_flat --threads 6 --warmup 2 --iters 5 
+# started: 2026-05-29T01:10:03-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_corpus__pthread_chunked_flat__T6
+
+# Aho-Corasick laboratory
+# git:        e3dc7d4
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 526.357 ms
+# warmup=2 iters=5 threads=6
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_flat      6   1421183736       4700.496       4958.893       5115.413       273.32   58367984       5064.574     3.69     2.2927      6
+#   iter_ms: 5082.807 4831.174 5115.413 4700.496 5064.574
+#   workers=6  median_MB/s=267.61  ns/byte=3.4893  stdev_ms=183.100
+
+# finished:        2026-05-29T01:10:38-03:00
+# elapsed_seconds: 35
+# exit_code:       0

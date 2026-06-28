@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_x8.txt --searcher pthread_2d_sharded_chunked --threads 8 --warmup 2 --iters 5 
+# started: 2026-05-29T06:36:22-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_x8__pthread_2d_sharded_chunked__T8
+
+# Aho-Corasick laboratory
+# git:        e3dc7d4
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      11369469888 bytes (10842.77 MiB) via mmap
+# build time: 490.276 ms
+# warmup=2 iters=5 threads=8
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_2d_sharded_chunked    8  11369469888      37118.666      40874.187      43885.300       265.27  466943872      40817.730     6.30     2.2253      8
+#   iter_ms: 42505.570 37118.666 40043.667 43885.300 40817.730
+#   workers=8  median_MB/s=265.64  ns/byte=3.5951  stdev_ms=2575.126
+
+# finished:        2026-05-29T06:41:12-03:00
+# elapsed_seconds: 290
+# exit_code:       0

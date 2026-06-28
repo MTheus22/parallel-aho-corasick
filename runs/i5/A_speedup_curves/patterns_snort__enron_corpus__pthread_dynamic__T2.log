@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_dynamic --threads 2 --warmup 2 --iters 5 
+# started: 2026-05-29T00:25:43-03:00
+# phase:   A_speedup_curves
+# label:   patterns_snort__enron_corpus__pthread_dynamic__T2
+
+# Aho-Corasick laboratory
+# git:        e3dc7d4
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 47.311 ms
+# warmup=2 iters=5 threads=2
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic           2   1421183736       3116.963       3135.526       3154.739       432.25   17853987       3134.588     0.43     3.6260      2
+#   iter_ms: 3154.739 3139.211 3116.963 3134.588 3132.131
+#   workers=2  median_MB/s=432.38  ns/byte=2.2063  stdev_ms=13.599
+
+# finished:        2026-05-29T00:26:05-03:00
+# elapsed_seconds: 22
+# exit_code:       0

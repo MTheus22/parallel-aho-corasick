@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_dynamic_flat --threads 12 --warmup 2 --iters 5 
+# started: 2026-06-28T02:28:40-03:00
+# phase:   G_granularity
+# label:   patterns_snort__enron_corpus__pthread_dynamic_flat__T12_tpt016
+
+# Aho-Corasick laboratory
+# git:        71fb53a
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 44.367 ms
+# warmup=2 iters=5 threads=12 tasks_per_thread=16
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic_flat     12   1421183736       1002.447       1022.642       1050.326      1325.34   17853987       1009.870     2.11    11.1177     12
+#   iter_ms: 1002.447 1009.870 1009.277 1041.290 1050.326
+#   workers=12  median_MB/s=1342.10  ns/byte=0.7196  stdev_ms=21.585
+
+# finished:        2026-06-28T02:28:47-03:00
+# elapsed_seconds: 7
+# exit_code:       0

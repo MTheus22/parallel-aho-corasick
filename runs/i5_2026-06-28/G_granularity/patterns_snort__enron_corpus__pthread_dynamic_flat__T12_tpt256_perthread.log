@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_dynamic_flat --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-06-28T02:29:22-03:00
+# phase:   G_granularity
+# label:   patterns_snort__enron_corpus__pthread_dynamic_flat__T12_tpt256_perthread
+
+# Aho-Corasick laboratory
+# git:        71fb53a
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 51.309 ms
+# warmup=1 iters=3 threads=12 tasks_per_thread=256
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic_flat     12   1421183736        940.573        950.366        960.152      1426.13   17853987        950.373     1.03    11.9633     12
+#   iter_ms: 940.573 950.373 960.152
+#   workers=12  median_MB/s=1426.12  ns/byte=0.6687  stdev_ms=9.790
+    [t00] 914.936 ms  108254250 bytes  1358425 matches  112.84 MB/s
+    [t01] 912.192 ms  106866375 bytes  1369177 matches  111.73 MB/s
+    [t02] 915.978 ms  109179500 bytes  1240175 matches  113.67 MB/s
+    [t03] 912.776 ms  105941125 bytes  1362019 matches  110.69 MB/s
+    [t04] 914.469 ms  141100625 bytes  1635901 matches  147.15 MB/s
+    [t05] 912.267 ms  105941125 bytes  1479389 matches  110.75 MB/s
+    [t06] 915.458 ms  108716875 bytes  1223442 matches  113.26 MB/s
+    [t07] 914.444 ms  140638000 bytes  1751802 matches  146.67 MB/s
+    [t08] 912.109 ms  140175375 bytes  1887766 matches  146.56 MB/s
+    [t09] 912.411 ms  108254250 bytes  1375451 matches  113.15 MB/s
+    [t10] 912.582 ms  105941125 bytes  1454287 matches  110.71 MB/s
+    [t11] 914.187 ms  140175375 bytes  1716153 matches  146.23 MB/s
+
+# finished:        2026-06-28T02:29:27-03:00
+# elapsed_seconds: 5
+# exit_code:       0

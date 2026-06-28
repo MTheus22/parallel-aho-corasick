@@ -1,0 +1,60 @@
+=== start 2026-05-29T00:17:23-03:00 ===
+
+--- uname -a ---
+Linux matheusbarros 6.17.0-29-generic #29~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon May 11 10:30:58 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+--- governor ---
+performance
+
+--- cpufreq atual (cpu0..cpuN MHz) ---
+cpu MHz		: 3719.295
+cpu MHz		: 631.933
+cpu MHz		: 3058.735
+cpu MHz		: 1123.692
+cpu MHz		: 3300.201
+cpu MHz		: 3300.145
+cpu MHz		: 3300.269
+cpu MHz		: 3296.471
+cpu MHz		: 3299.916
+cpu MHz		: 3299.716
+cpu MHz		: 3292.307
+cpu MHz		: 3300.132
+
+--- lscpu (resumido) ---
+Architecture:                            x86_64
+CPU(s):                                  12
+On-line CPU(s) list:                     0-11
+Model name:                              12th Gen Intel(R) Core(TM) i5-1235U
+Thread(s) per core:                      2
+Core(s) per socket:                      10
+Socket(s):                               1
+CPU(s) scaling MHz:                      73%
+CPU max MHz:                             4400.0000
+CPU min MHz:                             400.0000
+L1d cache:                               352 KiB (10 instances)
+L1i cache:                               576 KiB (10 instances)
+L2 cache:                                6.5 MiB (4 instances)
+L3 cache:                                12 MiB (1 instance)
+NUMA node0 CPU(s):                       0-11
+
+--- thermal zones ---
+  /sys/class/thermal/thermal_zone0/temp: 44000 mC
+  /sys/class/thermal/thermal_zone1/temp: 44000 mC
+  /sys/class/thermal/thermal_zone2/temp: 20000 mC
+  /sys/class/thermal/thermal_zone3/temp: 43050 mC
+  /sys/class/thermal/thermal_zone4/temp: 44050 mC
+  /sys/class/thermal/thermal_zone5/temp: 53000 mC
+  /sys/class/thermal/thermal_zone6/temp: 54000 mC
+  /sys/class/thermal/thermal_zone7/temp: 43000 mC
+  /sys/class/thermal/thermal_zone8/temp: 53000 mC
+
+--- free -h ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       4.2Gi       7.3Gi       587Mi        20Gi        26Gi
+Swap:          8.0Gi       1.6Gi       6.4Gi
+
+--- loadavg ---
+0.44 0.50 0.56 1/1749 3751448
+
+--- aclab commit ---
+e3dc7d4 Novos searchers

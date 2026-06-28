@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_x8.txt --searcher pattern_sharded_prefix --threads 4 --warmup 2 --iters 5 
+# started: 2026-05-29T02:46:00-03:00
+# phase:   A_speedup_curves
+# label:   patterns_snort__enron_x8__pattern_sharded_prefix__T4
+
+# Aho-Corasick laboratory
+# git:        e3dc7d4
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      11369469888 bytes (10842.77 MiB) via mmap
+# build time: 47.172 ms
+# warmup=2 iters=5 threads=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pattern_sharded_prefix    4  11369469888      34662.010      36194.304      37920.648       299.57  142831896      35701.811     3.80     2.5130      4
+#   iter_ms: 35350.995 35701.811 37920.648 37336.057 34662.010
+#   workers=4  median_MB/s=303.70  ns/byte=3.1835  stdev_ms=1377.090
+
+# finished:        2026-05-29T02:50:10-03:00
+# elapsed_seconds: 250
+# exit_code:       0

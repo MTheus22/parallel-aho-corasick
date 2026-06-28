@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_dynamic --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-05-29T07:43:35-03:00
+# phase:   D_per_thread
+# label:   patterns_snort__enron_corpus__pthread_dynamic__T12_perthread
+
+# Aho-Corasick laboratory
+# git:        e3dc7d4
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 54.839 ms
+# warmup=1 iters=3 threads=12
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic          12   1421183736       1509.949       1568.041       1610.416       864.36   17853987       1583.759     3.32     7.2507     12
+#   iter_ms: 1583.759 1509.949 1610.416
+#   workers=12  median_MB/s=855.78  ns/byte=1.1033  stdev_ms=52.045
+    [t00] 1437.011 ms  118431980 bytes  1349557 matches  78.60 MB/s
+    [t01] 1392.985 ms  118431980 bytes  1285059 matches  81.08 MB/s
+    [t02] 1359.736 ms  118431980 bytes  1249570 matches  83.06 MB/s
+    [t03] 1401.260 ms  118431980 bytes  1407097 matches  80.60 MB/s
+    [t04] 1179.474 ms  118431980 bytes  1379248 matches  95.76 MB/s
+    [t05] 1394.284 ms  118431980 bytes  1300782 matches  81.01 MB/s
+    [t06] 1207.575 ms  118431980 bytes  2032556 matches  93.53 MB/s
+    [t07] 1394.841 ms  118431980 bytes  1690055 matches  80.97 MB/s
+    [t08] 1190.696 ms  118431980 bytes  1765245 matches  94.86 MB/s
+    [t09] 1372.030 ms  118431980 bytes  1421341 matches  82.32 MB/s
+    [t10] 1398.317 ms  118431980 bytes  1416452 matches  80.77 MB/s
+    [t11] 1214.980 ms  118431980 bytes  1557025 matches  92.96 MB/s
+
+# finished:        2026-05-29T07:43:43-03:00
+# elapsed_seconds: 8
+# exit_code:       0

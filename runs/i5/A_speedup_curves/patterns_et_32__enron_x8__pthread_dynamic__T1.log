@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_x8.txt --searcher pthread_dynamic --threads 1 --warmup 2 --iters 5 
+# started: 2026-05-29T04:13:00-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_x8__pthread_dynamic__T1
+
+# Aho-Corasick laboratory
+# git:        e3dc7d4
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      11369469888 bytes (10842.77 MiB) via mmap
+# build time: 594.610 ms
+# warmup=2 iters=5 threads=1
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic           1  11369469888      85040.678      85549.684      86070.758       126.74  466943872      85541.678     0.55     1.0632      1
+#   iter_ms: 85978.181 86070.758 85040.678 85117.123 85541.678
+#   workers=1  median_MB/s=126.75  ns/byte=7.5245  stdev_ms=474.707
+
+# finished:        2026-05-29T04:23:02-03:00
+# elapsed_seconds: 602
+# exit_code:       0

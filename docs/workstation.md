@@ -1,5 +1,17 @@
 # Parecer — corrida única na Workstation (AMD Ryzen 9 9950X)
 
+> **⚠️ SUPERSEDIDO em parte (epic-03, 2026-06-29).** Este parecer cobre a **1ª
+> corrida REDUZIDA** (grade `A B D E`, 4 searchers) com os scripts hoje **legados**
+> `workstation_all.sh` / `run_workstation_sweep.sh` / `prepare_workstation_data.sh`.
+> O epic-03 torna a workstation **canônica** e roda a **grade COMPLETA A–E** pelo
+> motor **unificado**. Substituições 1-para-1:
+> `workstation_all.sh` → **`run_all.sh`**, `run_workstation_sweep.sh` →
+> **`run_sweep.sh`**, `prepare_workstation_data.sh` → **`prepare_data.sh`**, e as
+> envs `WS_*` → **`AC_*`** (`AC_GIT_PUSH`/`AC_GH_PAT`/`AC_UPLOAD_CMD`/`AC_NOTIFY`,
+> + `AC_GIT_PULL`). Comando canônico:
+> `RUN_DIR=runs/workstation ./scripts/run_all.sh`. As **ressalvas operacionais
+> (seções 3–5) continuam válidas** — só mudam os nomes dos scripts/envs.
+
 > **Status:** PRONTO PARA EXECUTAR, com 6 ressalvas operacionais que precisam ser
 > tratadas *antes* de você sair da máquina (seção 4). A infraestrutura de teste
 > (scripts, grade, resiliência, extração) já existe, está revisada e foi

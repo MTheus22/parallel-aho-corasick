@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# LEGADO (epic-03): substituído por scripts/run_all.sh (env-agnóstico, com
+# pull/upload/notificação). Use `RUN_DIR=runs/i5 ./scripts/run_all.sh`. Mantido
+# até a task 03 por segurança; não evoluir mais aqui.
 # =============================================================================
 # i5_all.sh — corrida única "um comando" no i5-1235U.
 # =============================================================================

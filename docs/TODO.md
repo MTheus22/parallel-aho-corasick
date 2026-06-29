@@ -33,9 +33,9 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 - **Por quê:** o sweep do i5 só tem `pthread_dynamic` (sem flat). Hoje a 9.6
   compara `v3_flat` (i5) com `dynamic_flat` (Ryzen) — conjuntos diferentes.
 - **Como:** acrescentar `pthread_dynamic_flat` ao set de variantes do
-  `scripts/run_i5_sweep.sh` (i5) nas fases A (escalabilidade) e B
-  (footprint); rerodar essas fases. **Não** rodar `v3/v3_flat` no Ryzen (colapsam
-  em `v2`).
+  `scripts/run_sweep.sh` (motor unificado) nas fases A (escalabilidade) e B
+  (footprint); rerodar essas fases no i5 (`RUN_DIR=runs/i5`). **Não** rodar
+  `v3/v3_flat` no Ryzen (colapsam em `v2`).
 - **Pronto quando:** `v_speedup`/`v_best` do i5 incluem `pthread_dynamic_flat`;
   atualizar 9.5/9.6 com a coluna.
 
@@ -45,11 +45,11 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   (balanceamento vs. contenção no contador atômico + re-leitura de overlap).
 - **Por quê:** com 4 tarefas/thread a dinâmica é quase estática (ver 9.8b). É a
   dúvida em aberto: "tarefas menores ajudariam?".
-- **Infra (feita 2026-06-27):** `phase_G` em `scripts/run_i5_sweep.sh` varre
-  `tasks_per_thread ∈ {1,4,16,64,256}` (via `AC_DYN_TASKS_PER_THREAD`, P0) para
-  `dynamic` e `dynamic_flat`, Snort + `enron_corpus`, `T=MAX_T`, com timing +
-  `--per-thread` por k. Opt-in: `PHASES="G" scripts/run_i5_sweep.sh`
-  (ou `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/i5_all.sh`).
+- **Infra (feita 2026-06-27):** `phase_G` no motor unificado `scripts/run_sweep.sh`
+  varre `tasks_per_thread ∈ {1,4,16,64,256}` (via `AC_DYN_TASKS_PER_THREAD`, P0)
+  para `dynamic` e `dynamic_flat`, Snort + `enron_corpus`, `T=MAX_T`, com timing +
+  `--per-thread` por k. Opt-in: `PHASES="G" scripts/run_sweep.sh`
+  (ou `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh`).
   Inventário: `docs/sweep-test-inventory.md` §"Fase G".
 - **Rodou no i5 (2026-06-28):** fase G executada em `runs/i5_2026-06-28/`
   (parte do re-run completo A–E+G). **Resultado inconclusivo:** com 1 invocação
@@ -59,8 +59,9 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   completo: [`i5-rerun-2026-06-28.md`](i5-rerun-2026-06-28.md).
 - **Falta:** repetir cada `k` **N≈5×** (mediana) para mediar o ruído de regime;
   idealmente sobre um corpus de **carga desigual** (ver P1 abaixo), senão prova
-  pouco. Depois rodar no **Ryzen** (adicionar `phase_G` análoga a
-  `run_workstation_sweep.sh`, ou via env) e consolidar a curva.
+  pouco. Depois rodar no **Ryzen** (a `phase_G` já está no motor unificado
+  `run_sweep.sh`: basta `RUN_DIR=runs/workstation PHASES="G" ./scripts/run_all.sh`)
+  e consolidar a curva.
 - **Expectativa:** ganho pequeno no Ryzen (homogêneo+uniforme); ganho maior no
   **i5** (P/E heterogêneo). Sanidade preliminar (slice 100 MB, T=12,
   `dynamic_flat`): k=1 → 1288 MB/s, k=64 → 1506 MB/s (≈+17%) — mas o re-run

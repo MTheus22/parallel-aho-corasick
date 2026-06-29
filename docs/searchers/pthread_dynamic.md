@@ -248,7 +248,7 @@ O valor efetivo é ecoado no header do run
 (`# warmup=… tasks_per_thread=N`), em texto e CSV. Valores razoáveis:
 2, 4, 8, 16, 32, 64 (ver §"Tarefas mais finas" acima). É a alavanca da
 **fase G** (`phase_G` em
-[`scripts/run_i5_sweep.sh`](../../scripts/run_i5_sweep.sh)), o sweep de
+[`scripts/run_sweep.sh`](../../scripts/run_sweep.sh)), o sweep de
 granularidade do P1 ([`../TODO.md`](../TODO.md)).
 
 > Histórico: antes era o `#define K_PER_THREAD 4`, que exigia uma

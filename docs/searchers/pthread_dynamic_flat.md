@@ -71,7 +71,7 @@ caminhar `(own_out_head, dict_suffix, outputs)`.
 Resolução: CLI `--tasks-per-thread N` → env `AC_DYN_TASKS_PER_THREAD=N`
 → default `4`. O valor efetivo aparece no header (`# … tasks_per_thread=N`),
 texto e CSV. É a alavanca da **fase G** (`phase_G` em
-[`scripts/run_i5_sweep.sh`](../../scripts/run_i5_sweep.sh)) — o sweep de
+[`scripts/run_sweep.sh`](../../scripts/run_sweep.sh)) — o sweep de
 granularidade do P1 ([`../TODO.md`](../TODO.md)).
 
 ## Estruturas consumidas

@@ -396,43 +396,61 @@ taskset -c 0,4 ./build/aclab --patterns data/patterns_snort.txt \
 
 ---
 
-## §14 · Sweep canônico do i5 (`run_i5_sweep.sh`)
+## §14 · Sweep canônico UNIFICADO (`run_sweep.sh`)
 
-Motor do sweep do i5. Resume automático — pula runs já concluídas. Fases default
-`A B C D E`; `G` (granularidade) é opt-in. Para a corrida real em máquina quieta,
-prefira o wrapper `i5_all.sh` (pré-flight + build + test + governador, depois
-**desacopla** — sobrevive a logout/suspensão; ver §14b).
+Motor de sweep **unificado e env-agnóstico** (substitui `run_i5_sweep.sh` e
+`run_workstation_sweep.sh`, agora legados). Roda a **grade completa** A–E em
+qualquer host, derivando `MAX_T=nproc` e o `RUN_DIR` (slug do modelo de CPU, ex.
+`runs/amd_ryzen_9_9950x`). Resume automático — pula runs já concluídas. Fases
+default `A B C D E`; `G` (granularidade) é opt-in. Para a corrida real, prefira o
+wrapper `run_all.sh` (pré-flight + build + test + governador + desacople +
+upload/notificação; ver §14b).
 
 ```bash
-# Fase A: curvas de speedup (todas as combinações snort/et_32 × enron/x8)
-PHASES="A" nohup scripts/run_i5_sweep.sh > i5.out 2>&1 &
+# Tudo, RUN_DIR auto pelo modelo de CPU
+nohup scripts/run_sweep.sh > sweep.out 2>&1 &
 
-# Fases específicas
-PHASES="B C D" scripts/run_i5_sweep.sh
+# Forçar o RUN_DIR (ex.: workstation canônica do epic-03)
+RUN_DIR=runs/workstation nohup scripts/run_sweep.sh > sweep.out 2>&1 &
 
-# Tudo (~6h30)
-nohup scripts/run_i5_sweep.sh > i5.out 2>&1 &
+# Fase A só; ou fases específicas
+PHASES="A" scripts/run_sweep.sh
+PHASES="B C D" scripts/run_sweep.sh
+
+# Pontos de curva custom (filtrados a 1..MAX_T)
+THREAD_POINTS="1 2 4 8 16 24 32" scripts/run_sweep.sh
 
 # Fase G (opt-in): granularidade da fila dinâmica — varre tasks-per-thread
-# {1,4,16,64,256} para dynamic/dynamic_flat (P1). Saída em runs/i5/G_granularity/.
-PHASES="G" nohup scripts/run_i5_sweep.sh > i5.out 2>&1 &
+# {1,4,16,64,256} para dynamic/dynamic_flat (P1). Saída em <RUN_DIR>/G_granularity/.
+PHASES="G" nohup scripts/run_sweep.sh > sweep.out 2>&1 &
 
-# Acompanhar progresso
-tail -f runs/i5/MASTER.log
+# Acompanhar progresso (ajuste o RUN_DIR)
+tail -f runs/<run_dir>/MASTER.log
 ```
 
-### §14b · Corrida "um comando" desacoplada (`i5_all.sh`)
+### §14b · Corrida "um comando" desacoplada (`run_all.sh`)
 
-Para rodar em TTY texto pós-reboot (protocolo de máquina quieta). Faz pré-flight
-de dados, build, `make test`, governador `performance` e então desacopla o sweep
-(imune a logout/suspensão), imprimindo os comandos de log.
+Wrapper **env-agnóstico** (substitui `i5_all.sh`/`workstation_all.sh`). Faz pull
+opcional (`AC_GIT_PULL=1`), pré-flight de dados (`prepare_data.sh`), governador
+`performance` (agnóstico: `amd-pstate`/`intel_pstate`), build + `make test`, e
+então **desacopla** o sweep (imune a logout/suspensão), imprimindo os comandos de
+log. Ao terminar, faz upload/notificação best-effort.
 
 ```bash
-# reboot -> Ctrl+Alt+F3 -> login -> cd .../parallel-aho-corasick
-./scripts/i5_all.sh                                   # default A B C D E
-PHASES="G" ./scripts/i5_all.sh                        # só granularidade
-RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/i5_all.sh   # em dir separado
+# i5 (TTY texto pós-reboot, protocolo de máquina quieta), sem upload
+RUN_DIR=runs/i5 ./scripts/run_all.sh                 # default A B C D E
+RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh   # só granularidade
+
+# Workstation Ryzen 9 9950X: grade completa + push da runs/ + notificação no celular
+RUN_DIR=runs/workstation \
+AC_GIT_PULL=1 AC_GIT_PUSH=1 AC_GH_PAT=github_pat_xxx \
+AC_NOTIFY='curl -d "TCC sweep pronto (rc=$AC_RC): $AC_RESULTS" ntfy.sh/SEU-TOPICO' \
+  ./scripts/run_all.sh
 ```
+
+> `AC_GIT_PUSH`+`AC_GH_PAT` (PAT só por ambiente; push em `HEAD:main`),
+> `AC_UPLOAD_CMD` (`$AC_RESULTS`=.tgz) e `AC_NOTIFY` (`$AC_RC`/`$AC_RESULTS`) são
+> independentes e best-effort — falha em qualquer um não derruba o sweep.
 
 Pós-sweep — gerar artefatos de análise e consultar (ver `runs/i5/QUERY_GUIDE.md`):
 

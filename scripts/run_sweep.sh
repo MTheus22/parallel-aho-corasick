@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
-# LEGADO: use scripts/run_sweep.sh (motor unificado env-agnóstico). Mantido só
-# para reprodutibilidade do sweep i5 2026-05-29; remoção pendente da task 03.
 # =============================================================================
-# Sweep do i5 — coleta para o relatório de resultados do TCC.
+# Motor de sweep UNIFICADO e env-agnóstico — coleta para o TCC.
 # =============================================================================
 #
+# Promove o antigo `run_i5_sweep.sh` a um único script que roda a **totalidade
+# da grade** (fases A–E, 9 searchers paralelos + 2 sequenciais) em **qualquer
+# ambiente**, derivando o teto de threads e o nome do diretório de saída do
+# hardware corrente. Nenhuma suposição de hardware híbrido (P/E) é embutida.
+#
+# Inventário exato da grade (em função de MAX_T): docs/sweep-test-inventory.md.
+#
 # Resiliente:
-#   - Cada run grava em um arquivo próprio em runs/i5/<fase>/.
+#   - Cada run grava em um arquivo próprio em <RUN_DIR>/<fase>/.
 #   - Rerodar o script PULA runs já concluídas (resume-from-crash).
 #   - Falhas individuais não derrubam o sweep; ficam marcadas com sufixo .FAIL.
 #   - SIGINT / SIGTERM são tratados: tmp files limpos, MASTER.log finalizado.
 #   - flock impede duas instâncias simultâneas (mediria com ruído).
 #
+# Diretório de saída (RUN_DIR):
+#   - Se RUN_DIR vier do chamador, é respeitado tal e qual.
+#   - Senão, é derivado do modelo de CPU (`lscpu` → slug), ex.:
+#       runs/amd_ryzen_9_9950x, runs/intel_core_i5_1235u.
+#     Fallback (sem lscpu/Model name): runs/<hostname>.
+#   - Os diretórios canônicos `runs/i5` e `runs/workstation` NUNCA são
+#     sobrescritos por engano: se o slug colidir com um deles e ele estiver
+#     não-vazio, anexa-se a data (runs/<slug>_AAAA-MM-DD) e avisa no MASTER.log.
+#
 # Estrutura de saída:
-#   runs/i5/
+#   <RUN_DIR>/
 #     MASTER.log                # event log timestampado (append-only)
 #     env/start.txt             # lscpu, governor, free, /proc/cpuinfo MHz
 #     env/end.txt               # idem no fim do sweep
@@ -28,51 +42,43 @@
 # Convenção de nome dos .log:
 #   <patterns_basename>__<corpus_basename>__<searcher>__T<n>[_<tag>].log
 #
-# Plano (fases):
+# Plano (fases) — pontos de thread escalam com MAX_T (nproc), não fixos em 12:
 #   A — curva completa por searcher (the headline figure)
-#       enron_corpus: T ∈ {1,2,3,4,6,8,10,12} × {snort, et_32} × 8 searchers
-#       enron_x8:     T ∈ {1,4,8,12}          × {snort, et_32} × 8 searchers
-#       warmup=2 iters=5 (resolve anomalia em T=4 e baseline frio do et_32)
+#       enron_corpus: T derivado de MAX_T (passo +2)  × {snort, et_32} × 9 searchers
+#       enron_x8:     T derivado de MAX_T (dobrando)   × {snort, et_32} × 9 searchers
+#       warmup=2 iters=5
 #   B — footprint do autômato vs throughput
 #       dicts ∈ {snort_100, snort_1k, snort, et_32} × {seq, v3}
-#       T ∈ {1, 12}, corpus = enron_corpus
+#       T ∈ {1, MAX_T}, corpus = enron_corpus
 #   C — sensibilidade ao corpus
-#       (snort) × {simplewiki, enron_corpus} × {seq, v3} × T ∈ {1, 12}
-#   D — per-thread em T=12 (para tabela de balanceamento)
-#       1 run por searcher paralelo em (snort, enron_corpus, T=12, --per-thread)
+#       (snort) × {simplewiki, enron_corpus} × {seq, v3} × T ∈ {1, MAX_T}
+#   D — per-thread em T=MAX_T (para tabela de balanceamento)
+#       1 run por searcher paralelo em (snort, enron_corpus, T=MAX_T, --per-thread)
 #   E — build-time paralelo vs. sequencial (idea 4)
-#       dicts ∈ {snort_100, snort_1k, snort, et_32}, build seq vs. par
+#       dicts ∈ {snort_100, snort_1k, snort, et_32}, build seq vs. par (dobrando até MAX_T)
 #   G — granularidade da fila dinâmica (OPT-IN, fora do default)
 #       AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} × {dynamic, dynamic_flat}
-#       (snort, enron_corpus, T=12); timing + --per-thread por k
+#       (snort, enron_corpus, T=MAX_T); timing + --per-thread por k
 #
 # Uso:
-#   scripts/run_i5_sweep.sh                    # roda o default (A B C D E, ~6h30)
-#   scripts/run_i5_sweep.sh A                  # roda só fase A
-#   PHASES="A C" scripts/run_i5_sweep.sh       # roda fases A e C
-#   PHASES="G" scripts/run_i5_sweep.sh         # só o sweep de granularidade (P1)
-#   RUN_DIR=runs/teste scripts/run_i5_sweep.sh # dir custom
+#   scripts/run_sweep.sh                       # default (A B C D E), RUN_DIR auto
+#   scripts/run_sweep.sh A                     # roda só fase A
+#   PHASES="A C" scripts/run_sweep.sh          # roda fases A e C
+#   PHASES="G" scripts/run_sweep.sh            # só o sweep de granularidade (P1)
+#   RUN_DIR=runs/teste scripts/run_sweep.sh    # dir custom (override)
+#   MAX_THREADS=32 scripts/run_sweep.sh        # teto de threads custom (default nproc)
+#   THREAD_POINTS="1 2 4 8 16 24 32" scripts/run_sweep.sh  # pontos de curva custom
 #
-# Antes de iniciar (recomendado):
-#   sudo cpupower frequency-set -g performance
+# Antes de iniciar (governador etc. ficam a cargo do wrapper "um comando";
+# aqui só registramos o ambiente em env/start.txt):
+#   sudo cpupower frequency-set -g performance   # (fora deste script)
 #   fechar IDEs/browsers
-#   nohup ./scripts/run_i5_sweep.sh > i5.out 2>&1 &
+#   nohup ./scripts/run_sweep.sh > sweep.out 2>&1 &
 #
 # Análise pós-execução:
 #   Cada .log começa com header `# command: ...` e `# started: ...`, depois
 #   contém a saída completa do aclab. A linha de resultado é a do searcher
-#   na tabela final. Exemplo de extrator (TSV: pat, cor, searcher, T, min, mean, MBps, matches):
-#
-#   for f in runs/i5/A_speedup_curves/*.log; do
-#     base=$(basename "$f" .log)
-#     IFS='__' read -ra parts <<< "$base"
-#     # parts[0]=pat parts[2]=cor parts[4]=searcher parts[6]=T...
-#     awk -v b="$base" '
-#       /^(sequential|pthread_)/ {
-#         printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-#                b, $1, $2, $4, $5, $6, $7, $8
-#       }' "$f"
-#   done > runs/i5/phase_A.tsv
+#   na tabela final. Extração: scripts/extract_sweep_csv.py + build_sweep_db.py.
 # =============================================================================
 
 set -uo pipefail
@@ -80,9 +86,46 @@ set -uo pipefail
 cd "$(dirname "$0")/.."
 
 BIN=build/aclab
-DATA=data
-RUN_DIR="${RUN_DIR:-runs/i5}"
+DATA="${DATA:-data}"
 MAX_T="${MAX_THREADS:-$(nproc)}"
+THREAD_POINTS="${THREAD_POINTS:-}"
+
+# -------- auto-nomeação do ambiente (quando RUN_DIR não vier do chamador) ----
+# Deriva um slug do modelo de CPU; fallback para hostname. Não embute nenhuma
+# suposição de hardware (P/E, contagem fixa de threads) — apenas um rótulo.
+cpu_slug() {
+  local model
+  model=$(lscpu 2>/dev/null | awk -F: '/Model name/{sub(/^[ \t]+/,"",$2); print $2; exit}')
+  if [[ -z "$model" ]]; then
+    hostname -s 2>/dev/null || echo "host"
+    return
+  fi
+  printf '%s\n' "$model" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/\(r\)|\(tm\)//g
+              s/ [0-9]+-core processor//
+              s/ processor//
+              s/ cpu//
+              s/ @.*$//
+              s/[^a-z0-9]+/_/g
+              s/^_+|_+$//g'
+}
+
+COLLISION_NOTE=""
+if [[ -z "${RUN_DIR:-}" ]]; then
+  SLUG=$(cpu_slug)
+  [[ -z "$SLUG" ]] && SLUG=$(hostname -s 2>/dev/null || echo host)
+  RUN_DIR="runs/$SLUG"
+  # Guarda defensiva: nunca sobrescrever os dirs canônicos não-vazios.
+  case "$RUN_DIR" in
+    runs/i5|runs/workstation)
+      if [[ -n "$(ls -A "$RUN_DIR" 2>/dev/null)" ]]; then
+        RUN_DIR="runs/${SLUG}_$(date +%F)"
+        COLLISION_NOTE="slug colidiu com dir canônico reservado e não-vazio; usando $RUN_DIR"
+      fi
+      ;;
+  esac
+fi
 
 # -------- build se necessário ----------------------------------------------
 if [[ ! -x "$BIN" ]]; then
@@ -172,16 +215,34 @@ snapshot_env() {
 }
 
 # Sample mais leve para correlacionar throttling com runs específicas.
+# Best-effort: se /sys/class/thermal não existir, a glob não casa e o campo
+# de zonas fica vazio — não aborta.
 thermal_snapshot() {
   local label="$1"
   local ts; ts=$(date '+%H:%M:%S')
   local zones=""
   for z in /sys/class/thermal/thermal_zone*/temp; do
+    [[ -e "$z" ]] || continue
     zones+=$(cat "$z" 2>/dev/null || echo 0)
     zones+=$'\t'
   done
   local mhz; mhz=$(awk '/^cpu MHz/ {sum+=$4; n++} END {if (n>0) printf "%.0f", sum/n}' /proc/cpuinfo)
   printf '%s\t%s\t%s%s\n' "$ts" "$label" "$zones" "$mhz" >> "$RUN_DIR/env/thermal.tsv"
+}
+
+# -------- pontos de thread -------------------------------------------------
+# Se THREAD_POINTS for fornecido pelo chamador, ele substitui a derivação por
+# MAX_T em TODAS as curvas (filtrado para 1..MAX_T, único e ordenado).
+thread_points_override() {
+  local out=() t seen=" "
+  for t in $THREAD_POINTS; do
+    [[ "$t" =~ ^[0-9]+$ ]] || continue
+    (( t >= 1 && t <= MAX_T )) || continue
+    [[ "$seen" == *" $t "* ]] && continue
+    out+=("$t"); seen+="$t "
+  done
+  # ordena numericamente
+  printf '%s\n' "${out[@]}" | sort -n | tr '\n' ' '
 }
 
 # -------- runner: 1 execução do aclab --------------------------------------
@@ -283,15 +344,25 @@ phase_A() {
                   pthread_2d_sharded_chunked  # idea 6
                   pattern_sharded_prefix)     # idea 1
 
-  # A1: enron_corpus (1.36 GiB) — curva dinâmica até MAX_T
-  local Ts_corpus=(1)
-  for ((i=2; i<MAX_T; i+=2)); do Ts_corpus+=($i); done
-  [[ ${Ts_corpus[-1]} -ne $MAX_T ]] && Ts_corpus+=($MAX_T)
+  # A1: enron_corpus (1.42 GiB) — curva dinâmica até MAX_T (passo +2)
+  local Ts_corpus
+  if [[ -n "$THREAD_POINTS" ]]; then
+    read -ra Ts_corpus <<< "$(thread_points_override)"
+  else
+    Ts_corpus=(1)
+    for ((i=2; i<MAX_T; i+=2)); do Ts_corpus+=($i); done
+    [[ ${Ts_corpus[-1]} -ne $MAX_T ]] && Ts_corpus+=($MAX_T)
+  fi
 
-  # A2: enron_x8 (10.59 GiB) — curva reduzida
-  local Ts_x8=(1)
-  for ((i=4; i<MAX_T; i*=2)); do Ts_x8+=($i); done
-  [[ ${Ts_x8[-1]} -ne $MAX_T ]] && Ts_x8+=($MAX_T)
+  # A2: enron_x8 (10.59 GiB) — curva reduzida (dobrando até MAX_T)
+  local Ts_x8
+  if [[ -n "$THREAD_POINTS" ]]; then
+    read -ra Ts_x8 <<< "$(thread_points_override)"
+  else
+    Ts_x8=(1)
+    for ((i=4; i<MAX_T; i*=2)); do Ts_x8+=($i); done
+    [[ ${Ts_x8[-1]} -ne $MAX_T ]] && Ts_x8+=($MAX_T)
+  fi
 
   for combo in "patterns_snort.txt:enron_corpus.txt" \
                "patterns_et_32.txt:enron_corpus.txt"; do
@@ -369,7 +440,7 @@ phase_C() {
 }
 
 # =============================================================================
-# Fase D — per-thread em T=12 (diagnóstico de balanceamento)
+# Fase D — per-thread em T=MAX_T (diagnóstico de balanceamento)
 # =============================================================================
 phase_D() {
   log "===== Fase D — per-thread (T=$MAX_T) ====="
@@ -405,10 +476,15 @@ phase_E() {
   for pat in "${dicts[@]}"; do
     # Build sequencial
     run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" sequential 0 0 1 "buildseq"
-    # Build paralelo
-    local Ts_build=()
-    for ((i=2; i<=MAX_T; i*=2)); do Ts_build+=($i); done
-    [[ ${Ts_build[-1]} -ne $MAX_T ]] && Ts_build+=($MAX_T)
+    # Build paralelo: dobrando até MAX_T (ou THREAD_POINTS override)
+    local Ts_build
+    if [[ -n "$THREAD_POINTS" ]]; then
+      read -ra Ts_build <<< "$(thread_points_override)"
+    else
+      Ts_build=()
+      for ((i=2; i<=MAX_T; i*=2)); do Ts_build+=($i); done
+      [[ ${#Ts_build[@]} -eq 0 || ${Ts_build[-1]} -ne $MAX_T ]] && Ts_build+=($MAX_T)
+    fi
 
     for T in "${Ts_build[@]}"; do
       # Passa variáveis de ambiente via env dentro de run_aclab.
@@ -427,13 +503,13 @@ phase_E() {
 # =============================================================================
 # Responde à pergunta em aberto do P1 ("tarefas menores ajudariam a dinâmica?").
 # Varre AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} (num_tasks = k·T) para os dois
-# searchers de dispatch dinâmico, no regime headline do i5 (Snort + enron_corpus,
+# searchers de dispatch dinâmico, no regime headline (Snort + enron_corpus,
 # T=MAX_T). Duas passadas por k: (i) timing → curva vazão × k; (ii) --per-thread
 # → spread de tempo entre workers (o que a granularidade de fato rebalanceia).
 #
 # Depende do P0 (binário lê --tasks-per-thread / AC_DYN_TASKS_PER_THREAD; o valor
 # efetivo aparece no header do log como `tasks_per_thread=N`). NÃO faz parte do
-# PHASES default — rode com:  PHASES="G" scripts/run_i5_sweep.sh
+# PHASES default — rode com:  PHASES="G" scripts/run_sweep.sh
 phase_G() {
   log "===== Fase G — granularidade tasks-per-thread (T=$MAX_T) ====="
   local phase="G_granularity"
@@ -464,8 +540,10 @@ phase_G() {
 # =============================================================================
 PHASES="${PHASES:-${1:-A B C D E}}"
 
-log "=== Sweep do i5 iniciado ==="
-log "RUN_DIR=$RUN_DIR  PHASES=$PHASES"
+log "=== Sweep iniciado ==="
+log "RUN_DIR=$RUN_DIR  MAX_T=$MAX_T  PHASES=$PHASES"
+[[ -n "$THREAD_POINTS" ]] && log "THREAD_POINTS override=$(thread_points_override)"
+[[ -n "$COLLISION_NOTE" ]] && log "WARN  $COLLISION_NOTE"
 snapshot_env start
 
 for p in $PHASES; do
@@ -484,7 +562,7 @@ snapshot_env end
 ELAPSED=$(($(date +%s) - START_TS))
 HRS=$((ELAPSED / 3600))
 MIN=$(((ELAPSED % 3600) / 60))
-log "=== Sweep do i5 concluído ==="
+log "=== Sweep concluído ==="
 log "Resumo: ok=$OK skipped=$SKIPPED failed=$FAILED  duração=${HRS}h${MIN}m"
 
 # Atalho rápido para o usuário ao acordar:

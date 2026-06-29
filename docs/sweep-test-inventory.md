@@ -1,19 +1,33 @@
-# Inventário do sweep do i5 (`scripts/run_i5_sweep.sh`)
+# Inventário do sweep (`scripts/run_sweep.sh`)
 
 Relação **exata** de execuções disparadas pelo sweep canônico do TCC.
-Fonte: `scripts/run_i5_sweep.sh`. Cada execução é uma chamada de
-`build/aclab` com `--patterns`, `--input`, `--searcher`, `--threads`,
-`--warmup` e `--iters`. O total bate com os **265 runs** do
-`runs/i5/sweep.db` (sweep de 2026-05-29, 0 falhas).
 
-> Nota: o cabeçalho-comentário do script (linhas 27-39) está **desatualizado**
+**Motor único:** `scripts/run_sweep.sh` é o engine **unificado e env-agnóstico**
+(promove o legado `scripts/run_i5_sweep.sh`). Roda a **grade completa** (fases
+A–E, 9 searchers paralelos + 2 sequenciais) em qualquer host, derivando o teto
+de threads (`MAX_T = MAX_THREADS:-nproc`) e o `RUN_DIR` (slug do modelo de CPU,
+ex.: `runs/amd_ryzen_9_9950x`, `runs/intel_core_i5_1235u`; fallback `runs/<host>`).
+`run_i5_sweep.sh`/`run_workstation_sweep.sh` ficam como **legados**.
+
+A **grade é descrita em função de `MAX_T`** — não é fixa em 12. As contagens
+abaixo valem para o **caso particular `MAX_T = 12`** (i5-1235U), que bate com os
+**265 runs** do `runs/i5/sweep.db` (sweep de 2026-05-29, 0 falhas). Em outro
+host a contagem muda só pelos pontos de thread (ver "Como `MAX_T` muda a
+contagem" ao fim). Cada execução é uma chamada de `build/aclab` com
+`--patterns`, `--input`, `--searcher`, `--threads`, `--warmup` e `--iters`.
+
+> Nota: o cabeçalho-comentário do legado `run_i5_sweep.sh` está **desatualizado**
 > em relação ao corpo. Onde houver divergência, vale o código. Ex.: o comentário
 > diz "8 searchers" e "T ∈ {1,2,3,4,6,8,10,12}", mas o código usa **9 searchers
 > paralelos** e a curva real em `enron_corpus` é **{1,2,4,6,8,10,12}** (sem 3).
+> O `run_sweep.sh` tem o cabeçalho já atualizado (descrição env-agnóstica).
 
 ## Parâmetros globais
 
-- `MAX_T = nproc` (na máquina atual, i5-1235U → **12**). Abaixo uso `MAX_T`.
+- `MAX_T = MAX_THREADS:-nproc` (no i5-1235U → **12**; no Ryzen 9 9950X → **32**).
+  Abaixo uso `MAX_T`. Override opcional dos pontos de curva:
+  `THREAD_POINTS="1 2 4 8 16 24 32"` (filtrado para `1..MAX_T`, único e ordenado;
+  substitui a derivação em **todas** as curvas — A1, A2, E).
 - Searchers sequenciais: `sequential` (chain-walk) e `sequential_flat` (idea 5).
 - **Conjunto de 9 searchers paralelos** (reusado em A e D):
   `pthread_chunked`, `pthread_chunked_v2`, `pthread_chunked_v3`,
@@ -99,7 +113,8 @@ sempre `sequential`, corpus `enron_corpus`.
 
 > **Fora do default** (`PHASES` padrão = `A B C D E`). **Não** entra nos 265
 > runs do `sweep.db` 2026-05-29 — foi adicionada depois (P0/P1), ainda **não
-> rodada** no i5. Rode com `PHASES="G" scripts/run_i5_sweep.sh`.
+> rodada** no i5. Rode com `PHASES="G" scripts/run_sweep.sh` (ou
+> `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh`).
 
 Responde à pergunta em aberto do P1 ("tarefas menores ajudariam a dinâmica?").
 Usa a alavanca de runtime `AC_DYN_TASKS_PER_THREAD` (P0) para variar
@@ -134,6 +149,23 @@ O `k` efetivo de cada run fica no header do `.log` como `tasks_per_thread=N`
 Resiliência: cada run grava 1 `.log`; rerodar pula o que já completou
 (grep pela linha de resultado do searcher). Falhas viram `.FAIL` sem
 derrubar o sweep. `flock` impede instâncias paralelas.
+
+### Como `MAX_T` muda a contagem
+
+Só a **Fase A** (curvas) e a **Fase E** (build paralelo) escalam com `MAX_T`; o
+resto é fixo (B/C/D usam `T ∈ {1, MAX_T}` ou `T = MAX_T`, contagem constante).
+Os pontos de thread são derivados assim (ou substituídos por `THREAD_POINTS`):
+
+- **A1** `enron_corpus` — `{1}` ∪ `{2,4,…}` (passo +2) até `MAX_T`. Em 12 → 7
+  pontos `{1,2,4,6,8,10,12}`; em 32 → 16 pontos `{1,2,4,…,32}`.
+- **A2** `enron_x8` — `{1}` ∪ `{4,8,16,…}` (dobrando) até `MAX_T`. Em 12 → 4
+  pontos `{1,4,8,12}`; em 32 → 5 pontos `{1,4,8,16,32}`.
+- **E** build paralelo — `{2,4,8,…}` (dobrando) até `MAX_T`, por dict. Em 12 →
+  `{2,4,8,12}` (4); em 32 → `{2,4,8,16,32}` (5).
+
+Logo a contagem total é `MAX_T`-dependente; **265 é o caso `MAX_T = 12`**, não
+uma constante do script. Para um `MAX_T` arbitrário, recompute A/E pelos pontos
+acima e some B(24) + C(6) + D(9) inalterados.
 
 ---
 
@@ -271,7 +303,7 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
    fases A/D/E **falham em massa**. Use o pré-flight dedicado:
 
    ```bash
-   ./scripts/prepare_workstation_data.sh
+   ./scripts/prepare_data.sh
    ```
 
    Ele: (a) gera `enron_x8.txt` = `enron_corpus.txt` × 8 (checa disco e
@@ -296,19 +328,25 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 
 ## Como rodar (driver enxuto)
 
-Script dedicado: **`scripts/run_workstation_sweep.sh`** (irmão do sweep do i5,
-herda lock/resume/env-snapshot/thermal). Implementa exatamente esta grade
+> **⚠️ epic-03:** esta subseção descreve a grade **reduzida** da 1ª corrida com o
+> **legado** `run_workstation_sweep.sh`. A corrida canônica do epic-03 roda a
+> **grade COMPLETA A–E** (topo deste doc) pelo motor unificado. Use:
+> `RUN_DIR=runs/workstation ./scripts/run_all.sh` (faz pré-flight + governador +
+> build/test + `run_sweep.sh` desacoplado + upload). Comandos abaixo = histórico.
+
+Script dedicado (legado): **`scripts/run_workstation_sweep.sh`** (irmão do sweep
+do i5, herda lock/resume/env-snapshot/thermal). Implementa esta grade reduzida
 e descarta `v3`/`v3_flat`.
 
 ```bash
-./scripts/prepare_workstation_data.sh            # PRÉ-FLIGHT DE DADOS (deve dar PRONTO)
+./scripts/prepare_data.sh                        # PRÉ-FLIGHT DE DADOS (deve dar PRONTO)
 sudo cpupower frequency-set -g performance       # Zen 5 = amd-pstate
 make && make test                                # correção no chip-alvo
-nohup ./scripts/run_workstation_sweep.sh > workstation.out 2>&1 &
+RUN_DIR=runs/workstation nohup ./scripts/run_sweep.sh > workstation.out 2>&1 &  # grade COMPLETA A–E
 ```
 
-- Default roda `A B D E` (a fase opcional `S` de 2-D/sharding só entra com
-  `PHASES="A B D E S"`).
+- O motor unificado roda `A B C D E` por default (a reduzida `A B D E` era do
+  legado; a fase opcional `S` de 2-D/sharding entra com `PHASES="A B D E S"`).
 - Os pontos de thread se adaptam ao `nproc` (ou a `MAX_THREADS=…`): em 32
   threads a curva é `{1,2,4,8,16,24,32}`.
 - Saída em `runs/workstation/<fase>/`; rerodar pula o que já completou.

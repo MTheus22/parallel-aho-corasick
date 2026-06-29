@@ -58,9 +58,9 @@ TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclus
 | `make asan`                | AddressSanitizer + UBSan                                               |
 | `make tsan`                | ThreadSanitizer — verifica ausência de data races na fase paralela     |
 | `make test`                | Executa `tests/test_correctness.c` contra todos os searchers          |
-| `scripts/run_i5_sweep.sh` | Motor do sweep canônico do TCC (i5, fases A–E, resume automático) → `runs/i5/` |
-| `scripts/i5_all.sh` | Wrapper "um comando" do i5: pré-flight + build + test + governador, depois **desacopla** o sweep (sobrevive a logout/suspensão). Para rodar em TTY texto pós-reboot. |
-| `scripts/run_workstation_sweep.sh` (`workstation_all.sh`) | Sweep de portabilidade (Ryzen 9 9950X, cores homogêneos) → `runs/workstation/` |
+| `scripts/run_sweep.sh` | **Motor de sweep UNIFICADO e env-agnóstico** (grade completa A–E, 9 paralelos + 2 seq). Deriva `MAX_T=nproc` e o `RUN_DIR` (slug da CPU). Substitui `run_i5_sweep.sh`/`run_workstation_sweep.sh` (legados). |
+| `scripts/prepare_data.sh` | Pré-flight de dados env-agnóstico: gera `enron_x8` + dicts reduzidos; **ABORTA** se `patterns_et_32.txt` faltar; imprime `PRONTO`. Substitui `prepare_workstation_data.sh`. |
+| `scripts/run_all.sh` | **Wrapper "um comando" env-agnóstico**: pull opc. + pré-flight + governador (amd/intel-pstate) + build + test, depois **desacopla** o sweep (sobrevive a logout/suspensão) e faz upload/notificação best-effort (`AC_GIT_PUSH`/`AC_GH_PAT`, `AC_UPLOAD_CMD`, `AC_NOTIFY`). Ex.: `RUN_DIR=runs/workstation ./scripts/run_all.sh`. Substitui `i5_all.sh`/`workstation_all.sh` (legados). |
 | `scripts/extract_sweep_csv.py` + `build_sweep_db.py` | Pós-sweep: logs → `sweep.csv` → SQLite `sweep.db` (consulta token-efficient) |
 | `./build/aclab --list`     | Lista todos os searchers registrados                                   |
 | `./build/aclab --help`     | Mostra todas as flags do CLI                                           |

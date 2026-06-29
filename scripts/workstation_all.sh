@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# LEGADO (epic-03): substituído por scripts/run_all.sh (env-agnóstico, grade
+# completa A–E, com pull/upload/notificação). Use
+# `RUN_DIR=runs/workstation ./scripts/run_all.sh`. Mantido até a task 03; não
+# evoluir mais aqui.
 # =============================================================================
 # workstation_all.sh — corrida única "um comando".
 # =============================================================================

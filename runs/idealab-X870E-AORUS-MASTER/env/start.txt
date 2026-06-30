@@ -1,4 +1,4 @@
-=== start 2026-06-29T16:53:38-03:00 ===
+=== start 2026-06-30T17:28:02-03:00 ===
 
 --- uname -a ---
 Linux idealab-X870E-AORUS-MASTER 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
@@ -7,34 +7,34 @@ Linux idealab-X870E-AORUS-MASTER 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMP
 performance
 
 --- cpufreq atual (cpu0..cpuN MHz) ---
-cpu MHz		: 5700.154
-cpu MHz		: 5665.395
-cpu MHz		: 5686.162
-cpu MHz		: 5613.231
-cpu MHz		: 5666.757
-cpu MHz		: 5699.281
-cpu MHz		: 5691.489
-cpu MHz		: 5698.146
+cpu MHz		: 5693.254
+cpu MHz		: 5680.971
+cpu MHz		: 5668.979
+cpu MHz		: 5683.007
+cpu MHz		: 5663.966
+cpu MHz		: 5686.733
+cpu MHz		: 5677.213
+cpu MHz		: 5671.224
+cpu MHz		: 3863.691
+cpu MHz		: 5469.013
+cpu MHz		: 5472.849
+cpu MHz		: 5472.489
+cpu MHz		: 5450.756
+cpu MHz		: 5483.575
+cpu MHz		: 5479.579
+cpu MHz		: 2739.046
 cpu MHz		: 624.194
 cpu MHz		: 624.194
-cpu MHz		: 5479.773
-cpu MHz		: 5480.692
-cpu MHz		: 5478.602
-cpu MHz		: 5472.370
-cpu MHz		: 5471.065
-cpu MHz		: 5466.176
-cpu MHz		: 5698.533
-cpu MHz		: 5695.342
 cpu MHz		: 624.194
 cpu MHz		: 624.194
 cpu MHz		: 624.194
-cpu MHz		: 5694.539
-cpu MHz		: 624.194
-cpu MHz		: 624.194
-cpu MHz		: 4778.631
-cpu MHz		: 4294.471
-cpu MHz		: 4349.769
-cpu MHz		: 3905.716
+cpu MHz		: 5633.057
+cpu MHz		: 5694.215
+cpu MHz		: 5693.715
+cpu MHz		: 5490.734
+cpu MHz		: 5481.815
+cpu MHz		: 5433.320
+cpu MHz		: 5483.922
 cpu MHz		: 624.194
 cpu MHz		: 624.194
 cpu MHz		: 624.194
@@ -45,7 +45,7 @@ CPU(s):                                    32
 Lista de CPU(s) on-line:                   0-31
 Nome do modelo:                            AMD Ryzen 9 9950X 16-Core Processor
 Thread(s) per núcleo:                      2
-CPU(s) MHz de escala:                      66%
+CPU(s) MHz de escala:                      73%
 CPU MHz máx.:                              5756,4521
 CPU MHz mín.:                              624,1940
 cache de L1d:                              768 KiB (16 instâncias)
@@ -59,11 +59,11 @@ CPU(s) de nó0 NUMA:                        0-31
 
 --- free -h ---
                total       usada       livre    compart.  buff/cache  disponível
-Mem.:          123Gi       2,3Gi       120Gi       3,6Mi       1,3Gi       121Gi
+Mem.:          123Gi       2,4Gi       117Gi       3,3Mi       4,4Gi       121Gi
 Swap:          8,0Gi          0B       8,0Gi
 
 --- loadavg ---
-0.15 0.08 0.03 1/635 6908
+0.08 0.04 0.02 1/592 6897
 
 --- aclab commit ---
-82dc697 epic-03: harness de sweep unificado e env-agnóstico (Fase 1)
+334311e bench: alinhar protocolo canonico da workstation

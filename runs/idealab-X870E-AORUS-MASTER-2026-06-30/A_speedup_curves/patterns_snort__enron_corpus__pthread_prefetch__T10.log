@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_prefetch --threads 10 --warmup 2 --iters 5 
+# started: 2026-06-30T18:10:17-03:00
+# phase:   A_speedup_curves
+# label:   patterns_snort__enron_corpus__pthread_prefetch__T10
+
+# Aho-Corasick laboratory
+# git:        c19da78
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 31.955 ms
+# warmup=2 iters=5 threads=10 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_prefetch         10   1421183736        463.706        464.986        465.873      2914.81   17853987        465.299     0.19    24.4512     10
+#   iter_ms: 465.299 465.873 463.706 464.556 465.494
+#   workers=10  median_MB/s=2912.85  ns/byte=0.3272  stdev_ms=0.861
+
+# finished:        2026-06-30T18:10:20-03:00
+# elapsed_seconds: 3
+# exit_code:       0

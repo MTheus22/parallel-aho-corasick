@@ -1,0 +1,69 @@
+=== start 2026-06-30T17:58:18-03:00 ===
+
+--- uname -a ---
+Linux idealab-X870E-AORUS-MASTER 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+--- governor ---
+performance
+
+--- cpufreq atual (cpu0..cpuN MHz) ---
+cpu MHz		: 5647.331
+cpu MHz		: 5635.086
+cpu MHz		: 5668.436
+cpu MHz		: 5690.760
+cpu MHz		: 5680.177
+cpu MHz		: 5685.182
+cpu MHz		: 5649.094
+cpu MHz		: 5687.835
+cpu MHz		: 5479.624
+cpu MHz		: 624.194
+cpu MHz		: 5472.258
+cpu MHz		: 5476.304
+cpu MHz		: 5474.646
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 5479.914
+cpu MHz		: 624.194
+cpu MHz		: 5678.507
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 5685.616
+cpu MHz		: 5684.825
+cpu MHz		: 5652.417
+cpu MHz		: 5687.780
+cpu MHz		: 624.194
+cpu MHz		: 5481.124
+cpu MHz		: 5478.989
+cpu MHz		: 5475.237
+cpu MHz		: 5437.955
+cpu MHz		: 5407.882
+cpu MHz		: 5480.248
+cpu MHz		: 5034.452
+
+--- lscpu (resumido) ---
+CPU(s):                                    32
+Lista de CPU(s) on-line:                   0-31
+Nome do modelo:                            AMD Ryzen 9 9950X 16-Core Processor
+Thread(s) per núcleo:                      2
+CPU(s) MHz de escala:                      78%
+CPU MHz máx.:                              5756,4521
+CPU MHz mín.:                              624,1940
+cache de L1d:                              768 KiB (16 instâncias)
+cache de L1i:                              512 KiB (16 instâncias)
+cache de L2:                               16 MiB (16 instâncias)
+cache de L3:                               64 MiB (2 instâncias)
+CPU(s) de nó0 NUMA:                        0-31
+
+--- thermal zones ---
+  /sys/class/thermal/thermal_zone*/temp: n/a mC
+
+--- free -h ---
+               total       usada       livre    compart.  buff/cache  disponível
+Mem.:          123Gi       2,4Gi       105Gi       3,3Mi        16Gi       121Gi
+Swap:          8,0Gi          0B       8,0Gi
+
+--- loadavg ---
+0.34 2.15 2.56 1/593 26248
+
+--- aclab commit ---
+c19da78 resultados: sweep idealab-X870E-AORUS-MASTER 2026-06-30

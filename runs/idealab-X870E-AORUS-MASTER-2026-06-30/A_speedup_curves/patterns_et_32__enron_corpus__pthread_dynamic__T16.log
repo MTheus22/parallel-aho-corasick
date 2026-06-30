@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_corpus.txt --searcher pthread_dynamic --threads 16 --warmup 2 --iters 5 
+# started: 2026-06-30T18:39:07-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_corpus__pthread_dynamic__T16
+
+# Aho-Corasick laboratory
+# git:        c19da78
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 335.614 ms
+# warmup=2 iters=5 threads=16 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic          16   1421183736        534.560        537.882        541.936      2519.78   58367984        537.402     0.53    21.1375     16
+#   iter_ms: 541.936 536.188 534.560 539.324 537.402
+#   workers=16  median_MB/s=2522.03  ns/byte=0.3785  stdev_ms=2.857
+
+# finished:        2026-06-30T18:39:11-03:00
+# elapsed_seconds: 4
+# exit_code:       0

@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort_100.txt --input data/enron_corpus.txt --searcher sequential --threads 0 --warmup 0 --iters 1 
+# started: 2026-06-29T20:36:14-03:00
+# phase:   E_build_par
+# label:   patterns_snort_100__enron_corpus__sequential__T0_buildpar_T32
+
+# Aho-Corasick laboratory
+# git:        82dc697
+# patterns:   100 (max len 107, min len 4)
+# automaton:  1939 states, 1.93 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 3.382 ms [parallel T=32]
+# warmup=0 iters=1 threads=0 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+sequential                0   1421183736       2098.504       2098.504       2098.504       645.86     141504       2098.504     0.00     5.4179      1
+#   iter_ms: 2098.504
+#   workers=1  median_MB/s=645.86  ns/byte=1.4766  stdev_ms=0.000
+
+# finished:        2026-06-29T20:36:16-03:00
+# elapsed_seconds: 2
+# exit_code:       0

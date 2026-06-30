@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_corpus.txt --searcher pattern_sharded_prefix --threads 28 --warmup 2 --iters 5 
+# started: 2026-06-29T17:36:36-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_corpus__pattern_sharded_prefix__T28
+
+# Aho-Corasick laboratory
+# git:        82dc697
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 319.175 ms
+# warmup=2 iters=5 threads=28 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pattern_sharded_prefix   28   1421183736       2610.649       2670.710       2764.634       507.49   58367984       2613.144     3.01     4.2571     28
+#   iter_ms: 2612.646 2764.634 2752.478 2610.649 2613.144
+#   workers=28  median_MB/s=518.67  ns/byte=1.8792  stdev_ms=80.312
+
+# finished:        2026-06-29T17:36:56-03:00
+# elapsed_seconds: 20
+# exit_code:       0

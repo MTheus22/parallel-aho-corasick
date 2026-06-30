@@ -252,3 +252,39 @@ Resultados versionáveis em runs/workstation/ (logs + env + sweep.csv + sweep.db
 [2026-06-25 20:54:07] sweep terminou (rc=0); empacotando
 [ok] /home/idealab/ws-results.tgz
 [2026-06-25 20:54:07] upload: git commit + push de runs/workstation
+To https://github.com/MTheus22/parallel-aho-corasick.git
+   4831be1..dc58145  HEAD -> main
+[upload] git push OK (PAT)
+[2026-06-25 20:54:09] upload: WS_UPLOAD_CMD
+
+    Caution: You are using the Snap version of curl.
+    Due to Snap's sandbox nature, this version has some limitations.
+    For example, it may not be able to access hidden folders in your home directory
+    or other restricted areas of the os.
+
+    Which means you may encounter errors when using snap curl to download and execute some script.
+    For those cases, you might want to use the native curl package.
+    For details, see: https://github.com/boukendesho/curl-snap/issues/1
+    
+    To stop seeing this message, run the following command:
+    $ curl.snap-acked
+
+
+    Caution: You are using the Snap version of curl.
+    Due to Snap's sandbox nature, this version has some limitations.
+    For example, it may not be able to access hidden folders in your home directory
+    or other restricted areas of the os.
+
+    Which means you may encounter errors when using snap curl to download and execute some script.
+    For those cases, you might want to use the native curl package.
+    For details, see: https://github.com/boukendesho/curl-snap/issues/1
+    
+    To stop seeing this message, run the following command:
+    $ curl.snap-acked
+
+  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
+                                 Dload  Upload  Total   Spent   Left   Speed
+  0      0   0      0   0      0      0      0                              0100    483 100    307 100    176    926    531                              0100    483 100    307 100    176    926    531                              0100    483 100    307 100    176    926    531                              0
+{"id":"pkE71bwpFdAZ","time":1782431652,"expires":1782474852,"event":"message","topic":"workstation-sweep-750a6217d8","message":"Workstation sweep pronto: uploads disabled because it’s been almost nothing but AI botnet spam for the past few months. will be back with a few changes at some point. no ETA."}
+[upload] WS_UPLOAD_CMD OK
+[2026-06-25 20:54:12] FIM. Resultados em /home/idealab/matheus_antonio_2211285/parallel-aho-corasick/runs/workstation/ e /home/idealab/ws-results.tgz

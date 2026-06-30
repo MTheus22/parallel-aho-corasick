@@ -1,0 +1,69 @@
+=== start 2026-06-29T16:53:38-03:00 ===
+
+--- uname -a ---
+Linux idealab-X870E-AORUS-MASTER 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+--- governor ---
+performance
+
+--- cpufreq atual (cpu0..cpuN MHz) ---
+cpu MHz		: 5700.154
+cpu MHz		: 5665.395
+cpu MHz		: 5686.162
+cpu MHz		: 5613.231
+cpu MHz		: 5666.757
+cpu MHz		: 5699.281
+cpu MHz		: 5691.489
+cpu MHz		: 5698.146
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 5479.773
+cpu MHz		: 5480.692
+cpu MHz		: 5478.602
+cpu MHz		: 5472.370
+cpu MHz		: 5471.065
+cpu MHz		: 5466.176
+cpu MHz		: 5698.533
+cpu MHz		: 5695.342
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 5694.539
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 4778.631
+cpu MHz		: 4294.471
+cpu MHz		: 4349.769
+cpu MHz		: 3905.716
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+
+--- lscpu (resumido) ---
+CPU(s):                                    32
+Lista de CPU(s) on-line:                   0-31
+Nome do modelo:                            AMD Ryzen 9 9950X 16-Core Processor
+Thread(s) per núcleo:                      2
+CPU(s) MHz de escala:                      66%
+CPU MHz máx.:                              5756,4521
+CPU MHz mín.:                              624,1940
+cache de L1d:                              768 KiB (16 instâncias)
+cache de L1i:                              512 KiB (16 instâncias)
+cache de L2:                               16 MiB (16 instâncias)
+cache de L3:                               64 MiB (2 instâncias)
+CPU(s) de nó0 NUMA:                        0-31
+
+--- thermal zones ---
+  /sys/class/thermal/thermal_zone*/temp: n/a mC
+
+--- free -h ---
+               total       usada       livre    compart.  buff/cache  disponível
+Mem.:          123Gi       2,3Gi       120Gi       3,6Mi       1,3Gi       121Gi
+Swap:          8,0Gi          0B       8,0Gi
+
+--- loadavg ---
+0.15 0.08 0.03 1/635 6908
+
+--- aclab commit ---
+82dc697 epic-03: harness de sweep unificado e env-agnóstico (Fase 1)

@@ -1,0 +1,53 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pattern_sharded_prefix --threads 32 --warmup 1 --iters 3 --per-thread
+# started: 2026-06-29T20:35:51-03:00
+# phase:   D_per_thread
+# label:   patterns_snort__enron_corpus__pattern_sharded_prefix__T32_perthread
+
+# Aho-Corasick laboratory
+# git:        82dc697
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 27.790 ms
+# warmup=1 iters=3 threads=32 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pattern_sharded_prefix   32   1421183736       2298.091       2301.344       2303.332       588.94   17853987       2302.610     0.12     4.9404     32
+#   iter_ms: 2302.610 2298.091 2303.332
+#   workers=32  median_MB/s=588.61  ns/byte=1.6193  stdev_ms=2.841
+    [t00] 2281.614 ms  1421183736 bytes  3331184 matches  594.03 MB/s
+    [t01] 2175.392 ms  1421183736 bytes  2543479 matches  623.04 MB/s
+    [t02] 2232.207 ms  1421183736 bytes  49783 matches  607.18 MB/s
+    [t03] 2178.475 ms  1421183736 bytes  2929022 matches  622.15 MB/s
+    [t04] 2235.654 ms  1421183736 bytes  197931 matches  606.24 MB/s
+    [t05] 2143.064 ms  1421183736 bytes  287630 matches  632.43 MB/s
+    [t06] 2253.835 ms  1421183736 bytes  1474843 matches  601.35 MB/s
+    [t07] 2139.408 ms  1421183736 bytes  179410 matches  633.51 MB/s
+    [t08] 2234.629 ms  1421183736 bytes  902231 matches  606.52 MB/s
+    [t09] 2144.330 ms  1421183736 bytes  48687 matches  632.06 MB/s
+    [t10] 2222.561 ms  1421183736 bytes  298 matches  609.81 MB/s
+    [t11] 2135.203 ms  1421183736 bytes  19527 matches  634.76 MB/s
+    [t12] 2232.032 ms  1421183736 bytes  345847 matches  607.23 MB/s
+    [t13] 2146.563 ms  1421183736 bytes  741576 matches  631.40 MB/s
+    [t14] 2239.888 ms  1421183736 bytes  396877 matches  605.10 MB/s
+    [t15] 2155.224 ms  1421183736 bytes  285806 matches  628.87 MB/s
+    [t16] 2240.378 ms  1421183736 bytes  737400 matches  604.96 MB/s
+    [t17] 2134.734 ms  1421183736 bytes  1577 matches  634.90 MB/s
+    [t18] 2242.219 ms  1421183736 bytes  824943 matches  604.47 MB/s
+    [t19] 2173.734 ms  1421183736 bytes  950346 matches  623.51 MB/s
+    [t20] 2249.208 ms  1421183736 bytes  558299 matches  602.59 MB/s
+    [t21] 2138.499 ms  1421183736 bytes  75939 matches  633.78 MB/s
+    [t22] 2228.282 ms  1421183736 bytes  35689 matches  608.25 MB/s
+    [t23] 2138.923 ms  1421183736 bytes  21529 matches  633.66 MB/s
+    [t24] 2225.618 ms  1421183736 bytes  7 matches  608.98 MB/s
+    [t25] 2135.863 ms  1421183736 bytes  0 matches  634.57 MB/s
+    [t26] 2221.683 ms  1421183736 bytes  0 matches  610.05 MB/s
+    [t27] 2134.770 ms  1421183736 bytes  211 matches  634.89 MB/s
+    [t28] 2229.225 ms  1421183736 bytes  497 matches  607.99 MB/s
+    [t29] 2135.644 ms  1421183736 bytes  603181 matches  634.63 MB/s
+    [t30] 2222.736 ms  1421183736 bytes  0 matches  609.76 MB/s
+    [t31] 2141.046 ms  1421183736 bytes  310238 matches  633.03 MB/s
+
+# finished:        2026-06-29T20:36:03-03:00
+# elapsed_seconds: 12
+# exit_code:       0

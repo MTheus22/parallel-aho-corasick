@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_corpus.txt --searcher sequential --threads 0 --warmup 0 --iters 1 
+# started: 2026-06-29T20:37:34-03:00
+# phase:   E_build_par
+# label:   patterns_et_32__enron_corpus__sequential__T0_buildpar_T32
+
+# Aho-Corasick laboratory
+# git:        82dc697
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 220.755 ms [parallel T=32]
+# warmup=0 iters=1 threads=0 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+sequential                0   1421183736       6507.408       6507.408       6507.408       208.28   58367984       6507.408     0.00     1.7472      1
+#   iter_ms: 6507.408
+#   workers=1  median_MB/s=208.28  ns/byte=4.5789  stdev_ms=0.000
+
+# finished:        2026-06-29T20:37:40-03:00
+# elapsed_seconds: 6
+# exit_code:       0

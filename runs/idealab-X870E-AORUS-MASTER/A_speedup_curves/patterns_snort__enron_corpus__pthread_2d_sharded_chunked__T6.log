@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_2d_sharded_chunked --threads 6 --warmup 2 --iters 5 
+# started: 2026-06-29T17:03:12-03:00
+# phase:   A_speedup_curves
+# label:   patterns_snort__enron_corpus__pthread_2d_sharded_chunked__T6
+
+# Aho-Corasick laboratory
+# git:        82dc697
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 29.435 ms
+# warmup=2 iters=5 threads=6 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_2d_sharded_chunked    6   1421183736        963.098        965.403        967.524      1403.92   17853987        965.214     0.17    11.7769      6
+#   iter_ms: 965.214 966.203 967.524 964.973 963.098
+#   workers=6  median_MB/s=1404.19  ns/byte=0.6793  stdev_ms=1.634
+
+# finished:        2026-06-29T17:03:19-03:00
+# elapsed_seconds: 7
+# exit_code:       0

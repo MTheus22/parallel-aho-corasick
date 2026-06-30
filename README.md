@@ -115,7 +115,12 @@ Para a referência completa de flags:
 | `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
 | `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
 | `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico.                               |
+| `pthread_dynamic_flat`| `pthread_dynamic` + emissão por tabela achatada de saídas.                     |
 | `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
+| `sequential_flat`     | Baseline single-thread com emissão por tabela achatada.                         |
+| `pthread_chunked_flat`| `pthread_chunked_v2` + emissão por tabela achatada.                             |
+| `pthread_chunked_v3_flat`| `pthread_chunked_v3` + emissão por tabela achatada.                         |
+| `pattern_sharded_prefix`| Sharding do dicionário por primeiro byte.                                    |
 | `pthread_2d_sharded_chunked` | Idea 6 — 2-D `K × N` (sharding por prefixo × chunking de texto).         |
 
 Documentação por searcher em [`docs/searchers/`](docs/searchers/).

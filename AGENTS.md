@@ -58,9 +58,9 @@ TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclus
 | `make asan`                | AddressSanitizer + UBSan                                               |
 | `make tsan`                | ThreadSanitizer — verifica ausência de data races na fase paralela     |
 | `make test`                | Executa `tests/test_correctness.c` contra todos os searchers          |
-| `scripts/run_sweep.sh` | **Motor de sweep UNIFICADO e env-agnóstico** (grade completa A–E, 9 paralelos + 2 seq). Deriva `MAX_T=nproc` e o `RUN_DIR` (slug da CPU). Substitui `run_i5_sweep.sh`/`run_workstation_sweep.sh` (legados). |
-| `scripts/prepare_data.sh` | Pré-flight de dados env-agnóstico: gera `enron_x8` + dicts reduzidos; **ABORTA** se `patterns_et_32.txt` faltar; imprime `PRONTO`. Substitui `prepare_workstation_data.sh`. |
-| `scripts/run_all.sh` | **Wrapper "um comando" env-agnóstico**: pull opc. + pré-flight + governador (amd/intel-pstate) + build + test, depois **desacopla** o sweep (sobrevive a logout/suspensão) e faz upload/notificação best-effort (`AC_GIT_PUSH`/`AC_GH_PAT`, `AC_UPLOAD_CMD`, `AC_NOTIFY`). Ex.: `RUN_DIR=runs/workstation ./scripts/run_all.sh`. Substitui `i5_all.sh`/`workstation_all.sh` (legados). |
+| `scripts/run_sweep.sh` | **Motor de sweep UNIFICADO e env-agnóstico** (default A–G, 10 paralelos + 2 seq; 562 runs em `MAX_T=32`). Deriva `MAX_T=nproc` e o `RUN_DIR` (slug da CPU). Substitui `run_i5_sweep.sh`/`run_workstation_sweep.sh` (legados). |
+| `scripts/prepare_data.sh` | Pré-flight de dados env-agnóstico: gera `enron_x8` + dicts reduzidos; valida `simplewiki.txt`; restaura `patterns_et_32.txt` do git se faltar; imprime `PRONTO`. Substitui `prepare_workstation_data.sh`. |
+| `scripts/run_all.sh` | **Wrapper "um comando" env-agnóstico**: pull opc. + pré-flight + governador (amd/intel-pstate) + build + test fatal, depois **desacopla** o sweep (sobrevive a logout/suspensão) e faz upload/notificação best-effort (`AC_GIT_PUSH`/`AC_GH_PAT`, `AC_UPLOAD_CMD`, `AC_NOTIFY`). Ex.: `RUN_DIR=runs/workstation ./scripts/run_all.sh`. Substitui `i5_all.sh`/`workstation_all.sh` (legados). |
 | `scripts/extract_sweep_csv.py` + `build_sweep_db.py` | Pós-sweep: logs → `sweep.csv` → SQLite `sweep.db` (consulta token-efficient) |
 | `./build/aclab --list`     | Lista todos os searchers registrados                                   |
 | `./build/aclab --help`     | Mostra todas as flags do CLI                                           |
@@ -196,9 +196,12 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 
-> Fonte de verdade do TCC = `runs/i5/sweep.db` (i5, **2026-05-29**). A workstation
-> é **portabilidade**, não a substitui. `pthread_dynamic_flat` só foi medido no
-> Ryzen; `v3`/`v3_flat`/`prefetch` só no i5 (no Ryzen colapsam em `v2`).
+> Protocolo canônico atual para a próxima consolidação do TCC =
+> `RUN_DIR=runs/workstation ./scripts/run_all.sh`, que roda A–G e inclui
+> `pthread_dynamic_flat` nas curvas principais. Até a nova corrida completa
+> ser versionada, `runs/i5/sweep.db` (i5, **2026-05-29**) continua sendo a fonte
+> histórica dos números já citados, mas não deve ser tratado como protocolo
+> final da workstation.
 >
 > Existe uma **2ª corrida do i5** em `runs/i5_2026-06-28/sweep.db` (headless,
 > A–E+G). É **reprodutibilidade/fase G**, **NÃO** canônica — não cite os números

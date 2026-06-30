@@ -1,5 +1,10 @@
 # Workstation analysis — Ryzen 9 9950X × i5-1235U
 
+> **Nota 2026-06-30:** esta análise é da corrida reduzida de 2026-06-25. O
+> protocolo canônico atual para a workstation é a grade A–G de
+> `scripts/run_sweep.sh` via `RUN_DIR=runs/workstation ./scripts/run_all.sh`.
+> Recalcule esta análise depois que a nova corrida for versionada.
+
 Análise consolidada e objetiva da corrida de portabilidade na **AMD Ryzen 9
 9950X** (`runs/workstation/sweep.db`, 2026-06-25) confrontada com o sweep
 canônico do **Intel i5-1235U** (`runs/i5/sweep.db`, 2026-05-29). Ambos:
@@ -49,9 +54,9 @@ Campeão por máquina; Enron ×8; speedup vs. `sequential`.
 | Balanceamento (cv% encadeado) | até **52,9%** | **0,10%** |
 | Cache cliff (T=1, seq) | −74% | −67% |
 
-> `dynamic_flat` **não foi medido no i5** (só `pthread_dynamic`); os campeões do
-> i5 são as variantes acima. No Ryzen, `v3`/`v3_flat` não foram rodados (colapsam
-> em `v2` sem P/E para balancear).
+> Na corrida histórica do i5, `dynamic_flat` **não foi medido nas curvas
+> principais** (só `pthread_dynamic`); os campeões do i5 são as variantes acima.
+> O protocolo canônico atual corrige essa lacuna em `run_sweep.sh`.
 
 ---
 

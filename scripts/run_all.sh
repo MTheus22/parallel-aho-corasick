@@ -8,7 +8,7 @@
 #   [0/5] pull opcional do código (AC_GIT_PULL=1)
 #   [1/5] pré-flight de dados        (scripts/prepare_data.sh — FATAL se faltar)
 #   [2/5] governador de frequência   (cpupower performance; agnóstico, sudo opc.)
-#   [3/5] build + correção           (make clean && make FATAL; make test avisa)
+#   [3/5] build + correção           (make clean && make FATAL; make test FATAL)
 #   [4/5] sanidade de ambiente       (lscpu/free/nproc)
 # Depois RELANÇA o sweep LONGO em BACKGROUND, imune a:
 #   - suspensão / idle           (systemd-inhibit)
@@ -23,7 +23,7 @@
 # Variáveis (HERDADAS pelo processo desacoplado — defina-as na linha de chamada):
 #   RUN_DIR        diretório de saída (default: auto pelo modelo de CPU, igual
 #                  ao run_sweep.sh). Ex.: RUN_DIR=runs/workstation.
-#   PHASES         fases do sweep (default: "A B C D E"; passe a run_sweep.sh).
+#   PHASES         fases do sweep (default: "A B C D E G"; passe a run_sweep.sh).
 #   MAX_THREADS    teto de threads (default: nproc).
 #   THREAD_POINTS  pontos de curva custom (ver run_sweep.sh).
 #   AC_GIT_PULL=1  git pull --ff-only antes de medir (best-effort, [0/5]).
@@ -46,7 +46,7 @@
 #     ./scripts/run_all.sh
 #
 # Uso (i5-1235U — protocolo máquina-quieta, TTY texto pós-reboot, sem upload):
-#   RUN_DIR=runs/i5 PHASES="A B C D E" ./scripts/run_all.sh
+#   RUN_DIR=runs/i5 PHASES="A B C D E G" ./scripts/run_all.sh
 #
 # AC_GIT_PUSH, AC_UPLOAD_CMD e AC_NOTIFY são independentes e best-effort: falha
 # em qualquer um loga e NÃO altera o rc do sweep.
@@ -58,7 +58,7 @@ SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 cd "$(dirname "$SELF")/.."          # raiz do repo
 ROOT="$(pwd)"
 
-PHASES="${PHASES:-A B C D E}"
+PHASES="${PHASES:-A B C D E G}"
 
 # -------- RUN_DIR: derivado uma vez aqui (mesma lógica do run_sweep.sh) ------
 # Fixamos RUN_DIR já no setup e o passamos EXPLÍCITO ao run_sweep.sh, para que
@@ -162,8 +162,6 @@ if [[ "${AC_SWEEP_ONLY:-0}" == "1" ]]; then
   exit "$rc"
 fi
 
-ok=1   # vira 0 se um passo NÃO-FATAL falhar (só p/ o banner final)
-
 # --------------------------------------------------------------------------
 # [0/5] Pull opcional do código (best-effort, não-fatal).
 # --------------------------------------------------------------------------
@@ -211,7 +209,7 @@ else
 fi
 
 # --------------------------------------------------------------------------
-# [3/5] Build + correção (build FATAL; test não-fatal mas em destaque).
+# [3/5] Build + correção (build e test FATAIS).
 # --------------------------------------------------------------------------
 echo
 echo "===== [3/5] compilar + validar correção ====="
@@ -223,9 +221,9 @@ fi
 if make test; then
   echo "[ok] make test passou"
 else
-  echo "[AVISO] make test FALHOU — o sweep roda mesmo assim;"
-  echo "        valide v_correctness=1 ANTES de usar os números."
-  ok=0
+  echo >&2
+  echo "ABORTADO: make test falhou. Nada foi executado." >&2
+  exit 1
 fi
 
 # --------------------------------------------------------------------------
@@ -258,11 +256,7 @@ PID=$!
 
 echo
 echo "============================================================"
-if [[ "$ok" == "1" ]]; then
-  echo " Tudo OK. Sweep rodando em BACKGROUND (PID $PID)."
-else
-  echo " Sweep rodando em BACKGROUND (PID $PID) — REVISE o aviso do make test."
-fi
+echo " Tudo OK. Sweep rodando em BACKGROUND (PID $PID)."
 echo " PODE FAZER LOGOUT / DESCONECTAR — o sweep segue sozinho."
 echo
 echo "   acompanhar geral:   tail -f $LOG"

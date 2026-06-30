@@ -54,3 +54,6 @@ __pycache__/
 i5.out
 run_all.out
 workstation.out
+
+# Lockfile do desacoplamento (setsid/flock) — runtime, não é resultado
+runs/*/.lock

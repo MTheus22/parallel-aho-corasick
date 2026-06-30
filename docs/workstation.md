@@ -3,7 +3,7 @@
 > **⚠️ SUPERSEDIDO em parte (epic-03, 2026-06-29).** Este parecer cobre a **1ª
 > corrida REDUZIDA** (grade `A B D E`, 4 searchers) com os scripts hoje **legados**
 > `workstation_all.sh` / `run_workstation_sweep.sh` / `prepare_workstation_data.sh`.
-> O epic-03 torna a workstation **canônica** e roda a **grade COMPLETA A–E** pelo
+> O protocolo atual torna a workstation **canônica** e roda a **grade COMPLETA A–G** pelo
 > motor **unificado**. Substituições 1-para-1:
 > `workstation_all.sh` → **`run_all.sh`**, `run_workstation_sweep.sh` →
 > **`run_sweep.sh`**, `prepare_workstation_data.sh` → **`prepare_data.sh`**, e as
@@ -31,9 +31,9 @@
 
 | Pergunta | Resposta |
 |---|---|
-| A grade de testes está definida e justificada? | **Sim.** 112 runs núcleo (A B D E) + 4 opcionais (S). Calibrada para cores homogêneos (descarta `v3`/`v3_flat`, foca estático vs. dinâmico). |
+| A grade de testes está definida e justificada? | **Sim.** O protocolo canônico atual usa `run_all.sh` → `run_sweep.sh` com default A–G; a grade reduzida deste parecer é histórica. |
 | O script é à prova de falhas? | **Em grande parte.** Resume-from-crash por run, `flock`, traps SIGINT/TERM, `.FAIL` não derruba o sweep, snapshot de ambiente rico. Os pontos cegos são externos ao script (abaixo). |
-| Os dados existem? | **Sim, no laptop.** `enron_corpus.txt` (1,42 GB), `patterns_et_32.txt` (797 KiB — **insubstituível**), `patterns_snort.txt`. `enron_x8.txt` é regenerável no host. |
+| Os dados existem? | **Sim.** `patterns_et_32.txt` é versionado no git; `enron_corpus.txt` e `patterns_snort.txt` são rebaixáveis; `enron_x8.txt` é regenerável no host. |
 | Posso confiar nos números no dia seguinte? | **Só depois de checar** `v_correctness = 1` e zero `.FAIL` (seção 9). |
 | Cabe numa noite? | **Folgado.** Estimativa 3–5 h para A B D E S (seção 8). |
 
@@ -90,7 +90,7 @@ DDR5-5600**. Três coisas novas e citáveis que só este hardware dá:
 |---|---|---|
 | **Wrapper "um comando"** | `scripts/workstation_all.sh` | ✨ **criado neste parecer.** dados→build→test→sweep→empacota; auto-background imune a suspend/logout. Sintaxe validada; mecanismo de desacoplamento testado. |
 | Driver do sweep | `scripts/run_workstation_sweep.sh` | ✔ revisado. Default `A B D E`; `S` opcional. Lock, resume, traps, snapshot. |
-| Pré-flight de dados | `scripts/prepare_workstation_data.sh` | ✔ valida/gera dados; **PARA** se `patterns_et_32.txt` faltar (insubstituível). Checa disco e tamanho exato do `enron_x8`. |
+| Pré-flight de dados | `scripts/prepare_data.sh` | ✔ valida/gera dados; restaura `patterns_et_32.txt` do git se faltar; checa disco e tamanho exato do `enron_x8`. |
 | Extratores | `scripts/extract_sweep_csv.py` + `build_sweep_db.py` | ✔ `--known-only` reconhece os 4 searchers da grade + baselines (confirmado linha 25–31). Geram `sweep.csv` + `sweep.db` SQLite. |
 | Contrato de saída | `src/main.c` (getopt_long) | ✔ `--patterns/--input/--searcher/--threads/--warmup/--iters/--per-thread` existem; `AC_BUILD_PARALLEL`/`AC_BUILD_THREADS` lidos. |
 | Doc auto-contido | `runs/workstation/README.md` | ✔ explica run + análise (views SQLite). Já versionado. |
@@ -195,7 +195,7 @@ antes de ir embora.
 
 | Item | Risco | Mitigação |
 |---|---|---|
-| 4.8 | `... A B` posicional só roda a **primeira** fase | Use o **default** (sem args = `A B D E`) ou a env `PHASES="A B D E S"`. |
+| 4.8 | `... A B` posicional só roda a **primeira** fase | Use o **default** (sem args = `A B C D E G`) ou a env `PHASES="..."`. |
 | 4.9 | `python3` ausente no host → `finalize` não gera `sweep.db` | Os `.log` são a fonte de verdade; regenere `csv`/`db` no laptop (seção 9.3). Ubuntu tem `python3`. |
 | 4.10 | `sqlite3` CLI ausente | Não é necessário para *gerar* o DB (`build_sweep_db.py` usa o módulo stdlib). Só para *consultar* — faça no laptop. |
 | 4.11 | `.lock` órfão de tentativa anterior bloqueia o sweep | `rm runs/workstation/.lock` se não houver sweep rodando. |
@@ -215,7 +215,7 @@ risco de binário velho.
 | repo `parallel-aho-corasick/` (fonte) | ~poucos MB | scripts, Makefile, src, docs, `runs/i5` (logs pequenos). |
 | `data/enron_corpus.txt` | 1,42 GB | base do `enron_x8` (regenerado) e corpus das fases B/E. |
 | `data/patterns_snort.txt` | 87 KiB | fases A/B/D/E. |
-| `data/patterns_et_32.txt` | 797 KiB | **insubstituível — sem ele, fases A/B/E falham em massa.** |
+| `data/patterns_et_32.txt` | 797 KiB | Versionado no git; sem ele, fases A/B/E falham em massa. |
 
 ### O que NÃO levar
 - `build/` (compile no host — ver 4.1).
@@ -349,16 +349,15 @@ WS_UPLOAD_CMD='U=$(curl -sF "file=@$WS_RESULTS" https://0x0.st); curl -d "sweep 
 ```
 
 ### Se o pendrive falhar: clonar e re-rodar
-Agora é um fallback **completo** (commitei o `patterns_et_32.txt`, que era o
-único arquivo insubstituível):
+Fallback completo: o clone traz `patterns_et_32.txt`; o pré-flight baixa o que
+é reprodutível e gera `enron_x8`.
 ```bash
 git clone https://github.com/MTheus22/parallel-aho-corasick.git && cd parallel-aho-corasick
-AUTO_DOWNLOAD=1 ./scripts/prepare_workstation_data.sh   # baixa Snort + Enron (~1,4 GB) e gera enron_x8
-chmod +x scripts/*.sh && WS_GIT_PUSH=1 WS_GH_PAT=github_pat_xxx ./scripts/workstation_all.sh
+AUTO_DOWNLOAD=1 ./scripts/prepare_data.sh
+RUN_DIR=runs/workstation AC_GIT_PUSH=1 AC_GH_PAT=github_pat_xxx ./scripts/run_all.sh
 ```
-Custa o download do Enron (CMU, ~1,4 GB — mais lento que o pendrive, mas funciona
-sem ele). `enron_corpus`/`patterns_snort` são rebaixáveis; o `et_32` agora vem no
-clone.
+Custa o download do Enron e do SimpleWiki se faltarem. `enron_corpus`,
+`patterns_snort` e `simplewiki` são rebaixáveis; `patterns_et_32.txt` vem do git.
 
 ---
 

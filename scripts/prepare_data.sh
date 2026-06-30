@@ -12,9 +12,10 @@
 #   prepare_datasets.sh e NÃO estão versionados (data/ é gitignored):
 #
 #     data/enron_x8.txt        (~10,6 GiB) — fases A, D
-#     data/enron_corpus.txt    ( ~1,4 GiB) — fases A–E
+#     data/enron_corpus.txt    ( ~1,4 GiB) — fases A–G
 #     data/patterns_snort.txt              — fases A, B, C, D, E
 #     data/patterns_et_32.txt  (~816 KiB)  — fases A, B
+#     data/simplewiki.txt                  — fase C
 #
 #   Numa máquina fresca, rodar o sweep sem estes arquivos faz fases inteiras
 #   falharem (.FAIL). Como o sweep roda UMA vez, isto é fatal — por isso o
@@ -24,15 +25,16 @@
 #     - gera patterns_snort_100/1k.txt via head (igual ao que o sweep faria);
 #     - se patterns_snort.txt / enron_corpus.txt faltarem, oferece rodar o
 #       prepare_datasets.sh (download Snort + Enron);
-#     - patterns_et_32.txt NÃO tem como ser regenerado (sem fonte/script):
-#       se faltar, o script ABORTA com instruções claras de cópia do laptop.
+#     - se simplewiki.txt faltar, oferece rodar acquire_corpus.sh;
+#     - patterns_et_32.txt é versionado no git; se faltar no checkout padrão
+#       (`data/`), tenta restaurar com `git restore`.
 #
 #   Ao fim, imprime um relatório e a palavra PRONTO no sucesso (rc=0). Rode-o
 #   ANTES do sweep e só dispare o sweep se o veredito for PRONTO.
 #
 # Uso:
 #   scripts/prepare_data.sh                       # valida + gera o que der
-#   AUTO_DOWNLOAD=1 scripts/prepare_data.sh       # baixa Snort/Enron se faltarem
+#   AUTO_DOWNLOAD=1 scripts/prepare_data.sh       # baixa Snort/Enron/SimpleWiki se faltarem
 #   DATA=/mnt/dados scripts/prepare_data.sh       # diretório de dados custom
 # =============================================================================
 
@@ -80,15 +82,53 @@ fi
 [[ -s "$DATA/enron_corpus.txt"  ]] && ok "enron_corpus.txt     ($(human "$(size_of "$DATA/enron_corpus.txt")"))"
 
 # --------------------------------------------------------------------------
-# 2. patterns_et_32.txt — SEM fonte/script. Só pode vir por cópia. ABORTA.
+# 1b. simplewiki.txt — gerável via scripts/acquire_corpus.sh.
+# --------------------------------------------------------------------------
+if [[ -s "$DATA/simplewiki.txt" ]]; then
+  ok "simplewiki.txt      ($(human "$(size_of "$DATA/simplewiki.txt")"))"
+else
+  warn "simplewiki.txt ausente (necessário para a fase C)."
+  if [[ "${AUTO_DOWNLOAD:-0}" == "1" ]]; then
+    say "  -> AUTO_DOWNLOAD=1: rodando scripts/acquire_corpus.sh (SimpleWiki)"
+    if ! ./scripts/acquire_corpus.sh; then
+      err "acquire_corpus.sh falhou."
+      PROBLEMS=$((PROBLEMS+1))
+    fi
+  else
+    err "Faça uma das opções e rode este script de novo:"
+    say "     (a) copie do laptop:              scp laptop:.../data/simplewiki.txt data/"
+    say "     (b) gere via download:            ./scripts/acquire_corpus.sh"
+    PROBLEMS=$((PROBLEMS+1))
+  fi
+fi
+
+# --------------------------------------------------------------------------
+# 2. patterns_et_32.txt — versionado no git; restaura se faltar.
 # --------------------------------------------------------------------------
 if [[ -s "$DATA/patterns_et_32.txt" ]]; then
   ok "patterns_et_32.txt   ($(human "$(size_of "$DATA/patterns_et_32.txt")"))"
 else
-  err "patterns_et_32.txt AUSENTE e NÃO é regenerável (sem script/fonte no repo)."
-  say "     Copie do laptop:  scp laptop:.../data/patterns_et_32.txt data/"
-  say "     (É o dicionário ET-32, ~816 KiB / ~44708 padrões — segundo regime de cache da fase A/B.)"
-  PROBLEMS=$((PROBLEMS+1))
+  warn "patterns_et_32.txt ausente."
+  if [[ "$DATA" == "data" ]] &&
+     git ls-files --error-unmatch data/patterns_et_32.txt >/dev/null 2>&1; then
+    say "  -> restaurando data/patterns_et_32.txt do checkout git"
+    if git restore --source=HEAD -- data/patterns_et_32.txt &&
+       [[ -s "$DATA/patterns_et_32.txt" ]]; then
+      ok "patterns_et_32.txt   ($(human "$(size_of "$DATA/patterns_et_32.txt")"))"
+    else
+      err "falha ao restaurar patterns_et_32.txt via git."
+      say "     Tente: git pull --ff-only && git restore data/patterns_et_32.txt"
+      PROBLEMS=$((PROBLEMS+1))
+    fi
+  else
+    err "patterns_et_32.txt AUSENTE."
+    say "     No repo padrão, obtenha via git:"
+    say "       git pull --ff-only && git restore data/patterns_et_32.txt"
+    say "     Ou baixe direto do GitHub:"
+    say "       mkdir -p data && curl -L -o data/patterns_et_32.txt https://raw.githubusercontent.com/MTheus22/parallel-aho-corasick/main/data/patterns_et_32.txt"
+    say "     (É o dicionário ET-32, ~798 KiB / ~44708 padrões — segundo regime de cache da fase A/B.)"
+    PROBLEMS=$((PROBLEMS+1))
+  fi
 fi
 
 # --------------------------------------------------------------------------
@@ -147,7 +187,7 @@ fi
 say
 say "==================== relatório de dados ===================="
 req=(patterns_snort.txt patterns_et_32.txt patterns_snort_100.txt
-     patterns_snort_1k.txt enron_corpus.txt enron_x8.txt)
+     patterns_snort_1k.txt enron_corpus.txt enron_x8.txt simplewiki.txt)
 allok=1
 for f in "${req[@]}"; do
   if [[ -s "$DATA/$f" ]]; then

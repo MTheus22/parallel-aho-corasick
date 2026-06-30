@@ -1,0 +1,44 @@
+# Workstation canonical run commands
+#
+# AUTO_DOWNLOAD=1 is idempotent in scripts/prepare_data.sh:
+# - if patterns_snort.txt and enron_corpus.txt already exist, it does not rerun
+#   scripts/prepare_datasets.sh;
+# - if only simplewiki.txt is missing, it runs only scripts/acquire_corpus.sh;
+# - patterns_et_32.txt is tracked in git; if missing, restore it from the
+#   checkout or download the raw file as shown below.
+
+# 0) Check whether ET-32 exists and matches the expected local checksum.
+test -s data/patterns_et_32.txt && sha256sum data/patterns_et_32.txt
+# Expected SHA-256:
+# dd867f8ab42d509c5e0ad57d73e0a87d3fde4db70a239c85c7a1b3b0ba0170c2
+
+# 0b) Restore ET-32 from git if the file was deleted locally.
+git pull --ff-only
+git restore data/patterns_et_32.txt
+
+# 0c) Direct download fallback for ET-32.
+mkdir -p data
+curl -L -o data/patterns_et_32.txt https://raw.githubusercontent.com/MTheus22/parallel-aho-corasick/main/data/patterns_et_32.txt
+sha256sum data/patterns_et_32.txt
+
+# 1) Prepare/verify all datasets, downloading only missing downloadable files.
+AUTO_DOWNLOAD=1 ./scripts/prepare_data.sh
+
+# 2) Canonical workstation sweep, no automatic push/notification.
+RUN_DIR=runs/workstation ./scripts/run_all.sh
+
+# 3) Canonical workstation sweep with git pull, automatic commit/push and ntfy.
+# Set AC_GH_PAT in the shell, not in this file, before running:
+#   export AC_GH_PAT='github_pat_xxx'
+RUN_DIR=runs/workstation \
+AC_GIT_PULL=1 \
+AC_GIT_PUSH=1 \
+AC_NOTIFY='curl -d "TCC sweep pronto (rc=$AC_RC): $AC_RESULTS" ntfy.sh/SEU-TOPICO' \
+  ./scripts/run_all.sh
+
+# 4) Alternative upload for an ephemeral host: upload the .tgz to 0x0.st and
+# notify the phone. Replace SEU-TOPICO before running.
+RUN_DIR=runs/workstation \
+AC_UPLOAD_CMD='U=$(curl -sF "file=@$AC_RESULTS" https://0x0.st); curl -d "TCC sweep: $U" ntfy.sh/SEU-TOPICO' \
+AC_NOTIFY='curl -d "TCC sweep finalizado (rc=$AC_RC): $AC_RESULTS" ntfy.sh/SEU-TOPICO' \
+  ./scripts/run_all.sh

@@ -27,17 +27,20 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   `tasks_per_thread=64` (texto e CSV). Correção idêntica (`make test`) e
   TSan-clean nas duas variantes. Desbloqueia o item P1 (sweep de granularidade).
 
-## P0 — Rodar `dynamic_flat` no i5 (fechar lacuna da comparação)
+## P0 — Rodar `dynamic_flat` nas curvas principais ✅ MOTOR ALINHADO (2026-06-30)
 
 - **Objetivo:** comparação i5 × Ryzen justa para a variante campeã do Ryzen.
-- **Por quê:** o sweep do i5 só tem `pthread_dynamic` (sem flat). Hoje a 9.6
-  compara `v3_flat` (i5) com `dynamic_flat` (Ryzen) — conjuntos diferentes.
-- **Como:** acrescentar `pthread_dynamic_flat` ao set de variantes do
-  `scripts/run_sweep.sh` (motor unificado) nas fases A (escalabilidade) e B
-  (footprint); rerodar essas fases no i5 (`RUN_DIR=runs/i5`). **Não** rodar
-  `v3/v3_flat` no Ryzen (colapsam em `v2`).
-- **Pronto quando:** `v_speedup`/`v_best` do i5 incluem `pthread_dynamic_flat`;
-  atualizar 9.5/9.6 com a coluna.
+- **Por quê:** a comparação antiga colocava `v3_flat` (i5) contra
+  `dynamic_flat` (Ryzen) — conjuntos diferentes. Sem `dynamic_flat` em A/B/C/D,
+  ele aparecia apenas no teste lateral de granularidade, insuficiente para
+  defender um campeão canônico.
+- **Como (implementado):** `scripts/run_sweep.sh` agora inclui
+  `pthread_dynamic_flat` no conjunto principal da fase A e D, e inclui
+  `pthread_dynamic`/`pthread_dynamic_flat` nas fases B e C para comparar
+  chunking estático vs. bag-of-tasks com e sem flat output.
+- **Falta:** rerodar a grade canônica (`RUN_DIR=runs/workstation
+  ./scripts/run_all.sh`) e reconstruir `sweep.csv`/`sweep.db`; depois atualizar
+  as seções 9.x com `dynamic_flat` lado a lado.
 
 ## P1 — Sweep de granularidade da fila dinâmica · RODOU 1×, ainda inconclusivo
 
@@ -48,7 +51,8 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 - **Infra (feita 2026-06-27):** `phase_G` no motor unificado `scripts/run_sweep.sh`
   varre `tasks_per_thread ∈ {1,4,16,64,256}` (via `AC_DYN_TASKS_PER_THREAD`, P0)
   para `dynamic` e `dynamic_flat`, Snort + `enron_corpus`, `T=MAX_T`, com timing +
-  `--per-thread` por k. Opt-in: `PHASES="G" scripts/run_sweep.sh`
+  `--per-thread` por k. A fase G agora entra no default A–G; para rodá-la
+  isolada use `PHASES="G" scripts/run_sweep.sh`
   (ou `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh`).
   Inventário: `docs/sweep-test-inventory.md` §"Fase G".
 - **Rodou no i5 (2026-06-28):** fase G executada em `runs/i5_2026-06-28/`
@@ -115,11 +119,73 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 - **Por quê:** Enron×8 é o mesmo texto replicado 8× → perfeitamente uniforme e
   periódico. É *a* razão de a dinâmica não render aqui (matches por fatia ~iguais,
   ver ciclo de 4 na 9.8b). Sem isso, o sweep de granularidade prova pouco.
-- **Como:** concatenar corpora heterogêneos (ex.: trechos densos em assinaturas +
-  trechos "limpos"), ou ordenar o texto por densidade para criar hot spots.
-  Documentar a construção em `testes-workstation.md` §4.
-- **Pronto quando:** repetir Teste 3 nesse corpus; esperar spread estático ≫
-  dinâmico (validando o mecanismo).
+- **Embasamento na RSL (literature-lookup, 2026-06-29):** **nenhum** dos 24 papers
+  constrói um corpus *espacialmente* não-uniforme para estressar estático ×
+  dinâmico em AC — o skew espacial + medir ociosidade de barreira por thread é,
+  portanto, **contribuição própria**, não replicação. Precedentes a citar/adaptar:
+  - **DEFCON17 "good/bad/ugly"** (Aldwairi, Alshboul & Seyam 2018; reusado por
+    Shatnawi et al. 2018 em AC na GPU): traces rotulados por densidade de
+    assinatura — *ugly* ≈ **43–45%** de pacotes com match, *bad* 16–17%, *good* ≈
+    limpo. Dá **alvo numérico com respaldo** para o bloco quente (~40–45%).
+    Resumo: `related_work_summaries/characterizing_realistic_signature-based_intrusion_detection_benchmarks.md`.
+  - **FHBM** (Lee & Yang 2017): método de "discar" densidade — injetar **prefixos
+    ≥80% do comprimento do padrão** (sorteados do set Snort) num corpus limpo a
+    *match ratio* controlado (eles usam 1%/8%/32%, mas **uniforme** no stream).
+    Resumo: `related_work_summaries/a_flexible_pattern-matching__algorithm...multi-core_processors.md`.
+  - **Ródenas Picó** (load-balancing ratio; "a maior fatia limita o makespan" —
+    1/29 do tempo trava o speedup em ~29×): moldura para a falha do estático.
+    Em NPB-MZ, não AC. Resumo: `related_work_summaries/a_parallel_aho_corasick_algorithm_with_non_determi.md`.
+  - Mapear os slugs → keys em `acceleration-.../referencias.bib` (não inventar keys).
+  - Obs.: **nenhum paper usa Enron**; precedente de e-mail real em GB = Podesta/
+    WikiLeaks (paper PISA). Datasets reais de IDS nomeados: DEFCON17, ISCX/CIC-IDS,
+    DARPA 2000, ToN-IoT (mas o harness varre bytes, não pcap → encanamento extra;
+    sintético-no-Enron é melhor para reprodutibilidade, pcap fica como futuro).
+- **Estratégias de obtenção (trade-off):**
+
+  | Estratégia | Padrões | Corpus/match | Esforço | Reprod. | Papel |
+  |---|---|---|---|---|---|
+  | 1. FHBM: injetar prefixos Snort/ET no Enron | real | semi-sintético | baixo | alto | **corpo da tese** |
+  | 2. Tráfego real (DEFCON *ugly* / ET-malware) + ET | real | real | médio-alto | médio | validação / futuro |
+  | 3. Concatenar corpora heterogêneos (Enron + HTTP + binários + random) | real | real-ish | baixo | alto | reforço barato |
+  | 4. Padrões sintéticos casados ao Enron | sintético | real-ish | baixo | alto | só controle |
+
+  - **Disciplina (1):** manipular **só o corpus**; padrões reais (Snort/ET)
+    **intactos**. Customizar os dois lados = benchmark circular ("fiz casar") →
+    perde defensibilidade. Reportar a densidade de match obtida.
+  - **Por que "base mais realista" (2) = pcap:** regras Snort/ET são escritas
+    contra **tráfego de rede**, não prosa de e-mail — por isso Snort∩Enron quase
+    não casa. Tráfego real (DEFCON17, ISCX/CIC-IDS, DARPA, malware-traffic-
+    analysis.net) dispara as assinaturas e já é não-uniforme; custo = encanamento
+    pcap→bytes + engrandecer p/ escala de GB.
+  - **ET (Emerging Threats):** já é o set de padrões (`patterns_et_32.txt` = ET
+    Open, ~44k regras, autômato ~515 MiB → estoura L3). ET é **regra, não corpus**;
+    a combinação realista é **regras ET × payloads de malware real**
+    (malware-traffic-analysis.net, já citado em `...supply_chains`).
+  - **Alavanca dominante:** o que desbalanceia AC é a **variação espacial do custo
+    por chunk**. Densidade de match é a alavanca *controlável/citável* (com flat a
+    emissão é barata → efeito moderado); **heterogeneidade de conteúdo** (forçar o
+    DFA por estados "frios") costuma desbalancear *mais*, quase de graça. **Combinar
+    1+3** (blocos quentes por injeção **dentro** de corpus heterogêneo) é o melhor.
+- **Como (receita recomendada — estratégia 1+3, concatenação graduada por densidade):**
+  1. **Filler frio:** `enron_corpus.txt` (≈0 match Snort) nas regiões limpas.
+  2. **Blocos quentes:** método FHBM — injetar prefixos ≥80% de padrões de
+     `patterns_snort.txt` num pedaço de Enron até **~40–45%** de densidade (alvo
+     DEFCON *ugly*).
+  3. **Layout = a chave:** **agrupar** os blocos quentes (ex.: no 1º quarto do
+     arquivo) para sobrecarregar poucos chunks estáticos e esvaziar o resto.
+  4. **Controle (Ródenas):** manter **bytes totais E matches totais iguais** entre
+     a versão uniforme e a skewed — variar *só* a distribuição espacial, para que
+     o spread por-thread seja atribuível ao balanceamento, não a "mais trabalho".
+     Ideal: **fator de skew tunável** → curva "spread estático × dinâmico vs. skew".
+- **Esboço de implementação:** `scripts/make_skewed_corpus.sh` (ou integrado ao
+  `prepare_data.sh`) gera o corpus; nova fase no `run_sweep.sh` roda `v2`/`flat` ×
+  `dynamic`/`dynamic_flat` em T=MAX_T com `--per-thread` nos dois corpora
+  (uniforme vs. skewed). Documentar a construção em `testes-workstation.md` §4.
+- **Medição:** spread de tempo por worker / ociosidade de barreira (contribuição
+  própria — a RSL não mede isso para AC), com a moldura "maior fatia limita o
+  makespan" de Ródenas.
+- **Pronto quando:** repetir Teste 3 (per-thread) nesse corpus; esperar spread
+  estático ≫ dinâmico (validando o mecanismo).
 
 ## P1 — Mais réplicas na decomposição por thread (Teste 3)
 
@@ -171,7 +237,7 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 | # | Item | Prioridade | Bloqueia |
 |---|---|---|---|
 | 1 | Tamanho de tarefa em runtime ✅ | P0 (feito) | sweep de granularidade |
-| 2 | `dynamic_flat` no i5 | P0 | — |
+| 2 | `dynamic_flat` nas curvas principais — motor alinhado, falta rerun | P0 | — |
 | 3 | Sweep de granularidade (i5 + Ryzen) — infra pronta (`phase_G`), falta rodar | P1 | item 1 |
 | 4 | Métricas: replicar invocações + instrumentar `--per-thread` (CPU/P-E, freq, migrações) | P1 | conclui itens 3 e 6 |
 | 5 | Corpus de carga desigual | P1 | — |

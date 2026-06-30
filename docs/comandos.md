@@ -399,12 +399,18 @@ taskset -c 0,4 ./build/aclab --patterns data/patterns_snort.txt \
 ## §14 · Sweep canônico UNIFICADO (`run_sweep.sh`)
 
 Motor de sweep **unificado e env-agnóstico** (substitui `run_i5_sweep.sh` e
-`run_workstation_sweep.sh`, agora legados). Roda a **grade completa** A–E em
+`run_workstation_sweep.sh`, agora legados). Roda a **grade completa** A–G em
 qualquer host, derivando `MAX_T=nproc` e o `RUN_DIR` (slug do modelo de CPU, ex.
-`runs/amd_ryzen_9_9950x`). Resume automático — pula runs já concluídas. Fases
-default `A B C D E`; `G` (granularidade) é opt-in. Para a corrida real, prefira o
-wrapper `run_all.sh` (pré-flight + build + test + governador + desacople +
-upload/notificação; ver §14b).
+`runs/amd_ryzen_9_9950x`). Em `MAX_T=32`, o default atual dispara 562 runs.
+Resume automático — pula runs já concluídas. Para cortar uma fase, passe
+explicitamente a lista desejada em `PHASES`. Falhas individuais viram `.FAIL`;
+o sweep continua para as demais configs, mas retorna rc=1 se alguma falha
+permanecer ao fim.
+
+Use `run_sweep.sh` quando o ambiente já estiver preparado e você quiser apenas
+o motor de benchmark. Para corrida real/noturna, prefira `run_all.sh`: ele
+executa pré-flight de dados, build/test, governador, desacoplamento de sessão e
+upload/notificação best-effort antes/depois de chamar `run_sweep.sh`.
 
 ```bash
 # Tudo, RUN_DIR auto pelo modelo de CPU
@@ -420,7 +426,7 @@ PHASES="B C D" scripts/run_sweep.sh
 # Pontos de curva custom (filtrados a 1..MAX_T)
 THREAD_POINTS="1 2 4 8 16 24 32" scripts/run_sweep.sh
 
-# Fase G (opt-in): granularidade da fila dinâmica — varre tasks-per-thread
+# Fase G isolada: granularidade da fila dinâmica — varre tasks-per-thread
 # {1,4,16,64,256} para dynamic/dynamic_flat (P1). Saída em <RUN_DIR>/G_granularity/.
 PHASES="G" nohup scripts/run_sweep.sh > sweep.out 2>&1 &
 
@@ -438,7 +444,7 @@ log. Ao terminar, faz upload/notificação best-effort.
 
 ```bash
 # i5 (TTY texto pós-reboot, protocolo de máquina quieta), sem upload
-RUN_DIR=runs/i5 ./scripts/run_all.sh                 # default A B C D E
+RUN_DIR=runs/i5 ./scripts/run_all.sh                 # default A B C D E G
 RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh   # só granularidade
 
 # Workstation Ryzen 9 9950X: grade completa + push da runs/ + notificação no celular

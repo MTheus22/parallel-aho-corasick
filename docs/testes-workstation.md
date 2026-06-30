@@ -1,5 +1,11 @@
 # Plano de testes — Aho–Corasick paralelo (workstation de núcleos homogêneos)
 
+> **Nota 2026-06-30:** este documento registra a primeira corrida reduzida da
+> workstation. O protocolo canônico atual é o default A–G de
+> `scripts/run_sweep.sh`, disparado por `RUN_DIR=runs/workstation
+> ./scripts/run_all.sh`; ele inclui `pthread_dynamic_flat` nas curvas principais
+> e deve substituir estes números quando a nova corrida for versionada.
+
 ## 1. Objetivo
 
 Medir, numa CPU multicore de **núcleos homogêneos**, o ganho de desempenho em função de:

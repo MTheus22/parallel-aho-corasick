@@ -4,22 +4,24 @@ Relação **exata** de execuções disparadas pelo sweep canônico do TCC.
 
 **Motor único:** `scripts/run_sweep.sh` é o engine **unificado e env-agnóstico**
 (promove o legado `scripts/run_i5_sweep.sh`). Roda a **grade completa** (fases
-A–E, 9 searchers paralelos + 2 sequenciais) em qualquer host, derivando o teto
+A–G, 10 searchers paralelos + 2 sequenciais) em qualquer host, derivando o teto
 de threads (`MAX_T = MAX_THREADS:-nproc`) e o `RUN_DIR` (slug do modelo de CPU,
 ex.: `runs/amd_ryzen_9_9950x`, `runs/intel_core_i5_1235u`; fallback `runs/<host>`).
 `run_i5_sweep.sh`/`run_workstation_sweep.sh` ficam como **legados**.
 
 A **grade é descrita em função de `MAX_T`** — não é fixa em 12. As contagens
-abaixo valem para o **caso particular `MAX_T = 12`** (i5-1235U), que bate com os
-**265 runs** do `runs/i5/sweep.db` (sweep de 2026-05-29, 0 falhas). Em outro
-host a contagem muda só pelos pontos de thread (ver "Como `MAX_T` muda a
-contagem" ao fim). Cada execução é uma chamada de `build/aclab` com
+abaixo valem para o **caso particular `MAX_T = 12`** (i5-1235U). O sweep
+histórico de 2026-05-29 tinha **265 runs** porque ainda não incluía
+`pthread_dynamic_flat` nas fases A/B/C/D nem a fase G no default. O protocolo
+canônico atual em `MAX_T=12` tem **338 runs**; em `MAX_T=32` (Ryzen 9 9950X),
+tem **562 runs**. Cada execução é uma chamada de `build/aclab` com
 `--patterns`, `--input`, `--searcher`, `--threads`, `--warmup` e `--iters`.
 
 > Nota: o cabeçalho-comentário do legado `run_i5_sweep.sh` está **desatualizado**
 > em relação ao corpo. Onde houver divergência, vale o código. Ex.: o comentário
-> diz "8 searchers" e "T ∈ {1,2,3,4,6,8,10,12}", mas o código usa **9 searchers
-> paralelos** e a curva real em `enron_corpus` é **{1,2,4,6,8,10,12}** (sem 3).
+> diz "8 searchers" e "T ∈ {1,2,3,4,6,8,10,12}", mas o código atual usa
+> **10 searchers paralelos** e a curva real em `enron_corpus` é
+> **{1,2,4,6,8,10,12}** (sem 3).
 > O `run_sweep.sh` tem o cabeçalho já atualizado (descrição env-agnóstica).
 
 ## Parâmetros globais
@@ -29,10 +31,11 @@ contagem" ao fim). Cada execução é uma chamada de `build/aclab` com
   `THREAD_POINTS="1 2 4 8 16 24 32"` (filtrado para `1..MAX_T`, único e ordenado;
   substitui a derivação em **todas** as curvas — A1, A2, E).
 - Searchers sequenciais: `sequential` (chain-walk) e `sequential_flat` (idea 5).
-- **Conjunto de 9 searchers paralelos** (reusado em A e D):
+- **Conjunto de 10 searchers paralelos** (reusado em A e D):
   `pthread_chunked`, `pthread_chunked_v2`, `pthread_chunked_v3`,
-  `pthread_dynamic`, `pthread_prefetch`, `pthread_chunked_flat` (idea 5),
-  `pthread_chunked_v3_flat` (ideas 5+7), `pthread_2d_sharded_chunked` (idea 6),
+  `pthread_dynamic`, `pthread_dynamic_flat`, `pthread_prefetch`,
+  `pthread_chunked_flat` (idea 5), `pthread_chunked_v3_flat` (ideas 5+7),
+  `pthread_2d_sharded_chunked` (idea 6),
   `pattern_sharded_prefix` (idea 1).
 - Datasets de padrões: `patterns_snort.txt` (~56 MiB de autômato),
   `patterns_et_32.txt` (~515 MiB), e reduzidos `patterns_snort_100.txt`,
@@ -42,7 +45,7 @@ contagem" ao fim). Cada execução é uma chamada de `build/aclab` com
 
 ---
 
-## Fase A — curvas de speedup (the headline figure) — **206 runs**
+## Fase A — curvas de speedup (the headline figure) — **228 runs**
 
 `warmup=2 iters=5`. Dois sub-blocos por corpus.
 
@@ -53,18 +56,18 @@ contagem" ao fim). Cada execução é uma chamada de `build/aclab` com
 ### A1 — `enron_corpus` (1,42 GiB)
 Para cada conjunto de padrões em `{snort, et_32}`:
 - 2 baselines single-thread: `sequential`, `sequential_flat`.
-- 7 pontos de thread × 9 searchers paralelos = 63.
-- Subtotal por padrão = 65. **× 2 padrões = 130 runs.**
+- 7 pontos de thread × 10 searchers paralelos = 70.
+- Subtotal por padrão = 72. **× 2 padrões = 144 runs.**
 
 ### A2 — `enron_x8` (10,59 GiB)
 Para cada conjunto de padrões em `{snort, et_32}`:
 - 2 baselines single-thread.
-- 4 pontos de thread × 9 searchers = 36.
-- Subtotal por padrão = 38. **× 2 padrões = 76 runs.**
+- 4 pontos de thread × 10 searchers = 40.
+- Subtotal por padrão = 42. **× 2 padrões = 84 runs.**
 
 ---
 
-## Fase B — footprint do autômato vs. throughput — **24 runs**
+## Fase B — footprint do autômato vs. throughput — **40 runs**
 
 `warmup=2 iters=5`, corpus fixo `enron_corpus`. Varre o tamanho do
 dicionário para localizar o cross-over de cache.
@@ -72,25 +75,28 @@ dicionário para localizar o cross-over de cache.
 - Dicts: `snort_100`, `snort_1k`, `snort`, `et_32` (4).
 - Por dict:
   - single-thread: `sequential`, `sequential_flat` (2 runs).
-  - multi-thread: `pthread_chunked_v3`, `pthread_chunked_flat` × T ∈ {1, MAX_T} (4 runs).
-- Subtotal por dict = 6. **× 4 = 24 runs.**
+  - multi-thread: `pthread_chunked_v3`, `pthread_chunked_flat`,
+    `pthread_dynamic`, `pthread_dynamic_flat` × T ∈ {1, MAX_T} (8 runs).
+- Subtotal por dict = 10. **× 4 = 40 runs.**
 
 ---
 
-## Fase C — sensibilidade ao corpus — **6 runs**
+## Fase C — sensibilidade ao corpus — **20 runs**
 
 `warmup=2 iters=5`, padrões fixos `snort`.
 
 - Corpora: `simplewiki`, `enron_corpus` (2).
-- Por corpus: `sequential` (1, single-thread) + `pthread_chunked_v3` × T ∈ {1, MAX_T} (2).
-- Subtotal por corpus = 3. **× 2 = 6 runs.**
+- Por corpus: `sequential`, `sequential_flat` (2 single-thread) +
+  `pthread_chunked_v3`, `pthread_chunked_flat`, `pthread_dynamic`,
+  `pthread_dynamic_flat` × T ∈ {1, MAX_T} (8).
+- Subtotal por corpus = 10. **× 2 = 20 runs.**
 
 ---
 
-## Fase D — diagnóstico per-thread em T=MAX_T — **9 runs**
+## Fase D — diagnóstico per-thread em T=MAX_T — **10 runs**
 
 `warmup=1 iters=3 --per-thread`, padrões `snort`, corpus `enron_corpus`,
-T = MAX_T fixo. 1 run por searcher do conjunto de 9 paralelos.
+T = MAX_T fixo. 1 run por searcher do conjunto de 10 paralelos.
 Alimenta a tabela de balanceamento (ociosidade de barreira).
 
 ---
@@ -109,11 +115,11 @@ sempre `sequential`, corpus `enron_corpus`.
 
 ---
 
-## Fase G — granularidade da fila dinâmica (tasks-per-thread) — **20 runs** · OPT-IN
+## Fase G — granularidade da fila dinâmica (tasks-per-thread) — **20 runs**
 
-> **Fora do default** (`PHASES` padrão = `A B C D E`). **Não** entra nos 265
-> runs do `sweep.db` 2026-05-29 — foi adicionada depois (P0/P1), ainda **não
-> rodada** no i5. Rode com `PHASES="G" scripts/run_sweep.sh` (ou
+> Entra no default atual (`PHASES` padrão = `A B C D E G`). Não entra nos 265
+> runs do `sweep.db` 2026-05-29 porque foi adicionada depois (P0/P1). Para rodar
+> só ela: `PHASES="G" scripts/run_sweep.sh` (ou
 > `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh`).
 
 Responde à pergunta em aberto do P1 ("tarefas menores ajudariam a dinâmica?").
@@ -138,34 +144,36 @@ O `k` efetivo de cada run fica no header do `.log` como `tasks_per_thread=N`
 
 | Fase | Foco | Runs |
 |------|------|-----:|
-| A | curvas de speedup (escalonamento) | 206 |
-| B | footprint / cache blowout | 24 |
-| C | sensibilidade ao corpus | 6 |
-| D | per-thread / balanceamento | 9 |
+| A | curvas de speedup (escalonamento) | 228 |
+| B | footprint / cache blowout | 40 |
+| C | sensibilidade ao corpus | 20 |
+| D | per-thread / balanceamento | 10 |
 | E | build paralelo (idea 4) | 20 |
-| **Total (sweep 2026-05-29)** | | **265** |
-| G | granularidade tasks-per-thread (opt-in, não rodada) | 20 |
+| **Total A–E atual, MAX_T=12** | | **318** |
+| G | granularidade tasks-per-thread | 20 |
+| **Total default atual A–G, MAX_T=12** | | **338** |
 
 Resiliência: cada run grava 1 `.log`; rerodar pula o que já completou
 (grep pela linha de resultado do searcher). Falhas viram `.FAIL` sem
-derrubar o sweep. `flock` impede instâncias paralelas.
+derrubar as demais execuções, mas o processo termina com rc=1 se qualquer
+falha permanecer ao fim. `flock` impede instâncias paralelas.
 
 ### Como `MAX_T` muda a contagem
 
 Só a **Fase A** (curvas) e a **Fase E** (build paralelo) escalam com `MAX_T`; o
-resto é fixo (B/C/D usam `T ∈ {1, MAX_T}` ou `T = MAX_T`, contagem constante).
+resto é fixo (B/C/D/G usam `T ∈ {1, MAX_T}` ou `T = MAX_T`, contagem constante).
 Os pontos de thread são derivados assim (ou substituídos por `THREAD_POINTS`):
 
 - **A1** `enron_corpus` — `{1}` ∪ `{2,4,…}` (passo +2) até `MAX_T`. Em 12 → 7
-  pontos `{1,2,4,6,8,10,12}`; em 32 → 16 pontos `{1,2,4,…,32}`.
+  pontos `{1,2,4,6,8,10,12}`; em 32 → 17 pontos `{1,2,4,…,32}`.
 - **A2** `enron_x8` — `{1}` ∪ `{4,8,16,…}` (dobrando) até `MAX_T`. Em 12 → 4
   pontos `{1,4,8,12}`; em 32 → 5 pontos `{1,4,8,16,32}`.
 - **E** build paralelo — `{2,4,8,…}` (dobrando) até `MAX_T`, por dict. Em 12 →
   `{2,4,8,12}` (4); em 32 → `{2,4,8,16,32}` (5).
 
-Logo a contagem total é `MAX_T`-dependente; **265 é o caso `MAX_T = 12`**, não
-uma constante do script. Para um `MAX_T` arbitrário, recompute A/E pelos pontos
-acima e some B(24) + C(6) + D(9) inalterados.
+Logo a contagem total é `MAX_T`-dependente. Para um `MAX_T` arbitrário,
+recompute A/E pelos pontos acima e some B(40) + C(20) + D(10) + G(20)
+inalterados. Em `MAX_T=32`, o default atual soma **562 runs**.
 
 ---
 
@@ -308,10 +316,9 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 
    Ele: (a) gera `enron_x8.txt` = `enron_corpus.txt` × 8 (checa disco e
    tamanho exato); (b) gera `patterns_snort_100/1k.txt` via `head`; (c) baixa
-   Snort/Enron se faltarem (`AUTO_DOWNLOAD=1`); (d) **PARA** se
-   `patterns_et_32.txt` faltar — esse arquivo **não é regenerável**, copie do
-   laptop (`scp laptop:.../data/patterns_et_32.txt data/`). Só siga adiante
-   quando o veredito for **PRONTO**. Transferência mínima recomendada:
+   Snort/Enron se faltarem (`AUTO_DOWNLOAD=1`); (d) restaura
+   `patterns_et_32.txt` do git se ele tiver sido removido do checkout. Só siga
+   adiante quando o veredito for **PRONTO**. Transferência mínima recomendada:
    `enron_corpus.txt` + `patterns_*.txt` (~1,42 GiB) e gerar `enron_x8` no
    host (evita mover 10,6 GiB).
 1. `lscpu` / `lstopo` — confirmar 16C/32T e o layout **2 CCDs × 32 MiB L3**
@@ -329,8 +336,8 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 ## Como rodar (driver enxuto)
 
 > **⚠️ epic-03:** esta subseção descreve a grade **reduzida** da 1ª corrida com o
-> **legado** `run_workstation_sweep.sh`. A corrida canônica do epic-03 roda a
-> **grade COMPLETA A–E** (topo deste doc) pelo motor unificado. Use:
+> **legado** `run_workstation_sweep.sh`. A corrida canônica atual roda a
+> **grade COMPLETA A–G** (topo deste doc) pelo motor unificado. Use:
 > `RUN_DIR=runs/workstation ./scripts/run_all.sh` (faz pré-flight + governador +
 > build/test + `run_sweep.sh` desacoplado + upload). Comandos abaixo = histórico.
 
@@ -342,11 +349,11 @@ e descarta `v3`/`v3_flat`.
 ./scripts/prepare_data.sh                        # PRÉ-FLIGHT DE DADOS (deve dar PRONTO)
 sudo cpupower frequency-set -g performance       # Zen 5 = amd-pstate
 make && make test                                # correção no chip-alvo
-RUN_DIR=runs/workstation nohup ./scripts/run_sweep.sh > workstation.out 2>&1 &  # grade COMPLETA A–E
+RUN_DIR=runs/workstation nohup ./scripts/run_sweep.sh > workstation.out 2>&1 &  # grade COMPLETA A–G
 ```
 
-- O motor unificado roda `A B C D E` por default (a reduzida `A B D E` era do
-  legado; a fase opcional `S` de 2-D/sharding entra com `PHASES="A B D E S"`).
+- O motor unificado roda `A B C D E G` por default. Para cortar uma fase, passe
+  explicitamente a lista desejada em `PHASES`, por exemplo `PHASES="A B D E G"`.
 - Os pontos de thread se adaptam ao `nproc` (ou a `MAX_THREADS=…`): em 32
   threads a curva é `{1,2,4,8,16,24,32}`.
 - Saída em `runs/workstation/<fase>/`; rerodar pula o que já completou.

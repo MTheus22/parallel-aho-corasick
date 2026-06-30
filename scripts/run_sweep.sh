@@ -4,7 +4,7 @@
 # =============================================================================
 #
 # Promove o antigo `run_i5_sweep.sh` a um único script que roda a **totalidade
-# da grade** (fases A–E, 9 searchers paralelos + 2 sequenciais) em **qualquer
+# da grade** (fases A–G, 10 searchers paralelos + 2 sequenciais) em **qualquer
 # ambiente**, derivando o teto de threads e o nome do diretório de saída do
 # hardware corrente. Nenhuma suposição de hardware híbrido (P/E) é embutida.
 #
@@ -13,7 +13,8 @@
 # Resiliente:
 #   - Cada run grava em um arquivo próprio em <RUN_DIR>/<fase>/.
 #   - Rerodar o script PULA runs já concluídas (resume-from-crash).
-#   - Falhas individuais não derrubam o sweep; ficam marcadas com sufixo .FAIL.
+#   - Falhas individuais não derrubam as demais runs; ficam marcadas com sufixo
+#     .FAIL e fazem o processo terminar com rc=1 ao final.
 #   - SIGINT / SIGTERM são tratados: tmp files limpos, MASTER.log finalizado.
 #   - flock impede duas instâncias simultâneas (mediria com ruído).
 #
@@ -37,31 +38,32 @@
 #     C_cross_corpus/<run>.log
 #     D_per_thread/<run>.log
 #     E_build_par/<run>.log
-#     G_granularity/<run>.log     # opt-in (PHASES="G")
+#     G_granularity/<run>.log
 #
 # Convenção de nome dos .log:
 #   <patterns_basename>__<corpus_basename>__<searcher>__T<n>[_<tag>].log
 #
 # Plano (fases) — pontos de thread escalam com MAX_T (nproc), não fixos em 12:
 #   A — curva completa por searcher (the headline figure)
-#       enron_corpus: T derivado de MAX_T (passo +2)  × {snort, et_32} × 9 searchers
-#       enron_x8:     T derivado de MAX_T (dobrando)   × {snort, et_32} × 9 searchers
+#       enron_corpus: T derivado de MAX_T (passo +2)  × {snort, et_32} × 10 searchers
+#       enron_x8:     T derivado de MAX_T (dobrando)   × {snort, et_32} × 10 searchers
 #       warmup=2 iters=5
 #   B — footprint do autômato vs throughput
-#       dicts ∈ {snort_100, snort_1k, snort, et_32} × {seq, v3}
+#       dicts ∈ {snort_100, snort_1k, snort, et_32} × {seq, v3, flat, dynamic, dynamic_flat}
 #       T ∈ {1, MAX_T}, corpus = enron_corpus
 #   C — sensibilidade ao corpus
-#       (snort) × {simplewiki, enron_corpus} × {seq, v3} × T ∈ {1, MAX_T}
+#       (snort) × {simplewiki, enron_corpus} × {seq, seq_flat, v3, flat, dynamic, dynamic_flat}
+#       T ∈ {1, MAX_T} para searchers paralelos
 #   D — per-thread em T=MAX_T (para tabela de balanceamento)
 #       1 run por searcher paralelo em (snort, enron_corpus, T=MAX_T, --per-thread)
 #   E — build-time paralelo vs. sequencial (idea 4)
 #       dicts ∈ {snort_100, snort_1k, snort, et_32}, build seq vs. par (dobrando até MAX_T)
-#   G — granularidade da fila dinâmica (OPT-IN, fora do default)
+#   G — granularidade da fila dinâmica
 #       AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} × {dynamic, dynamic_flat}
 #       (snort, enron_corpus, T=MAX_T); timing + --per-thread por k
 #
 # Uso:
-#   scripts/run_sweep.sh                       # default (A B C D E), RUN_DIR auto
+#   scripts/run_sweep.sh                       # default (A B C D E G), RUN_DIR auto
 #   scripts/run_sweep.sh A                     # roda só fase A
 #   PHASES="A C" scripts/run_sweep.sh          # roda fases A e C
 #   PHASES="G" scripts/run_sweep.sh            # só o sweep de granularidade (P1)
@@ -338,6 +340,7 @@ phase_A() {
   local phase="A_speedup_curves"
   local parallel=(pthread_chunked pthread_chunked_v2 pthread_chunked_v3
                   pthread_dynamic
+                  pthread_dynamic_flat
                   pthread_prefetch
                   pthread_chunked_flat        # idea 5
                   pthread_chunked_v3_flat     # ideas 5+7
@@ -400,7 +403,8 @@ phase_B() {
   # single-thread baselines
   local seq_searchers=(sequential sequential_flat)
   # parallel searchers (incluindo flat — idea 5)
-  local par_searchers=(pthread_chunked_v3 pthread_chunked_flat)
+  local par_searchers=(pthread_chunked_v3 pthread_chunked_flat
+                       pthread_dynamic pthread_dynamic_flat)
   local cor="enron_corpus.txt"
 
   for pat in "${dicts[@]}"; do
@@ -423,15 +427,16 @@ phase_B() {
 phase_C() {
   log "===== Fase C — cross-corpus ====="
   local phase="C_cross_corpus"
-  local searchers=(sequential pthread_chunked_v3)
+  local seq_searchers=(sequential sequential_flat)
+  local par_searchers=(pthread_chunked_v3 pthread_chunked_flat
+                       pthread_dynamic pthread_dynamic_flat)
   local pat="patterns_snort.txt"
 
   for cor in "simplewiki.txt" "enron_corpus.txt"; do
-    for s in "${searchers[@]}"; do
-      if [[ "$s" == "sequential" ]]; then
-        run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" sequential 0 2 5
-        continue
-      fi
+    for s in "${seq_searchers[@]}"; do
+      run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" 0 2 5
+    done
+    for s in "${par_searchers[@]}"; do
       for T in 1 "$MAX_T"; do
         run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" "$T" 2 5
       done
@@ -447,6 +452,7 @@ phase_D() {
   local phase="D_per_thread"
   local parallel=(pthread_chunked pthread_chunked_v2 pthread_chunked_v3
                   pthread_dynamic
+                  pthread_dynamic_flat
                   pthread_prefetch
                   pthread_chunked_flat        # idea 5
                   pthread_chunked_v3_flat     # ideas 5+7
@@ -499,7 +505,7 @@ phase_E() {
 }
 
 # =============================================================================
-# Fase G — granularidade da fila dinâmica (tasks-per-thread)   [OPT-IN]
+# Fase G — granularidade da fila dinâmica (tasks-per-thread)
 # =============================================================================
 # Responde à pergunta em aberto do P1 ("tarefas menores ajudariam a dinâmica?").
 # Varre AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} (num_tasks = k·T) para os dois
@@ -508,8 +514,7 @@ phase_E() {
 # → spread de tempo entre workers (o que a granularidade de fato rebalanceia).
 #
 # Depende do P0 (binário lê --tasks-per-thread / AC_DYN_TASKS_PER_THREAD; o valor
-# efetivo aparece no header do log como `tasks_per_thread=N`). NÃO faz parte do
-# PHASES default — rode com:  PHASES="G" scripts/run_sweep.sh
+# efetivo aparece no header do log como `tasks_per_thread=N`).
 phase_G() {
   log "===== Fase G — granularidade tasks-per-thread (T=$MAX_T) ====="
   local phase="G_granularity"
@@ -538,7 +543,7 @@ phase_G() {
 # =============================================================================
 # Orquestração
 # =============================================================================
-PHASES="${PHASES:-${1:-A B C D E}}"
+PHASES="${PHASES:-${1:-A B C D E G}}"
 
 log "=== Sweep iniciado ==="
 log "RUN_DIR=$RUN_DIR  MAX_T=$MAX_T  PHASES=$PHASES"
@@ -570,4 +575,5 @@ if (( FAILED > 0 )); then
   echo
   echo "Falhas (rerodar o script reexecuta apenas estas):"
   find "$RUN_DIR" -name '*.FAIL' -printf '  %p\n'
+  exit 1
 fi

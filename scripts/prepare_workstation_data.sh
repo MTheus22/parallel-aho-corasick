@@ -4,8 +4,8 @@
 # =============================================================================
 #
 # Por que este script existe:
-#   O sweep da workstation precisa de 4 arquivos de dados que NÃO são gerados
-#   por prepare_datasets.sh e NÃO estão versionados (data/ é gitignored):
+#   O sweep da workstation precisa de arquivos de dados que não são todos
+#   gerados por prepare_datasets.sh:
 #
 #     data/enron_x8.txt        (10,59 GiB) — fases A, D, S
 #     data/enron_corpus.txt    ( 1,42 GiB) — fases B, E
@@ -21,8 +21,8 @@
 #     - gera patterns_snort_100/1k.txt via head (igual ao que o sweep faria);
 #     - se patterns_snort.txt / enron_corpus.txt faltarem, oferece rodar o
 #       prepare_datasets.sh (download Snort + Enron);
-#     - patterns_et_32.txt NÃO tem como ser regenerado (sem fonte/script):
-#       se faltar, o script PARA com instruções claras de scp.
+#     - patterns_et_32.txt é versionado no git; se faltar, restaure com
+#       `git pull --ff-only && git restore data/patterns_et_32.txt`.
 #
 #   Ao fim, imprime um relatório "PRONTO/NÃO PRONTO" com tamanhos. Rode-o
 #   ANTES do sweep e só dispare o sweep se o veredito for PRONTO.
@@ -76,13 +76,13 @@ fi
 [[ -s "$DATA/enron_corpus.txt"  ]] && ok "enron_corpus.txt     ($(human "$(size_of "$DATA/enron_corpus.txt")"))"
 
 # --------------------------------------------------------------------------
-# 2. patterns_et_32.txt — SEM fonte/script. Só pode vir por cópia.
+# 2. patterns_et_32.txt — versionado no git.
 # --------------------------------------------------------------------------
 if [[ -s "$DATA/patterns_et_32.txt" ]]; then
   ok "patterns_et_32.txt   ($(human "$(size_of "$DATA/patterns_et_32.txt")"))"
 else
-  err "patterns_et_32.txt AUSENTE e NÃO é regenerável (sem script/fonte no repo)."
-  say "     Copie do laptop:  scp laptop:.../data/patterns_et_32.txt data/"
+  err "patterns_et_32.txt AUSENTE."
+  say "     Tente: git pull --ff-only && git restore data/patterns_et_32.txt"
   say "     (É o dicionário ET-32, ~816 KiB / ~44708 padrões — segundo regime de cache da fase A.)"
   PROBLEMS=$((PROBLEMS+1))
 fi

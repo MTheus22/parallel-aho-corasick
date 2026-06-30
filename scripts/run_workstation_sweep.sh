@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # LEGADO: use scripts/run_sweep.sh (motor unificado env-agnóstico, grade completa
-# A–E). Este é a variante REDUZIDA; mantido só como referência. Remoção pendente.
+# A–G). Este é a variante REDUZIDA; mantido só como referência. Remoção pendente.
 # =============================================================================
 # Sweep da workstation reservada — subconjunto relevante do TCC.
 # =============================================================================

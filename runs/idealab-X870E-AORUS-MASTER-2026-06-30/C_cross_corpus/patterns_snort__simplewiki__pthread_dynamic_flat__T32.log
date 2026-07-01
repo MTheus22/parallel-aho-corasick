@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/simplewiki.txt --searcher pthread_dynamic_flat --threads 32 --warmup 2 --iters 5 
+# started: 2026-06-30T22:03:47-03:00
+# phase:   C_cross_corpus
+# label:   patterns_snort__simplewiki__pthread_dynamic_flat__T32
+
+# Aho-Corasick laboratory
+# git:        c19da78
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1289283640 bytes (1229.56 MiB) via mmap
+# build time: 28.611 ms
+# warmup=2 iters=5 threads=32 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic_flat     32   1289283640        153.691        154.155        154.592      7976.11   12407040        154.239     0.24    66.9084     32
+#   iter_ms: 154.365 153.888 153.691 154.592 154.239
+#   workers=32  median_MB/s=7971.74  ns/byte=0.1196  stdev_ms=0.364
+
+# finished:        2026-06-30T22:03:48-03:00
+# elapsed_seconds: 1
+# exit_code:       0

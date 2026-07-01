@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_x8.txt --searcher pattern_sharded_prefix --threads 8 --warmup 2 --iters 5 
+# started: 2026-06-30T21:35:12-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_x8__pattern_sharded_prefix__T8
+
+# Aho-Corasick laboratory
+# git:        c19da78
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      11369469888 bytes (10842.77 MiB) via mmap
+# build time: 335.156 ms
+# warmup=2 iters=5 threads=8 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pattern_sharded_prefix    8  11369469888      20060.129      20069.438      20086.402       540.26  466943872      20067.637     0.05     4.5321      8
+#   iter_ms: 20063.408 20086.402 20067.637 20069.612 20060.129
+#   workers=8  median_MB/s=540.31  ns/byte=1.7652  stdev_ms=10.175
+
+# finished:        2026-06-30T21:37:34-03:00
+# elapsed_seconds: 142
+# exit_code:       0

@@ -1,9 +1,10 @@
 # Workstation analysis — Ryzen 9 9950X × i5-1235U
 
-> **Nota 2026-06-30:** esta análise é da corrida reduzida de 2026-06-25. O
-> protocolo canônico atual para a workstation é a grade A–G de
-> `scripts/run_sweep.sh` via `RUN_DIR=runs/workstation ./scripts/run_all.sh`.
-> Recalcule esta análise depois que a nova corrida for versionada.
+> **Nota 2026-06-30:** esta análise é da corrida reduzida de 2026-06-25 e é
+> **histórica**. A workstation é agora a **fonte canônica** do TCC; a coleta atual
+> está em `runs/workstation_2026-06-29/` (ver `RESULTS.md`). Refaça esta análise
+> i5×Ryzen sobre a nova corrida — idealmente após o re-run limpo A–G com
+> `dynamic_flat` (`RUN_DIR=runs/workstation ./scripts/run_all.sh`).
 
 Análise consolidada e objetiva da corrida de portabilidade na **AMD Ryzen 9
 9950X** (`runs/workstation/sweep.db`, 2026-06-25) confrontada com o sweep
@@ -13,8 +14,10 @@ governador `performance`, binário nativo (`-O3 -march=native`), corpus Enron ×
 (match-count único por `(dicionário, corpus)`: 142.831.896 em Snort,
 466.943.872 em ET-32), zero falhas.
 
-O **i5 permanece a fonte de verdade** das tabelas/figuras do corpo da tese; a
-workstation entra como **seção de portabilidade/generalização**. Curvas brutas
+Política (2026-06-30): a **fonte canônica do TCC é agora a workstation**. Esta
+corrida de 2026-06-25 é **histórica**, sucedida por `runs/workstation_2026-06-29/`
+(ver `RESULTS.md`); o i5 mantém apenas os números que o corpo da tese **ainda
+cita** (até a migração) e a **discussão de P/E**. Curvas brutas
 por variante × threads estão em [`testes-workstation.md`](testes-workstation.md)
 §9. Este doc concentra a camada analítica (eficiência, comparação i5×Ryzen,
 confronto com a tese).

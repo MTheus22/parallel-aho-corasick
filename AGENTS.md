@@ -192,16 +192,26 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
   fase G). Achado: o pico de speedup no i5 saturado (T=12) tem ±40–65% de
   variância **entre corridas**, invisível ao cv intra-run; fase G precisa de
   repetições por `k`.
-- `runs/workstation/README.md` — execução/risco da corrida da workstation.
+- `runs/workstation_2026-06-29/RESULTS.md` — **análise da coleta canônica atual**
+  (Ryzen 9 9950X, 2026-06-29): saúde, ranking de searchers, fases A–E, ressalvas.
+- `runs/workstation/README.md` — execução/risco da corrida **antiga** (2026-06-25,
+  reduzida, portabilidade — não headline).
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 
-> Protocolo canônico atual para a próxima consolidação do TCC =
-> `RUN_DIR=runs/workstation ./scripts/run_all.sh`, que roda A–G e inclui
-> `pthread_dynamic_flat` nas curvas principais. Até a nova corrida completa
-> ser versionada, `runs/i5/sweep.db` (i5, **2026-05-29**) continua sendo a fonte
-> histórica dos números já citados, mas não deve ser tratado como protocolo
-> final da workstation.
+> **Fonte canônica do TCC = workstation Ryzen 9 9950X** (16C/32T homogêneo).
+> Coleta canônica atual: `runs/workstation_2026-06-29/` (análise em
+> `runs/workstation_2026-06-29/RESULTS.md`). ⚠️ Rodou no commit `82dc697`, **sem**
+> `pthread_dynamic_flat` na fase A e **sem** fase G, e a **Fase C falhou**
+> (`simplewiki.txt` ausente) — **ainda não é headline final**. Faça um re-run
+> limpo com o commit atual (`RUN_DIR=runs/workstation ./scripts/run_all.sh`, que
+> roda A–G e inclui `pthread_dynamic_flat`) e recupere a Fase C antes de citar
+> números como finais.
+>
+> O i5 **deixou de ser canônico**: `runs/i5/sweep.db` (**2026-05-29**) serve só
+> aos números que o LaTeX já cita (até a migração) e à **seção de P/E** (única
+> máquina híbrida P+E). A corrida antiga `runs/workstation/` (2026-06-25) foi
+> reduzida (portabilidade) — não citar como headline.
 >
 > Existe uma **2ª corrida do i5** em `runs/i5_2026-06-28/sweep.db` (headless,
 > A–E+G). É **reprodutibilidade/fase G**, **NÃO** canônica — não cite os números

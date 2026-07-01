@@ -215,9 +215,12 @@ Origem, scripts e tamanhos detalhados em
 - [`docs/architecture/parallelism.md`](docs/architecture/parallelism.md)
   — modelo de paralelismo e argumento de correção.
 - [`docs/searchers/`](docs/searchers/) — documentação por searcher.
-- [`docs/testes-workstation.md`](docs/testes-workstation.md) e
-  [`docs/workstation-analysis.md`](docs/workstation-analysis.md) — corrida
-  **antiga** de portabilidade na workstation (Ryzen 9 9950X, 2026-06-25) e
-  comparação com o i5. A **fonte canônica do TCC é agora a workstation**
-  (`runs/workstation_2026-06-29/`, ver `RESULTS.md`); o i5 (`runs/i5/sweep.db`)
-  fica para a discussão de P/E e os números ainda citados no LaTeX.
+- [`runs/MANIFEST.md`](runs/MANIFEST.md) — política dos runs preservados:
+  `runs/workstation_2026-06-30/` é a fonte canônica do TCC; `runs/i5/` fica
+  apenas para a discussão P/E.
+- [`runs/QUERY_GUIDE.md`](runs/QUERY_GUIDE.md) — schema, views e consultas
+  SQLite para os `sweep.db` preservados.
+- [`runs/workstation_2026-06-30/RESULTS.md`](runs/workstation_2026-06-30/RESULTS.md)
+  — análise consolidada da coleta canônica e mapa de leitura humana das fases.
+- [`docs/sweep-test-inventory.md`](docs/sweep-test-inventory.md) — inventário
+  das fases A B C D E G do sweep e da contagem de runs por ambiente.

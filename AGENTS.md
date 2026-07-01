@@ -74,7 +74,7 @@ TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclus
 | `pthread_chunked_v2`  | v1 com split warm-up/owned loops e cache-pad em `worker_t`.                     |
 | `pthread_chunked_v3`  | v2 + afinidade ciente de topologia + chunks ponderados por `cpufreq` (híbridas).|
 | `pthread_dynamic`     | Dispatch dinâmico de chunks via contador atômico (4N tarefas).                  |
-| `pthread_dynamic_flat`| `pthread_dynamic` (bag of tasks) + emissão pela tabela achatada (idea 5). Candidato a campeão em cores homogêneos. |
+| `pthread_dynamic_flat`| `pthread_dynamic` (bag of tasks) + emissão pela tabela achatada (idea 5). **Campeão** em cores homogêneos (workstation 06-30). |
 | `pthread_prefetch`    | v2 + `__builtin_prefetch(text + Δ)` para cobrir latência DRAM residual.         |
 | `sequential_flat`     | Sequential AC scan lendo a tabela achatada de saídas (idea 5).                  |
 | `pthread_chunked_flat`| `pthread_chunked_v2` + emissão pela tabela achatada (idea 5).                   |
@@ -171,52 +171,45 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
   freq-weighted chunks.
 - `docs/searchers/pthread_dynamic.md` — dispatch dinâmico atômico.
 - `docs/searchers/pthread_dynamic_flat.md` — bag of tasks (dispatch
-  dinâmico) + flat output table (idea 5); candidato a campeão em cores
-  homogêneos.
+  dinâmico) + flat output table (idea 5); **campeão** em cores homogêneos
+  (workstation 06-30).
 - `docs/searchers/pthread_prefetch.md` — software prefetch do stream
   de texto.
 - `docs/searchers/pthread_chunked_v3_flat.md` — composição v3 (topology
   + freq weights) + flat output table (ideas 5 e 7).
 - `docs/searchers/pthread_2d_sharded_chunked.md` — 2-D K × N
   (sharding por dicionário × chunking de texto), idea 6.
-- `runs/i5/QUERY_GUIDE.md` — schema + views + queries do `sweep.db`
-  (forma token-efficient de consultar os resultados do sweep via `sqlite3`).
-- `docs/testes-workstation.md` — plano de testes + resultados (§9) da corrida
-  na workstation (Ryzen 9 9950X). Mesmas views do `sweep.db`.
-- `docs/workstation-analysis.md` — análise objetiva i5 × Ryzen (eficiência,
-  cache cliff, balanceamento, confronto com a tese).
-- `docs/TODO.md` — melhorias pendentes do estudo (ex.: `dynamic_flat` no i5,
-  sweep de granularidade, corpus de carga desigual).
-- `docs/i5-rerun-2026-06-28.md` — 2ª corrida do i5 (headless, fria) em
-  `runs/i5_2026-06-28/sweep.db`. **Não** é canônica (reprodutibilidade + 1ª
-  fase G). Achado: o pico de speedup no i5 saturado (T=12) tem ±40–65% de
-  variância **entre corridas**, invisível ao cv intra-run; fase G precisa de
-  repetições por `k`.
-- `runs/workstation_2026-06-29/RESULTS.md` — **análise da coleta canônica atual**
-  (Ryzen 9 9950X, 2026-06-29): saúde, ranking de searchers, fases A–E, ressalvas.
-- `runs/workstation/README.md` — execução/risco da corrida **antiga** (2026-06-25,
-  reduzida, portabilidade — não headline).
+- `runs/QUERY_GUIDE.md` — schema + views + queries dos `sweep.db` preservados
+  (forma token-efficient de consultar resultados via `sqlite3`).
+- `runs/MANIFEST.md` — **política dos runs preservados**: só `workstation_2026-06-30/`
+  (canônico) e `i5/` (P/E) existem; lacunas conhecidas (single-run por config;
+  corpus ~uniforme). Leia antes de citar ou criar runs.
+- `runs/workstation_2026-06-30/RESULTS.md` — **análise da coleta canônica**
+  (Ryzen 9 9950X, 2026-06-30): run único ponta-a-ponta (commit `c19da78`, 522 ok /
+  0 fail), fases A B C D E + G, campeão `pthread_dynamic_flat`; também contém o
+  mapa de leitura humana das fases.
+- `docs/TODO.md` — melhorias pendentes; vários itens já resolvidos no run 06-30
+  (fase G, `dynamic_flat`). Lacunas vivas: réplicas por config, corpus skewed.
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 
 > **Fonte canônica do TCC = workstation Ryzen 9 9950X** (16C/32T homogêneo).
-> Coleta canônica atual: `runs/workstation_2026-06-29/` (análise em
-> `runs/workstation_2026-06-29/RESULTS.md`). ⚠️ Rodou no commit `82dc697`, **sem**
-> `pthread_dynamic_flat` na fase A e **sem** fase G, e a **Fase C falhou**
-> (`simplewiki.txt` ausente) — **ainda não é headline final**. Faça um re-run
-> limpo com o commit atual (`RUN_DIR=runs/workstation ./scripts/run_all.sh`, que
-> roda A–G e inclui `pthread_dynamic_flat`) e recupere a Fase C antes de citar
-> números como finais.
+> Coleta canônica: `runs/workstation_2026-06-30/` (análise em
+> `runs/workstation_2026-06-30/RESULTS.md`). Run único ponta-a-ponta no commit
+> `c19da78` (**522 ok / 0 skip / 0 fail**, correctness 100%), fases A B C D E + G
+> com `pthread_dynamic_flat` em todas. **Campeão: `pthread_dynamic_flat` @ T=32**
+> (snort 22,91× / et_32 18,96×; baseline seq 329,2 / 209,8 MB/s). ⚠️ **Single-run
+> por configuração** (ver `runs/MANIFEST.md`) — não afirme variância entre corridas
+> que não foi medida.
 >
 > O i5 **deixou de ser canônico**: `runs/i5/sweep.db` (**2026-05-29**) serve só
 > aos números que o LaTeX já cita (até a migração) e à **seção de P/E** (única
-> máquina híbrida P+E). A corrida antiga `runs/workstation/` (2026-06-25) foi
-> reduzida (portabilidade) — não citar como headline.
+> máquina híbrida P+E).
 >
-> Existe uma **2ª corrida do i5** em `runs/i5_2026-06-28/sweep.db` (headless,
-> A–E+G). É **reprodutibilidade/fase G**, **NÃO** canônica — não cite os números
-> dela como headline. Ela reproduz o baseline mas mostra que o pico de speedup
-> a T=12 oscila ±40–65% entre corridas. Detalhes: `docs/i5-rerun-2026-06-28.md`.
+> **Limpeza 2026-07-01:** os runs interinos/mistos/reduzidos e relatos históricos
+> foram **removidos**. Só existem `workstation_2026-06-30/` e `i5/`. Não cite
+> runs removidos; runs novos vão em `runs/<slug-data>/` (não sobrescreva um run
+> promovido).
 
 ## Coisas que provavelmente NÃO devem mudar sem discussão
 

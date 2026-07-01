@@ -6,13 +6,15 @@
 # Uso:
 #   scripts/build_sweep_db.py runs/i5/sweep.csv -o runs/i5/sweep.db
 #
-# Gera a tabela `runs` (tipada) + views derivadas:
+# Gera a tabela `runs` (tipada), a tabela `worker_metrics` quando houver
+# logs `--per-thread`, e views derivadas:
 #   v_speedup        — speedup vs baseline sequential (fase A)
 #   v_self_speedup   — speedup vs o próprio searcher em T=1 (escalabilidade)
 #   v_footprint      — fase B: throughput vs tamanho do autômato (KiB)
 #   v_build          — fase E: build paralelo vs sequencial (idea 4)
 #   v_correctness    — nº de match-counts distintos por (patterns,corpus) [=1 ok]
 #   v_best           — melhor searcher (mbps) por (patterns,corpus,thr) na fase A
+#   v_worker_balance — resumo de spread entre workers para logs --per-thread
 # =============================================================================
 import argparse
 import csv
@@ -31,6 +33,23 @@ ALL_COLS = (TEXT_COLS
             + sorted(INT_COLS - {"build_threads"})
             + sorted(REAL_COLS)
             + ["build_threads"])
+
+WORKER_COLS = [
+    "phase", "patterns", "corpus", "searcher", "threads_label", "tag",
+    "thr", "log_file", "worker_id", "seconds", "milliseconds",
+    "bytes_scanned", "matches_found", "mbps",
+]
+
+WORKER_INT_COLS = {"thr", "worker_id", "bytes_scanned", "matches_found"}
+WORKER_REAL_COLS = {"seconds", "milliseconds", "mbps"}
+
+WORKER_LINE_RE = re.compile(
+    r"^\s*\[t(?P<worker_id>\d+)\]\s+"
+    r"(?P<milliseconds>[\d.]+)\s+ms\s+"
+    r"(?P<bytes_scanned>\d+)\s+bytes\s+"
+    r"(?P<matches_found>\d+)\s+matches\s+"
+    r"(?P<mbps>[\d.]+)\s+MB/s\s*$"
+)
 
 
 def coltype(c):
@@ -52,6 +71,62 @@ def cast(c, v):
     except ValueError:
         return None
     return v
+
+
+def worker_coltype(c):
+    if c in WORKER_INT_COLS:
+        return "INTEGER"
+    if c in WORKER_REAL_COLS:
+        return "REAL"
+    return "TEXT"
+
+
+def resolve_log_path(csv_path, log_file):
+    if not log_file:
+        return None
+    path = os.path.expanduser(log_file)
+    if os.path.isabs(path) and os.path.exists(path):
+        return path
+    if os.path.exists(path):
+        return path
+
+    # Older CSVs store log_file relative to the repository root. If the DB is
+    # rebuilt from elsewhere, also try resolving from the CSV directory.
+    candidate = os.path.join(os.path.dirname(csv_path), log_file)
+    if os.path.exists(candidate):
+        return candidate
+    return None
+
+
+def parse_worker_metrics(csv_path, run_row):
+    log_path = resolve_log_path(csv_path, run_row.get("log_file", ""))
+    if log_path is None:
+        return []
+
+    worker_rows = []
+    with open(log_path, "r", errors="replace") as fh:
+        for line in fh:
+            match = WORKER_LINE_RE.match(line)
+            if not match:
+                continue
+            milliseconds = float(match.group("milliseconds"))
+            worker_rows.append({
+                "phase": run_row.get("phase", ""),
+                "patterns": run_row.get("patterns", ""),
+                "corpus": run_row.get("corpus", ""),
+                "searcher": run_row.get("searcher", ""),
+                "threads_label": run_row.get("threads_label", ""),
+                "tag": run_row.get("tag", ""),
+                "thr": cast("thr", run_row.get("thr", "")),
+                "log_file": run_row.get("log_file", ""),
+                "worker_id": int(match.group("worker_id")),
+                "seconds": milliseconds / 1000.0,
+                "milliseconds": milliseconds,
+                "bytes_scanned": int(match.group("bytes_scanned")),
+                "matches_found": int(match.group("matches_found")),
+                "mbps": float(match.group("mbps")),
+            })
+    return worker_rows
 
 
 VIEWS = {
@@ -137,6 +212,27 @@ VIEWS = {
               AND x.searcher NOT IN ('sequential', 'sequential_flat'))
         ORDER BY r.patterns, r.corpus, r.thr
     """,
+    # Resumo de balanceamento dos logs --per-thread. `spread_pct` mede
+    # (worker mais lento - worker mais rapido) / media.
+    "v_worker_balance": """
+        CREATE VIEW v_worker_balance AS
+        SELECT phase, patterns, corpus, searcher, thr, tag, log_file,
+               COUNT(*) AS workers,
+               round(MIN(milliseconds), 3) AS min_worker_ms,
+               round(AVG(milliseconds), 3) AS avg_worker_ms,
+               round(MAX(milliseconds), 3) AS max_worker_ms,
+               round((MAX(milliseconds) - MIN(milliseconds))
+                     / AVG(milliseconds) * 100.0, 3) AS spread_pct,
+               round(MAX(milliseconds) / MIN(milliseconds), 4) AS imbalance_ratio,
+               round(MIN(mbps), 2) AS min_worker_mbps,
+               round(AVG(mbps), 2) AS avg_worker_mbps,
+               round(MAX(mbps), 2) AS max_worker_mbps,
+               SUM(bytes_scanned) AS total_worker_bytes,
+               SUM(matches_found) AS total_worker_matches
+        FROM worker_metrics
+        GROUP BY phase, patterns, corpus, searcher, thr, tag, log_file
+        ORDER BY phase, patterns, corpus, searcher, thr, tag
+    """,
 }
 
 
@@ -146,30 +242,46 @@ def main():
     ap.add_argument("-o", "--output", default=None)
     args = ap.parse_args()
     db_path = args.output or os.path.splitext(args.csv_path)[0] + ".db"
+    tmp_db_path = f"{db_path}.tmp-{os.getpid()}"
 
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    con = sqlite3.connect(db_path)
+    if os.path.exists(tmp_db_path):
+        os.remove(tmp_db_path)
+    con = sqlite3.connect(tmp_db_path)
     cur = con.cursor()
 
     cols_ddl = ",\n  ".join(f"{c} {coltype(c)}" for c in ALL_COLS)
     cur.execute(f"CREATE TABLE runs (\n  {cols_ddl}\n)")
 
+    worker_cols_ddl = ",\n  ".join(f"{c} {worker_coltype(c)}"
+                                    for c in WORKER_COLS)
+    cur.execute(f"CREATE TABLE worker_metrics (\n  {worker_cols_ddl}\n)")
+
     with open(args.csv_path, newline="") as fh:
         reader = csv.DictReader(fh)
         rows = []
+        worker_rows = []
         for r in reader:
             tag = r.get("tag", "") or ""
             m = re.search(r"buildpar_T(\d+)", tag)
             r["build_threads"] = m.group(1) if m else (
                 "1" if tag == "buildseq" else "")
             rows.append([cast(c, r.get(c, "")) for c in ALL_COLS])
+            worker_rows.extend(parse_worker_metrics(args.csv_path, r))
 
     placeholders = ",".join("?" * len(ALL_COLS))
     cur.executemany(f"INSERT INTO runs VALUES ({placeholders})", rows)
 
+    worker_placeholders = ",".join("?" * len(WORKER_COLS))
+    cur.executemany(
+        f"INSERT INTO worker_metrics VALUES ({worker_placeholders})",
+        [[wr.get(c) for c in WORKER_COLS] for wr in worker_rows])
+
     cur.execute("CREATE INDEX idx_phase ON runs(phase)")
     cur.execute("CREATE INDEX idx_combo ON runs(patterns, corpus, searcher, thr)")
+    cur.execute("CREATE INDEX idx_worker_log ON worker_metrics(log_file)")
+    cur.execute(
+        "CREATE INDEX idx_worker_combo ON worker_metrics("
+        "phase, patterns, corpus, searcher, thr)")
 
     for name, ddl in VIEWS.items():
         cur.execute(ddl)
@@ -177,6 +289,7 @@ def main():
     con.commit()
 
     print(f"[db] {len(rows)} runs -> {db_path}")
+    print(f"[db] {len(worker_rows)} worker metrics")
     print("[db] views:", ", ".join(VIEWS))
     bad = cur.execute(
         "SELECT patterns, corpus, distinct_match_counts FROM v_correctness "
@@ -186,6 +299,7 @@ def main():
     else:
         print("[db] correctness OK — match-count único por (patterns,corpus)")
     con.close()
+    os.replace(tmp_db_path, db_path)
 
 
 if __name__ == "__main__":

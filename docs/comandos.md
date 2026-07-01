@@ -448,7 +448,7 @@ RUN_DIR=runs/i5 ./scripts/run_all.sh                 # default A B C D E G
 RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh   # só granularidade
 
 # Workstation Ryzen 9 9950X: grade completa + push da runs/ + notificação no celular
-RUN_DIR=runs/workstation \
+RUN_DIR=runs/workstation_YYYY-MM-DD \
 AC_GIT_PULL=1 AC_GIT_PUSH=1 AC_GH_PAT=github_pat_xxx \
 AC_NOTIFY='curl -d "TCC sweep pronto (rc=$AC_RC): $AC_RESULTS" ntfy.sh/SEU-TOPICO' \
   ./scripts/run_all.sh
@@ -458,14 +458,15 @@ AC_NOTIFY='curl -d "TCC sweep pronto (rc=$AC_RC): $AC_RESULTS" ntfy.sh/SEU-TOPIC
 > `AC_UPLOAD_CMD` (`$AC_RESULTS`=.tgz) e `AC_NOTIFY` (`$AC_RC`/`$AC_RESULTS`) são
 > independentes e best-effort — falha em qualquer um não derruba o sweep.
 
-Pós-sweep — gerar artefatos de análise e consultar (ver `runs/i5/QUERY_GUIDE.md`):
+Pós-sweep — gerar artefatos de análise e consultar (ver `runs/QUERY_GUIDE.md`):
 
 ```bash
-python3 scripts/extract_sweep_csv.py runs/i5 -o runs/i5/sweep.csv --known-only
-python3 scripts/build_sweep_db.py    runs/i5/sweep.csv -o runs/i5/sweep.db
+RUN_DIR=runs/workstation_YYYY-MM-DD
+python3 scripts/extract_sweep_csv.py "$RUN_DIR" -o "$RUN_DIR/sweep.csv" --known-only
+python3 scripts/build_sweep_db.py    "$RUN_DIR/sweep.csv" -o "$RUN_DIR/sweep.db"
 
 # Token-efficient: rode SELECTs nas views (v_speedup, v_footprint, v_build, …)
-sqlite3 -header -column runs/i5/sweep.db \
+sqlite3 -header -column "$RUN_DIR/sweep.db" \
     "SELECT thr, searcher, speedup_vs_seq FROM v_speedup
      WHERE patterns='patterns_snort' AND corpus='enron_corpus'
      ORDER BY thr, speedup_vs_seq DESC;"

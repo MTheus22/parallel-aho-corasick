@@ -1,13 +1,14 @@
 # TODO — melhorias do estudo experimental (Aho–Corasick paralelo)
 
 Lista de trabalho para fortalecer os resultados antes de fechar o TCC.
-Referências de caminho relativas a este diretório (`tcc/`).
+Referências de caminho relativas à raiz deste repositório.
 Prioridades: **P0** = necessário p/ rigor/justeza · **P1** = fortalece achados ·
 **P2** = futuro / nice-to-have.
 
-Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
-`parallel-aho-corasick/runs/i5/sweep.db` (i5). Doc de resultados:
-`testes-workstation.md`.
+Fontes de verdade: `parallel-aho-corasick/runs/workstation_2026-06-30/sweep.db`
+(Ryzen, **canônica**) e `parallel-aho-corasick/runs/i5/sweep.db` (i5, P/E). Doc de
+resultados: `runs/workstation_2026-06-30/RESULTS.md`. Runs antigos foram
+removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
 
 ---
 
@@ -27,7 +28,7 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   `tasks_per_thread=64` (texto e CSV). Correção idêntica (`make test`) e
   TSan-clean nas duas variantes. Desbloqueia o item P1 (sweep de granularidade).
 
-## P0 — Rodar `dynamic_flat` nas curvas principais ✅ MOTOR ALINHADO (2026-06-30)
+## P0 — Rodar `dynamic_flat` nas curvas principais ✅ FEITO (2026-06-30)
 
 - **Objetivo:** comparação i5 × Ryzen justa para a variante campeã do Ryzen.
 - **Por quê:** a comparação antiga colocava `v3_flat` (i5) contra
@@ -38,11 +39,11 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   `pthread_dynamic_flat` no conjunto principal da fase A e D, e inclui
   `pthread_dynamic`/`pthread_dynamic_flat` nas fases B e C para comparar
   chunking estático vs. bag-of-tasks com e sem flat output.
-- **Falta:** rerodar a grade canônica (`RUN_DIR=runs/workstation
-  ./scripts/run_all.sh`) e reconstruir `sweep.csv`/`sweep.db`; depois atualizar
-  as seções 9.x com `dynamic_flat` lado a lado.
+- **Pronto quando:** ✔ coleta canônica em
+  `runs/workstation_2026-06-30/sweep.db`, com `pthread_dynamic_flat` em A/B/C/D/G
+  e análise em `runs/workstation_2026-06-30/RESULTS.md`.
 
-## P1 — Sweep de granularidade da fila dinâmica · RODOU 1×, ainda inconclusivo
+## P1 — Sweep de granularidade da fila dinâmica ✅ RODOU no Ryzen; réplicas ainda melhorariam
 
 - **Objetivo:** achar o ponto ótimo tarefas/thread e medir o trade-off
   (balanceamento vs. contenção no contador atômico + re-leitura de overlap).
@@ -55,23 +56,17 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   isolada use `PHASES="G" scripts/run_sweep.sh`
   (ou `RUN_DIR=runs/i5_granularidade PHASES="G" ./scripts/run_all.sh`).
   Inventário: `docs/sweep-test-inventory.md` §"Fase G".
-- **Rodou no i5 (2026-06-28):** fase G executada em `runs/i5_2026-06-28/`
-  (parte do re-run completo A–E+G). **Resultado inconclusivo:** com 1 invocação
-  por `k`, a curva é não-física (`dynamic` cai 1362→748 MB/s de k=1→k=4) —
-  dominada pela variância **entre invocações** no i5 saturado, não por
-  granularidade. cv intra-run baixo (0,3–2%) **não** captura esse ruído. Parecer
-  completo: [`i5-rerun-2026-06-28.md`](i5-rerun-2026-06-28.md).
-- **Falta:** repetir cada `k` **N≈5×** (mediana) para mediar o ruído de regime;
-  idealmente sobre um corpus de **carga desigual** (ver P1 abaixo), senão prova
-  pouco. Depois rodar no **Ryzen** (a `phase_G` já está no motor unificado
-  `run_sweep.sh`: basta `RUN_DIR=runs/workstation PHASES="G" ./scripts/run_all.sh`)
-  e consolidar a curva.
-- **Expectativa:** ganho pequeno no Ryzen (homogêneo+uniforme); ganho maior no
-  **i5** (P/E heterogêneo). Sanidade preliminar (slice 100 MB, T=12,
-  `dynamic_flat`): k=1 → 1288 MB/s, k=64 → 1506 MB/s (≈+17%) — mas o re-run
-  completo mostra que **1 amostra por k é ruído**; tratar como hipótese.
-- **Pronto quando:** nova subseção (ex. 9.8c) com curva vazão × tarefas/thread
-  (com repetições/mediana) nas duas máquinas.
+- **Resultado canônico (Ryzen 2026-06-30):** `pthread_dynamic_flat`, Snort/Enron,
+  T=32 cresce monotonicamente de tpt001→tpt256 (7.414→7.804 MB/s), com cv
+  <0,3%. Ver `runs/workstation_2026-06-30/RESULTS.md` e `runs/QUERY_GUIDE.md`.
+- **Lição do i5:** a fase G antiga em i5 com 1 invocação por `k` foi dominada por
+  variância entre invocações no regime saturado; o run foi removido e não deve
+  ser citado como número. Use a lição metodológica: se a fase G virar claim
+  estatístico, repetir cada `k` como **N≥5 processos independentes**.
+- **Falta:** repetir a fase G com réplicas se ela entrar como evidência forte, de
+  preferência no corpus skewed do Épico 04.
+- **Pronto quando:** fase G reporta mediana + IQR/min-max por `k`, ou fica
+  explicitamente tratada como evidência exploratória single-run.
 
 ## P1 — Métricas dos testes: medir/explicar a variância entre corridas
 
@@ -82,8 +77,8 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   thread pousou, turbo, colocação de páginas) são fixas dentro de um run e mudam
   **entre** runs → `σ²_between`, que **não medimos**. No i5
   `σ²_between ≫ σ²_within` (cv intra ~1–4% vs. swing entre corridas ~40–65%): por
-  isso a fase G saiu inconclusiva (cada `k` com n=1 confunde granularidade com
-  regime). Ver `i5-rerun-2026-06-28.md`.
+  isso a fase G antiga do i5 saiu inconclusiva (cada `k` com n=1 confunde
+  granularidade com regime). O run antigo foi removido; não cite seus números.
 - **Como (em ordem de prioridade):**
   - **(A) Replicar invocações.** Rodar cada config como **N≥5 processos
     independentes** (não N iterações no mesmo processo) e reportar **mediana +
@@ -183,13 +178,14 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
      defensibilidade. Reportar a densidade de match obtida.
 - **Pré-requisito (não pular):** o experimento **exige** primeiro o P1 de
   métricas — **N≥5 réplicas** (processos independentes) + `--per-thread`
-  instrumentado. Single-shot repete o fiasco da fase G do i5 (variância entre
-  corridas ±40–65% mascara o efeito). Ver `i5-rerun-2026-06-28.md`.
+  instrumentado. Single-shot repete o problema metodológico observado na fase G
+  antiga do i5: variância entre corridas pode mascarar o efeito.
 - **Esboço de implementação:** `scripts/make_skewed_corpus.sh` (ou integrado ao
   `prepare_data.sh`) gera o par uniforme×skewed; **fase nova e isolada** no
   `run_sweep.sh` (ex.: `PHASES="H"`) roda `v2`/`flat` × `dynamic`/`dynamic_flat`
   em T=MAX_T com `--per-thread` nos dois corpora — **sem re-rodar A–G**.
-  Documentar em `testes-workstation.md` §4.
+  Documentar no `RESULTS.md` do próprio run e consolidar em
+  `../tcc_notes/sections/notes/{methodology,results}.md`.
 - **Medição:** spread de tempo por worker / ociosidade de barreira (contribuição
   própria — a RSL não mede isso para AC), com a moldura "maior fatia limita o
   makespan" de Ródenas.
@@ -206,16 +202,19 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
   réplicas. Confirmar que o spread (4,8–8,0%) é estável, não ruído.
 - **Pronto quando:** 9.8/9.8b com cv entre réplicas reportado.
 
-## P1 — Reprodutibilidade: mesmo binário/commit nas duas máquinas
+## P1 — Transparência do i5 na seção P/E
 
-- **Objetivo:** garantir que i5 e Ryzen medem **o mesmo código**.
-- **Por quê:** os sweeps são de datas diferentes (i5 2026-05-29; Ryzen
-  2026-06-25) e o i5 tem variantes (`v3`, `prefetch`) ausentes no Ryzen. Confirmar
-  que as implementações compartilhadas não divergiram entre os commits.
-- **Como:** registrar `git rev-parse HEAD` no `env/` de cada corrida (já há
-  `git:` no header dos logs — conferir se batem); idealmente recompilar e
-  re-rodar ambas do mesmo commit/flags.
-- **Pronto quando:** commit e flags de build idênticos anotados nos dois `sweep.db`.
+- **Objetivo:** deixar claro que `runs/i5/sweep.db` é evidência P/E histórica,
+  não comparação headline contra a workstation canônica.
+- **Por quê:** o i5 é a única máquina híbrida P+E preservada, mas não foi coletado
+  no mesmo protocolo/commit da workstation 2026-06-30. Usá-lo como ranking entre
+  máquinas seria metodologicamente fraco; usá-lo para explicar `chunked_v3` e
+  `chunked_v3_flat` é aceitável.
+- **Como:** na seção P/E, citar commit/protocolo do i5 se disponível no DB/logs,
+  declarar que a evidência é histórica e limitar a conclusão ao efeito de
+  topologia/heterogeneidade.
+- **Pronto quando:** o texto do TCC não apresenta i5×Ryzen como disputa direta e
+  toda menção ao i5 remete à política de `runs/MANIFEST.md`.
 
 ## P2 — Variante CCD-aware para o Ryzen (ângulo de topologia homogênea)
 
@@ -230,8 +229,8 @@ Fontes de verdade: `parallel-aho-corasick/runs/workstation/sweep.db` (Ryzen) e
 ## P2 — Integrar números ao TCC e aos slides
 
 - **Objetivo:** levar os resultados da workstation para o texto final.
-- **Por quê:** `testes-workstation.md` é doc de apoio; o TCC ainda precisa
-  consumir esses números.
+- **Por quê:** `runs/workstation_2026-06-30/RESULTS.md` é fonte de apoio; o TCC
+  ainda precisa consumir esses números.
 - **Como:** portar tabelas-chave para
   `acceleration-of-.../partes/results.tex` (e `conclusion.tex`); atualizar
   `apresentacao/slides.md` (regenerar html/pdf via Marp); sincronizar

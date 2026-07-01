@@ -19,9 +19,12 @@ no Capítulo de Proposta da dissertação.
 | Pasta                            | Conteúdo                                                          |
 |----------------------------------|-------------------------------------------------------------------|
 | [`architecture/`](architecture/) | Arquitetura do sistema, autômato, modelo de paralelismo, harness de benchmark, protocolo experimental do TCC e datasets. |
-| [`searchers/`](searchers/)       | Uma página por implementação registrada do contrato `ac_searcher_t` (`sequential`, `pthread_chunked`). |
-| `testes-workstation.md` · `workstation-analysis.md` · `workstation.md` · `TODO.md` | Corrida **antiga** de portabilidade na workstation (Ryzen 9 9950X, 2026-06-25): plano + resultados (§9), análise i5 × Ryzen, parecer de execução e melhorias pendentes. **Histórico** — a **fonte canônica do TCC é agora a workstation**; coleta atual em `runs/workstation_2026-06-29/` (ver seu `RESULTS.md`). O i5 (`runs/i5/sweep.db`) fica para a discussão de P/E e os números ainda citados no LaTeX. |
-| `i5-rerun-2026-06-28.md` | Segunda corrida do i5 (headless, máquina fria) em `runs/i5_2026-06-28/` — validação de reprodutibilidade + 1ª execução da fase G. **Não** é canônica; conclui que o pico de speedup no i5 saturado tem ±40–65% de variância entre corridas (invisível ao cv intra-run). |
+| [`searchers/`](searchers/)       | Uma página por implementação registrada do contrato `ac_searcher_t`. |
+| [`../runs/MANIFEST.md`](../runs/MANIFEST.md) | **Política dos runs preservados** (`workstation_2026-06-30/` canônico + `i5/` P/E) e lacunas conhecidas. |
+| [`../runs/QUERY_GUIDE.md`](../runs/QUERY_GUIDE.md) | Schema, views e consultas SQLite para os `sweep.db` preservados, incluindo métricas por worker. |
+| [`../runs/workstation_2026-06-30/RESULTS.md`](../runs/workstation_2026-06-30/RESULTS.md) | Análise consolidada da coleta canônica; campeão `pthread_dynamic_flat`; mapa de leitura humana por fase. |
+| [`sweep-test-inventory.md`](sweep-test-inventory.md) | Inventário das fases do sweep e contagem de runs por `MAX_T`. |
+| [`TODO.md`](TODO.md) | Lacunas vivas: réplicas por config, corpus skewed e instrumentação complementar. |
 
 ## Ordem sugerida de leitura
 

@@ -8,7 +8,7 @@ construção do corpus, o protocolo da fase H e a leitura do resultado da Task 0
 
 ## Escopo
 
-- **In scope:** `docs/testes-workstation.md` (nova §4 "Corpus de carga desigual
+- **In scope:** `runs/<run>/RESULTS.md` (seção "Corpus de carga desigual
   (skew)"); `../tcc_notes/sections/notes/methodology.md`;
   `../tcc_notes/sections/notes/results.md`.
 - **Out of scope:** LaTeX (Task 06); `referencias.bib` (Task 06).
@@ -16,7 +16,7 @@ construção do corpus, o protocolo da fase H e a leitura do resultado da Task 0
 
 ## Implementação
 
-1. **`docs/testes-workstation.md` §4 (construção + protocolo):**
+1. **`runs/<run>/RESULTS.md` (construção + protocolo):**
    - Como o par uniforme×clustered é gerado (`make_skewed_corpus.sh`): blocos
      frios/quentes, injeção FHBM a ~42%, reordenação, **invariante de bytes+match
      iguais**, fator de skew.
@@ -40,18 +40,18 @@ construção do corpus, o protocolo da fase H e a leitura do resultado da Task 0
    cenário em que `dynamic`/`dynamic_flat` batem o estático em CPU homogênea.
    Se o efeito for negativo/fraco, registrar como tal (não inflar).
 4. **Proveniência:** citar o `RUN_DIR` da coleta (ex.:
-   `runs/workstation_skew/`), commit e data, no padrão das outras entradas.
+  `runs/workstation_skew/`), commit e data, no padrão das outras entradas.
 
 ## Validação
 
 - Revisão manual: os três arquivos referenciam os **mesmos números** da tabela
   `runs/<dir>/H_skew/skew_analysis.md` (sem divergência).
-- `grep -n "skew" docs/testes-workstation.md ../tcc_notes/sections/notes/methodology.md`
+- `grep -n "skew" runs/<run>/RESULTS.md ../tcc_notes/sections/notes/methodology.md`
   retorna as novas seções.
 
 ## Critérios de Aceite
 
-- `docs/testes-workstation.md` tem a §4 com construção + protocolo + tabela.
+- `runs/<run>/RESULTS.md` tem a seção com construção + protocolo + tabela.
 - `methodology.md` tem a hipótese H8, o invariante de controle, os corpora novos
   e a nota de pcap-fora-de-escopo.
 - `results.md` tem a subseção do skew com número (positivo **ou** negativo)

@@ -57,3 +57,4 @@ workstation.out
 
 # Lockfile do desacoplamento (setsid/flock) — runtime, não é resultado
 runs/*/.lock
+.venv/

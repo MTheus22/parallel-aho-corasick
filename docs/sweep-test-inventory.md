@@ -324,7 +324,7 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 1. `lscpu` / `lstopo` — confirmar 16C/32T e o layout **2 CCDs × 32 MiB L3**
    (relevante para interpretar o cross-over de footprint). O sweep já captura
    `lscpu` completo, `numactl --hardware`, `lstopo`, `dmidecode -t memory`,
-   THP e cmdline em `runs/workstation/env/` (alimenta a tabela de hardware).
+   THP e cmdline em `$RUN_DIR/env/` (alimenta a tabela de hardware).
 2. `make && make test` — correção em `{1,2,4,8,16,24,32}` neste chip.
 3. Governor de performance: no Zen 5 é `amd-pstate`; use
    `sudo cpupower frequency-set -g performance` (ou `performance` via
@@ -337,8 +337,9 @@ portável + no contraste chunking-estático vs. bag-of-tasks (`flat` vs.
 
 > **⚠️ epic-03:** esta subseção descreve a grade **reduzida** da 1ª corrida com o
 > **legado** `run_workstation_sweep.sh`. A corrida canônica atual roda a
-> **grade COMPLETA A–G** (topo deste doc) pelo motor unificado. Use:
-> `RUN_DIR=runs/workstation ./scripts/run_all.sh` (faz pré-flight + governador +
+> **grade COMPLETA A–G** (topo deste doc) pelo motor unificado. Use um diretório
+> datado, por exemplo:
+> `RUN_DIR=runs/workstation_YYYY-MM-DD ./scripts/run_all.sh` (faz pré-flight + governador +
 > build/test + `run_sweep.sh` desacoplado + upload). Comandos abaixo = histórico.
 
 Script dedicado (legado): **`scripts/run_workstation_sweep.sh`** (irmão do sweep
@@ -349,22 +350,22 @@ e descarta `v3`/`v3_flat`.
 ./scripts/prepare_data.sh                        # PRÉ-FLIGHT DE DADOS (deve dar PRONTO)
 sudo cpupower frequency-set -g performance       # Zen 5 = amd-pstate
 make && make test                                # correção no chip-alvo
-RUN_DIR=runs/workstation nohup ./scripts/run_sweep.sh > workstation.out 2>&1 &  # grade COMPLETA A–G
+RUN_DIR=runs/workstation_YYYY-MM-DD nohup ./scripts/run_sweep.sh > workstation.out 2>&1 &  # grade COMPLETA A–G
 ```
 
 - O motor unificado roda `A B C D E G` por default. Para cortar uma fase, passe
   explicitamente a lista desejada em `PHASES`, por exemplo `PHASES="A B D E G"`.
 - Os pontos de thread se adaptam ao `nproc` (ou a `MAX_THREADS=…`): em 32
   threads a curva é `{1,2,4,8,16,24,32}`.
-- Saída em `runs/workstation/<fase>/`; rerodar pula o que já completou.
-- **Versionável:** `runs/workstation/` tem exceção no `.gitignore` (o resto de
-  `runs/` segue ignorado). Ao terminar, o script roda os extratores e deixa
-  `runs/workstation/sweep.{csv,db}` prontos; basta
-  `git add runs/workstation && git commit`.
-- **Análise:** consulte via `sqlite3 runs/workstation/sweep.db` com as mesmas
-  views do sweep do i5 (`v_speedup`, `v_self_speedup`, `v_footprint`, `v_build`,
-  `v_best`, `v_correctness`). A correção é auto-checada: `v_correctness` deve
-  dar `distinct_match_counts = 1` por `(patterns, corpus)`.
+- Saída em `$RUN_DIR/<fase>/`; rerodar pula o que já completou.
+- **Versionável:** promova apenas runs que passem pela política em
+  `runs/MANIFEST.md`. Ao terminar, o script roda os extratores e deixa
+  `$RUN_DIR/sweep.{csv,db}` prontos.
+- **Análise:** consulte `$RUN_DIR/sweep.db` pelas views documentadas em
+  `runs/QUERY_GUIDE.md` (`v_speedup`, `v_self_speedup`, `v_footprint`,
+  `v_build`, `v_best`, `v_correctness`, `v_worker_balance`). A correção é
+  auto-checada: `v_correctness` deve dar `distinct_match_counts = 1` por
+  `(patterns, corpus)`.
 
 ## Estimativa de custo (ordem de grandeza)
 

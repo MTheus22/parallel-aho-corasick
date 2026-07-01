@@ -29,8 +29,9 @@ Not started (spec escrita 2026-07-01).
 - **Invariante inegociável:** par uniforme×clustered com bytes E matches
   idênticos (moldura de Ródenas). Task 01 garante por construção (mesmos blocos,
   reordenados); Task 03 reporta a paridade.
-- **Réplicas ≥5** (processos independentes) — sem isso repete o inconclusivo da
-  fase G do i5 (`docs/i5-rerun-2026-06-28.md`).
+- **Réplicas ≥5** (processos independentes) — sem isso repete o problema
+  metodológico observado na fase G antiga do i5: uma única invocação por config
+  pode confundir efeito experimental com variação entre corridas.
 - **Ponto de decisão do usuário:** se a Task 03 mostrar que nem sob skew o
   dinâmico vence (efeito fraco por flat barato), **não** forçar narrativa —
   reportar negativo e perguntar se a família dinâmica sai do texto.

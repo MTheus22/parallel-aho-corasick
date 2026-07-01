@@ -10,21 +10,23 @@
 
 Construir um corpus **espacialmente desigual** (carga concentrada em poucos
 chunks) e uma **fase de benchmark isolada** que, numa CPU **homogênea** (Ryzen
-9950X canônico), demonstre o cenário hoje ausente: a divisão estática de texto
-fica desbalanceada e o **dispatch dinâmico** (`pthread_dynamic`,
-`pthread_dynamic_flat`) recupera o makespan. O resultado converte um achado
-negativo ("dinâmico não rende") num **condicional defensável** ("rende sse a
-carga é espacialmente desigual"), justificando a existência da família dinâmica
-na tese e isolando o mecanismo de balanceamento do confundidor P/E do i5.
+9950X canônico), demonstre o mecanismo que o corpus uniforme quase não estressa:
+a divisão estática de texto fica desbalanceada e o **dispatch dinâmico**
+(`pthread_dynamic`, `pthread_dynamic_flat`) recupera o makespan. O resultado
+transforma um ganho hoje pequeno/ambíguo em um **condicional defensável**
+("rende quando a carga é espacialmente desigual"), justificando a família
+dinâmica na tese sem depender do confundidor P/E do i5.
 
 ## Status atual (auditado em 2026-07-01)
 
-- **Evidência que motiva o épico** (via `runs/workstation_2026-06-29/sweep.db`,
-  view `v_speedup`, T=32): em CPU homogênea + Enron uniforme o dinâmico **perde**
-  para o estático-flat — ET-32+Enron `chunked_flat` 18,95× > `dynamic` 17,98×;
-  snort idem 22,37× > 21,86×. No i5 o `dynamic` vence (4,79× vs 4,07× em
-  Snort+Enron T=12), mas por **heterogeneidade P/E**, não por skew de corpus.
-  Logo, a família dinâmica não tem cenário de vitória na máquina canônica.
+- **Evidência que motiva o épico** (via
+  `runs/workstation_2026-06-30/sweep.db`, view `v_speedup`, T=32): em CPU
+  homogênea + Enron uniforme, `pthread_dynamic_flat` já é o campeão, mas por
+  margem pequena sobre `pthread_chunked_flat` (Snort 22,91× vs. 22,48×; ET-32
+  18,96× vs. 18,83×). O `pthread_dynamic` sem flat ainda fica atrás do
+  estático-flat (Snort 21,98×; ET-32 17,97×). No i5, ganhos de balanceamento se
+  misturam à **heterogeneidade P/E**. Logo, falta um cenário controlado que isole
+  carga espacialmente desigual como causa do ganho dinâmico.
 - **Corpora atuais** (`data/`, gitignored, recriáveis): `enron_corpus.txt`
   (~1,32 GiB), `enron_x8.txt` (~10,6 GiB, o **mesmo texto ×8** → perfeitamente
   uniforme), `simplewiki.txt`. Padrões versionados: `patterns_snort.txt`
@@ -43,12 +45,14 @@ na tese e isolando o mecanismo de balanceamento do confundidor P/E do i5.
   campo de CPU físico / classe P-E (irrelevante no Ryzen homogêneo; opcional).
 - **Pipeline de resultados**: `extract_sweep_csv.py` **auto-descobre** os
   diretórios de fase (`os.listdir(run_dir)`), então uma pasta `H_skew/` é
-  ingerida sem mudança; `build_sweep_db.py` cria as views `v_*` por fase. As
-  linhas per-thread `[tNN] …` **não** entram no CSV (são diagnósticas) → a
-  análise de spread precisa de um parser próprio.
-- **Lição da fase G (i5)** (`docs/i5-rerun-2026-06-28.md`): 1 amostra por config
-  é dominada pela variância **entre corridas** (±40–65%), invisível ao cv
-  intra-run. **Réplicas (N≥5 processos independentes) são obrigatórias.**
+  ingerida sem mudança; `build_sweep_db.py` cria as views `v_*`, preenche
+  `worker_metrics` a partir das linhas `[tNN] …` dos logs `--per-thread` e expõe
+  `v_worker_balance`. A análise de spread deve consultar esse DB, não duplicar o
+  parser.
+- **Lição da fase G antiga do i5:** 1 amostra por config pode ser dominada pela
+  variância **entre corridas**, invisível ao cv intra-run. O run antigo foi
+  removido e não deve ser citado como número; mantenha a regra metodológica:
+  **réplicas (N≥5 processos independentes) são obrigatórias.**
 
 ## Escopo
 
@@ -57,10 +61,9 @@ na tese e isolando o mecanismo de balanceamento do confundidor P/E do i5.
     de controle: mesmos bytes E mesmos matches) + família por fator de skew.
   - `scripts/run_sweep.sh` — **fase H isolada** (skew), com réplicas e
     `--per-thread`.
-  - `scripts/analyze_skew.py` — parse das linhas per-thread → spread/ociosidade
-    de barreira, mediana+IQR sobre réplicas; (opcional) view `v_skew` no
-    `build_sweep_db.py`.
-  - Documentação: `docs/testes-workstation.md` §4,
+  - `scripts/analyze_skew.py` — consultas em `worker_metrics`/`v_worker_balance`
+    → spread/ociosidade de barreira, mediana+IQR sobre réplicas.
+  - Documentação: `runs/<run>/RESULTS.md`,
     `../tcc_notes/sections/notes/{methodology,results}.md`.
   - LaTeX: `acceleration-.../partes/{results,conclusion}.tex` +
     `referencias.bib` (só conferir/usar keys existentes).

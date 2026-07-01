@@ -1,5 +1,0 @@
-# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_x8.txt --searcher pthread_dynamic --threads 1 --warmup 2 --iters 5 
-# started: 2026-06-30T19:05:50-03:00
-# phase:   A_speedup_curves
-# label:   patterns_snort__enron_x8__pthread_dynamic__T1
-

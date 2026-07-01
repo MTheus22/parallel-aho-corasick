@@ -1,0 +1,69 @@
+=== end 2026-06-30T22:09:08-03:00 ===
+
+--- uname -a ---
+Linux idealab-X870E-AORUS-MASTER 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+--- governor ---
+performance
+
+--- cpufreq atual (cpu0..cpuN MHz) ---
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 5607.742
+cpu MHz		: 5629.543
+cpu MHz		: 4383.193
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 4736.026
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 3513.406
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 4532.286
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 4033.528
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+cpu MHz		: 3322.779
+cpu MHz		: 5442.484
+cpu MHz		: 3269.653
+cpu MHz		: 624.194
+cpu MHz		: 624.194
+
+--- lscpu (resumido) ---
+CPU(s):                                    32
+Lista de CPU(s) on-line:                   0-31
+Nome do modelo:                            AMD Ryzen 9 9950X 16-Core Processor
+Thread(s) per núcleo:                      2
+CPU(s) MHz de escala:                      35%
+CPU MHz máx.:                              5756,4521
+CPU MHz mín.:                              624,1940
+cache de L1d:                              768 KiB (16 instâncias)
+cache de L1i:                              512 KiB (16 instâncias)
+cache de L2:                               16 MiB (16 instâncias)
+cache de L3:                               64 MiB (2 instâncias)
+CPU(s) de nó0 NUMA:                        0-31
+
+--- thermal zones ---
+  /sys/class/thermal/thermal_zone*/temp: n/a mC
+
+--- free -h ---
+               total       usada       livre    compart.  buff/cache  disponível
+Mem.:          123Gi       3,3Gi       104Gi       3,6Mi        16Gi       120Gi
+Swap:          8,0Gi          0B       8,0Gi
+
+--- loadavg ---
+13.21 6.38 7.06 1/592 109706
+
+--- aclab commit ---
+58b0565 Resultados parciais

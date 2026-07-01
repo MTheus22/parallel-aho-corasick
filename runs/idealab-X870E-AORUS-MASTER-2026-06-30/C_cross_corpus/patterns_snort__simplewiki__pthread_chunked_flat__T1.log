@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/simplewiki.txt --searcher pthread_chunked_flat --threads 1 --warmup 2 --iters 5 
+# started: 2026-06-30T22:02:31-03:00
+# phase:   C_cross_corpus
+# label:   patterns_snort__simplewiki__pthread_chunked_flat__T1
+
+# Aho-Corasick laboratory
+# git:        c19da78
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1289283640 bytes (1229.56 MiB) via mmap
+# build time: 28.083 ms
+# warmup=2 iters=5 threads=1 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_flat      1   1289283640       3437.698       3439.957       3447.997       357.43   12407040       3437.998     0.13     2.9984      1
+#   iter_ms: 3447.997 3438.261 3437.832 3437.698 3437.998
+#   workers=1  median_MB/s=357.64  ns/byte=2.6681  stdev_ms=4.499
+
+# finished:        2026-06-30T22:02:55-03:00
+# elapsed_seconds: 24
+# exit_code:       0

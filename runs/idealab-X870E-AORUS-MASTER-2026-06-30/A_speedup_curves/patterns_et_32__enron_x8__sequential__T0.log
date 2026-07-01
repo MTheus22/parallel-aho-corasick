@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_x8.txt --searcher sequential --threads 0 --warmup 2 --iters 5 
+# started: 2026-06-30T19:59:09-03:00
+# phase:   A_speedup_curves
+# label:   patterns_et_32__enron_x8__sequential__T0
+
+# Aho-Corasick laboratory
+# git:        c19da78
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      11369469888 bytes (10842.77 MiB) via mmap
+# build time: 325.231 ms
+# warmup=2 iters=5 threads=0 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+sequential                0  11369469888      51391.799      51398.254      51402.481       210.96  466943872      51399.013     0.01     1.7696      1
+#   iter_ms: 51402.481 51401.138 51399.013 51396.839 51391.799
+#   workers=1  median_MB/s=210.95  ns/byte=4.5207  stdev_ms=4.196
+
+# finished:        2026-06-30T20:05:10-03:00
+# elapsed_seconds: 361
+# exit_code:       0

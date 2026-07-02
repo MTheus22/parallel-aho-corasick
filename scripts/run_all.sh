@@ -121,8 +121,8 @@ if [[ "${AC_SWEEP_ONLY:-0}" == "1" ]]; then
   if [[ "${AC_GIT_PUSH:-0}" == "1" ]]; then
     echo "[$(date '+%F %T')] upload: git commit + push de $RUN_DIR"
     git add "$RUN_DIR" 2>/dev/null
-    if git -c user.name="${AC_GIT_NAME:-sweep-runner}" \
-           -c user.email="${AC_GIT_EMAIL:-tcc@sweep}" \
+    if git -c user.name="${AC_GIT_NAME:-matheus}" \
+           -c user.email="${AC_GIT_EMAIL:-matheus.acdebarros@gmail.com}" \
            commit -q -m "resultados: sweep $SLUG $(date +%F)" 2>/dev/null; then
       if [[ -n "${AC_GH_PAT:-}" ]]; then
         # PAT via AMBIENTE: não grava o token em disco (.git/config) nem em argv/ps.

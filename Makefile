@@ -7,6 +7,7 @@
 #   make tsan       - ThreadSanitizer (verifies parallel correctness)
 #   make test       - run correctness tests
 #   make bench      - run the canonical TCC sweep (scripts/run_i5_sweep.sh)
+#   make ws-skew    - prepare and launch workstation skew run (phase H)
 #   make clean
 #
 # To plug in a new parallel searcher, drop src/searchers/<name>.c
@@ -49,7 +50,7 @@ MAIN_OBJ  := $(BUILD)/src/main.o
 TEST_OBJ  := $(BUILD)/tests/test_correctness.o
 DIGEST_OBJ := $(BUILD)/tests/test_digest.o
 
-.PHONY: all debug asan tsan test digest bench clean dirs
+.PHONY: all debug asan tsan test digest bench ws-skew ws-skew-check clean dirs
 
 all: $(BIN)
 
@@ -90,6 +91,12 @@ bench: $(BIN)
 	@echo "Running canonical TCC sweep via scripts/run_i5_sweep.sh."
 	@echo "Scope a subset with e.g. 'PHASES=\"A\" make bench'; the full run takes hours."
 	@./scripts/run_i5_sweep.sh
+
+ws-skew:
+	@./scripts/run_workstation_skew.sh
+
+ws-skew-check:
+	@./scripts/run_workstation_skew.sh --check
 
 clean:
 	rm -rf $(BUILD)

@@ -70,6 +70,7 @@ typedef struct {
     size_t                 tasks_done;
     double                 seconds;
     int                    rc;
+    int                    cpu;
 } worker_t;
 
 static void *worker_main(void *arg)
@@ -128,6 +129,7 @@ static void *worker_main(void *arg)
     w->rc = AC_OK;
 done:
     w->seconds = (double)(bench_now_ns() - t0) / 1e9;
+    w->cpu = ac_current_cpu();
     return NULL;
 }
 
@@ -227,6 +229,7 @@ static int dyn_search(const ac_automaton_t *aut,
                  * grabbed, ignoring overlap (small contribution). */
                 tm[i].bytes_scanned = workers[i].tasks_done * task_size;
                 tm[i].matches_found = workers[i].local.count;
+                tm[i].cpu           = workers[i].cpu;
             }
             *out_metrics     = tm;
             *out_num_metrics = (size_t)nthreads;

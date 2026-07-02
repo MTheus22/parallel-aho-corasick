@@ -58,7 +58,7 @@ TCC, atualize primeiro `../tcc_notes/sections/notes/{methodology,results,conclus
 | `make asan`                | AddressSanitizer + UBSan                                               |
 | `make tsan`                | ThreadSanitizer — verifica ausência de data races na fase paralela     |
 | `make test`                | Executa `tests/test_correctness.c` contra todos os searchers          |
-| `scripts/run_sweep.sh` | **Motor de sweep UNIFICADO e env-agnóstico** (default A–G, 10 paralelos + 2 seq; 562 runs em `MAX_T=32`). Deriva `MAX_T=nproc` e o `RUN_DIR` (slug da CPU). Substitui `run_i5_sweep.sh`/`run_workstation_sweep.sh` (legados). |
+| `scripts/run_sweep.sh` | **Motor de sweep UNIFICADO e env-agnóstico** (default A–G, 10 paralelos + 2 seq; 562 runs em `MAX_T=32`). Fases extras via `PHASES=`: **H** (corpus skew com réplicas, epic-04) e **R** (curvas replicadas = N processos independentes por config). Deriva `MAX_T=nproc` e o `RUN_DIR` (slug da CPU). Substitui `run_i5_sweep.sh`/`run_workstation_sweep.sh` (legados). |
 | `scripts/prepare_data.sh` | Pré-flight de dados env-agnóstico: gera `enron_x8` + dicts reduzidos; valida `simplewiki.txt`; restaura `patterns_et_32.txt` do git se faltar; imprime `PRONTO`. Substitui `prepare_workstation_data.sh`. |
 | `scripts/run_all.sh` | **Wrapper "um comando" env-agnóstico**: pull opc. + pré-flight + governador (amd/intel-pstate) + build + test fatal, depois **desacopla** o sweep (sobrevive a logout/suspensão) e faz upload/notificação best-effort (`AC_GIT_PUSH`/`AC_GH_PAT`, `AC_UPLOAD_CMD`, `AC_NOTIFY`). Ex.: `RUN_DIR=runs/workstation ./scripts/run_all.sh`. Substitui `i5_all.sh`/`workstation_all.sh` (legados). |
 | `scripts/extract_sweep_csv.py` + `build_sweep_db.py` | Pós-sweep: logs → `sweep.csv` → SQLite `sweep.db` (consulta token-efficient) |
@@ -189,7 +189,10 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
   0 fail), fases A B C D E + G, campeão `pthread_dynamic_flat`; também contém o
   mapa de leitura humana das fases.
 - `docs/TODO.md` — melhorias pendentes; vários itens já resolvidos no run 06-30
-  (fase G, `dynamic_flat`). Lacunas vivas: réplicas por config, corpus skewed.
+  (fase G, `dynamic_flat`). Motor de réplicas (fases R/D/H), corpora skew e
+  `cpu=` por worker **prontos** (2026-07-02); piloto i5 pronto para disparar
+  (`docs/i5-replicas-skew-command.txt`, máquina ociosa obrigatória); lacuna
+  viva: **coletar** réplicas + skew (i5 piloto e workstation canônica).
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 

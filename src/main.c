@@ -377,10 +377,11 @@ int main(int argc, char **argv)
             ac_match_list_init(&throwaway);
             s->search(&aut, input.ptr, input.len, &cfg, &throwaway, &tm, &ntm);
             for (size_t k = 0; k < ntm; k++) {
-                printf("    [t%02d] %.3f ms  %zu bytes  %zu matches  %.2f MB/s\n",
+                printf("    [t%02d] %.3f ms  %zu bytes  %zu matches  %.2f MB/s  cpu=%d\n",
                        tm[k].thread_id, tm[k].seconds * 1000.0,
                        tm[k].bytes_scanned, tm[k].matches_found,
-                       tm[k].bytes_scanned / (tm[k].seconds * (double)(1u << 20)));
+                       tm[k].bytes_scanned / (tm[k].seconds * (double)(1u << 20)),
+                       tm[k].cpu);
             }
             free(tm);
             ac_match_list_free(&throwaway);

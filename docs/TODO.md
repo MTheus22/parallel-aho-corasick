@@ -80,14 +80,23 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
   isso a fase G antiga do i5 saiu inconclusiva (cada `k` com n=1 confunde
   granularidade com regime). O run antigo foi removido; não cite seus números.
 - **Como (em ordem de prioridade):**
-  - **(A) Replicar invocações.** Rodar cada config como **N≥5 processos
-    independentes** (não N iterações no mesmo processo) e reportar **mediana +
-    IQR / min–max** (ou IC não-paramétrico). É o único jeito de estimar
-    `σ²_between`. Aplica-se à fase G e ao Teste 3.
+  - **(A) Replicar invocações. ✅ MOTOR PRONTO (2026-07-02), falta coletar.**
+    Rodar cada config como **N≥5 processos independentes** (não N iterações no
+    mesmo processo) e reportar **mediana + IQR / min–max** (ou IC
+    não-paramétrico). É o único jeito de estimar `σ²_between`. Implementado no
+    `run_sweep.sh`: fase **R** (curvas replicadas, réplicas *intercaladas* —
+    rep no laço externo — envs `AC_REP_*`), fase **D** com `AC_PHASE_D_REPS`
+    (default 5) e fase **H** com `AC_SKEW_REPS`. Primeira coleta real: piloto
+    i5 (fases R+H) — comando pronto em `docs/i5-replicas-skew-command.txt`,
+    aguardando janela com a máquina ociosa.
   - **(B) Instrumentar o `--per-thread`** (hoje só `thread_id, seconds, bytes,
     matches`) para **explicar** a variância:
-    - **CPU físico + classe P/E** por worker (`sched_getcpu()` amostrado ou campo
-      `processor` de `/proc/<tid>/stat`) — a variável escondida nº 1 no híbrido.
+    - ✅ **CPU físico por worker — FEITO (2026-07-02):** `sched_getcpu()` ao
+      fim do scan de cada worker → campo `cpu=` na saída `--per-thread` →
+      coluna `cpu` na tabela `workers` do `sweep.db`. Classe P/E deriva do
+      número (i5-1235U: cpu 0–3 = P/4,4 GHz com HT; cpu 4–11 = E/3,3 GHz).
+      Limitação: amostra o CPU no fim do scan — migrações no meio do laço não
+      aparecem (ver item de migrações abaixo).
     - **Frequência efetiva no laço quente** via `APERF/MPERF` (o `thermal.tsv`
       amostra só pre/post ociosos; perde o clock em-loop).
     - **Migrações / context switches involuntários** (`getrusage.ru_nivcsw`,
@@ -106,27 +115,45 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
 - **Pronto quando:** fase G e Teste 3 reportam mediana+spread sobre N réplicas; o
   `--per-thread` registra CPU/P-E (e, idealmente, freq efetiva) por worker.
 
-## P1 — Corpus de carga desigual / skew (justificar a família dinâmica) · ÉPICO 4
+## P1 — Corpus de carga desigual / skew (justificar a família dinâmica) · ÉPICO 4 — corpora GERADOS; fase H implementada
 
 > **Especificação completa:** `specs/epic-04/` (context + tasks 01–06). Esta
 > entrada é o resumo; o épico é a fonte de verdade da execução.
+
+> **Estado (2026-07-02):** tasks 01–02 **implementadas e validadas**.
+> `scripts/make_skewed_corpus.py` gerou os 4 corpora (4 GiB cada:
+> `enron_skew_{uniform,s0.5,clustered,s0.1}`) com **paridade exata de bytes e
+> matches (94 304 128)** — só a distribuição espacial muda; re-rodar o script
+> re-verifica a paridade dos arquivos existentes. Densidade: alvo implementado
+> como **0,05 matches/byte no bloco quente** (global 0,022) — o "43–45%" do
+> DEFCON é fração de *pacotes* com match, unidade incomparável; registrar essa
+> interpretação na metodologia. A `phase_H` do `run_sweep.sh` roda
+> {v2, **v3**, chunked_flat, dynamic, dynamic_flat} × {snort, et_32} ×
+> {uniform, clustered}, **≥5 réplicas** (processos independentes) com
+> `--per-thread` + campo `cpu=` (listas via `AC_SKEW_*`). Um **piloto no i5**
+> (confundido por P/E — v3 incluído justamente para esse contraste) está
+> **pronto para disparar**: comando e pré-condições em
+> `docs/i5-replicas-skew-command.txt` (fases R+H; rodar só com a máquina
+> ociosa/GUI desligada). A **coleta canônica continua exigindo a workstation
+> homogênea**.
 
 - **Objetivo:** um corpus onde o **custo por chunk** varie muito ao longo do
   texto, para que a divisão estática fique desbalanceada e a fila dinâmica tenha
   o que corrigir — em CPU **homogênea**, isolando o balanceamento do confundidor
   P/E.
-- **Por quê (a evidência exige):** na máquina canônica (Ryzen 9950X, Enron
-  uniforme) o dispatch dinâmico **não vence nada** — perde para o estático-flat
-  (ET-32+Enron T=32: `chunked_flat` 18,95× > `dynamic` 17,98×; snort idem: 22,37×
-  > 21,86×). O único lugar onde `dynamic` ganha é o i5 (Snort+Enron T=12: 4,79× vs
-  `chunked_flat` 4,07×), e ali o ganho vem da **heterogeneidade P/E**, não de
-  skew de corpus. Ou seja: hoje a tese **não tem nenhum cenário na máquina
-  canônica** que justifique a família dinâmica (`dynamic`, `dynamic_flat`) —
-  elas são peso morto. Enron×8 é o mesmo texto replicado 8× → perfeitamente
-  uniforme; é *a* razão de a dinâmica não render. Este corpus é o **único dataset
-  novo com valor real**: converte um resultado negativo ("dinâmico não ajuda")
-  num condicional ("ajuda sse a carga é espacialmente desigual"), justifica a
-  família dinâmica e isola o mecanismo do confundidor P/E.
+- **Por quê (a evidência exige):** na coleta canônica (Ryzen 9950X, 06-30,
+  Enron ~uniforme) o campeão `pthread_dynamic_flat` vence o estático
+  `chunked_flat` por margens que **não demonstram o mecanismo**: +1,9%
+  (snort/enron: 22,91× vs 22,48×), +1,6% (snort/x8), +0,7% (et_32/enron) e
+  **−0,2%** (et_32/x8 — empate técnico). ⚠️ Os números interinos que esta seção
+  citava (22,37×/21,86× etc.) eram do run 06-29 removido — não reintroduzir.
+  Num corpus uniforme a fila dinâmica quase não tem o que corrigir; o único
+  lugar onde a família dinâmica ganha com folga é o i5 (Snort+Enron T=12:
+  4,79× vs 4,07× do `chunked_flat`), e ali o ganho vem da **heterogeneidade
+  P/E**, não de skew de corpus. Enron e Enron×8 são ~uniformes por construção.
+  Este corpus é o dataset novo com valor real: converte "empata/vence por
+  margem dentro do ruído" num condicional testado ("ajuda sse a carga é
+  espacialmente desigual") e isola o mecanismo do confundidor P/E.
 - **Embasamento na RSL (literature-lookup, 2026-06-29):** **nenhum** dos 24
   papers constrói corpus *espacialmente* não-uniforme para AC nem mede ociosidade
   de barreira por thread → o skew espacial + spread por-thread é **contribuição
@@ -165,7 +192,9 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
      então densidade de match sozinha rende spread só **moderado** — o custo frio
      é a alavanca real.
   2. **Densidade (FHBM) como reforço:** injetar prefixos ≥80% de padrões de
-     `patterns_snort.txt` até **~40–45%** nos blocos quentes (alvo DEFCON *ugly*).
+     `patterns_snort.txt` nos blocos quentes. *Como implementado:* alvo de
+     **0,05 matches/byte** no bloco quente (o "43–45%" do DEFCON *ugly* é
+     fração de pacotes com match — unidade não transponível a matches/byte).
   3. **Layout = a chave:** **agrupar** os blocos quentes (ex.: no 1º quarto do
      arquivo) para sobrecarregar poucos chunks estáticos e esvaziar o resto.
   4. **Invariante de controle (Ródenas):** manter **bytes totais E matches totais
@@ -176,16 +205,20 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
   5. **Disciplina:** manipular **só o corpus**; padrões reais (Snort/ET)
      **intactos**. Customizar os dois lados = benchmark circular → perde
      defensibilidade. Reportar a densidade de match obtida.
-- **Pré-requisito (não pular):** o experimento **exige** primeiro o P1 de
-  métricas — **N≥5 réplicas** (processos independentes) + `--per-thread`
-  instrumentado. Single-shot repete o problema metodológico observado na fase G
-  antiga do i5: variância entre corridas pode mascarar o efeito.
-- **Esboço de implementação:** `scripts/make_skewed_corpus.sh` (ou integrado ao
-  `prepare_data.sh`) gera o par uniforme×skewed; **fase nova e isolada** no
-  `run_sweep.sh` (ex.: `PHASES="H"`) roda `v2`/`flat` × `dynamic`/`dynamic_flat`
-  em T=MAX_T com `--per-thread` nos dois corpora — **sem re-rodar A–G**.
-  Documentar no `RESULTS.md` do próprio run e consolidar em
-  `../tcc_notes/sections/notes/{methodology,results}.md`.
+- **Pré-requisito (SATISFEITO 2026-07-02):** o experimento exige **N≥5
+  réplicas** (processos independentes) + `--per-thread` instrumentado — ambos
+  implementados: `phase_H` roda `AC_SKEW_REPS` (default 5) processos por
+  config e o `--per-thread` agora emite `cpu=` por worker (coluna `cpu` no
+  `sweep.db`). Single-shot repetiria o problema metodológico da fase G antiga
+  do i5 (variância entre corridas mascara o efeito).
+- **Implementação (FEITA; era o esboço):** `scripts/make_skewed_corpus.{sh,py}`
+  gera e re-valida os corpora (fator de skew tunável via env `SKEWS`;
+  `HOT_FRAC`, `DENSITY`, `SIZE`); `PHASES="H" scripts/run_sweep.sh` roda a
+  fase isolada — **sem re-rodar A–G** — com listas em
+  `AC_SKEW_SEARCHERS/AC_SKEW_PATS/AC_SKEW_CORPORA`. Falta: rodar na
+  workstation, documentar no `RESULTS.md` do run promovido e consolidar em
+  `../tcc_notes/sections/notes/{methodology,results}.md` (tasks 03–06 do
+  épico).
 - **Medição:** spread de tempo por worker / ociosidade de barreira (contribuição
   própria — a RSL não mede isso para AC), com a moldura "maior fatia limita o
   makespan" de Ródenas.
@@ -200,9 +233,17 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
   execuções). As conclusões de spread/cauda repousam sobre amostra fina.
 - **Como:** subir para ≥ 5 medidas; reportar mediana e desvio do spread entre
   réplicas. Confirmar que o spread (4,8–8,0%) é estável, não ruído.
+- **Estado (2026-07-02):** `phase_D` agora roda `AC_PHASE_D_REPS` (default 5)
+  réplicas por searcher — implementado, **falta coletar na workstation** (a
+  fase D canônica de 06-30 ainda é single-run).
 - **Pronto quando:** 9.8/9.8b com cv entre réplicas reportado.
 
-## P1 — Transparência do i5 na seção P/E
+## P1 — Transparência do i5 na seção P/E ✅ ATENDIDO no texto (2026-07-02)
+
+> A seção P/E escrita pelo epic-03 (task 06; `partes/results.tex`,
+> `subsec:heterogeneous`) e a conclusão enquadram o i5 como **diagnóstico de
+> heterogeneidade**, não como segundo headline nem disputa i5×Ryzen. Mantido
+> aqui como guarda-corpo para edições futuras.
 
 - **Objetivo:** deixar claro que `runs/i5/sweep.db` é evidência P/E histórica,
   não comparação headline contra a workstation canônica.
@@ -226,18 +267,18 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
   o outro) vs. espalhar; comparar vazão em ET-32 (autômato ≫ L3 por CCD).
 - **Pronto quando:** medição de "1 CCD vs. 2 CCD" para ET-32 documentada.
 
-## P2 — Integrar números ao TCC e aos slides
+## P2 — Integrar números ao TCC e aos slides — LaTeX ✅ FEITO; slides/notes pendentes
 
 - **Objetivo:** levar os resultados da workstation para o texto final.
-- **Por quê:** `runs/workstation_2026-06-30/RESULTS.md` é fonte de apoio; o TCC
-  ainda precisa consumir esses números.
-- **Como:** portar tabelas-chave para
-  `acceleration-of-.../partes/results.tex` (e `conclusion.tex`); atualizar
-  `apresentacao/slides.md` (regenerar html/pdf via Marp); sincronizar
-  `tcc_notes/sections/notes/{results,conclusion}.md`. Garantir que todo headline
-  bate com `sweep.db`.
-- **Pronto quando:** results.tex e slides citam os números do Ryzen, consistentes
-  com as fontes canônicas.
+- **Feito (epic-03, concluído 2026-07-02):** `methodology.tex`, `results.tex`,
+  `conclusion.tex`, abstract e introdução **já citam os números canônicos do
+  06-30** (auditados nº a nº contra o `sweep.db`).
+- **Pendente:** `apresentacao/slides.md` (regenerar html/pdf via Marp),
+  `tcc_notes/sections/notes/{results,conclusion}.md` e
+  `docs/tcc-synthesis.html` — ainda alinhados ao i5/2026-05-29; migrar num
+  passo coordenado. Garantir que todo headline bate com `sweep.db`.
+- **Pronto quando:** slides e fontes de apoio citam os números do Ryzen,
+  consistentes com as fontes canônicas.
 
 ---
 
@@ -246,11 +287,11 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
 | # | Item | Prioridade | Bloqueia |
 |---|---|---|---|
 | 1 | Tamanho de tarefa em runtime ✅ | P0 (feito) | sweep de granularidade |
-| 2 | `dynamic_flat` nas curvas principais — motor alinhado, falta rerun | P0 | — |
-| 3 | Sweep de granularidade (i5 + Ryzen) — infra pronta (`phase_G`), falta rodar | P1 | item 1 |
-| 4 | Métricas: replicar invocações + instrumentar `--per-thread` (CPU/P-E, freq, migrações) | P1 | conclui itens 3 e 6 |
-| 5 | Corpus de carga desigual / skew (**Épico 4**, `specs/epic-04/`) | P1 | justifica família dinâmica |
-| 6 | Mais réplicas no Teste 3 | P1 | — |
+| 2 | `dynamic_flat` nas curvas principais ✅ (coleta canônica 06-30) | P0 (feito) | — |
+| 3 | Sweep de granularidade ✅ rodou no Ryzen (single-run); réplicas só se virar claim forte | P1 | item 1 |
+| 4 | Métricas: réplicas ✅ motor (fases R/D/H) + `cpu=` ✅; falta coletar; freq/migrações pendentes | P1 | conclui itens 3 e 6 |
+| 5 | Corpus skew (**Épico 4**): corpora ✅ + fase H ✅; piloto i5 pronto p/ disparar (`docs/i5-replicas-skew-command.txt`); falta coleta canônica (workstation) | P1 | justifica família dinâmica |
+| 6 | Mais réplicas no Teste 3 — fase D com reps ✅ motor; falta coletar | P1 | — |
 | 7 | Mesmo binário/commit nas 2 máquinas | P1 | — |
 | 8 | Variante CCD-aware (Ryzen) | P2 | — |
-| 9 | Integrar ao TCC + slides | P2 | itens 2–7 idealmente |
+| 9 | Integrar ao TCC ✅ (LaTeX, epic-03); slides + notes/synthesis pendentes | P2 | itens 2–7 idealmente |

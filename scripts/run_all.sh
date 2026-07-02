@@ -100,7 +100,17 @@ if [[ "${AC_SWEEP_ONLY:-0}" == "1" ]]; then
   echo "[$(date '+%F %T')] sweep iniciado (PHASES=$PHASES RUN_DIR=$RUN_DIR)"
   PHASES="$PHASES" RUN_DIR="$RUN_DIR" ./scripts/run_sweep.sh
   rc=$?
-  echo "[$(date '+%F %T')] sweep terminou (rc=$rc); empacotando"
+  echo "[$(date '+%F %T')] sweep terminou (rc=$rc); pós-processando"
+
+  # --- pós-processamento: logs → sweep.csv → sweep.db (best-effort) --------
+  if python3 scripts/extract_sweep_csv.py "$RUN_DIR" -o "$RUN_DIR/sweep.csv" \
+     && python3 scripts/build_sweep_db.py "$RUN_DIR/sweep.csv"; then
+    echo "[ok] pós-processamento: $RUN_DIR/sweep.csv + sweep.db"
+  else
+    echo "[aviso] pós-processamento falhou — rode extract_sweep_csv.py / build_sweep_db.py manualmente"
+  fi
+
+  echo "[$(date '+%F %T')] empacotando"
   if tar czf "$RESULT_TGZ" -C "$ROOT" "$RUN_DIR" 2>/dev/null; then
     echo "[ok] $RESULT_TGZ"
   else

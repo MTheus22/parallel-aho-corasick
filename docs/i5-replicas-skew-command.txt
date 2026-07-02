@@ -1,0 +1,34 @@
+# Piloto i5 — fases R (curvas replicadas) + H (corpus skew)
+#
+# Objetivo: base P/E replicada (fase R, snort×enron, 5 processos/config) +
+# piloto do skew (fase H, uniform×clustered, 5 réplicas, --per-thread com cpu=).
+# ⚠️ Piloto CONFUNDIDO por P/E — não substitui a coleta canônica na workstation.
+#
+# O RUN_DIR runs/i5_2026-07-02/ já existe com um RESULTS.md que instrui o
+# agente de análise; o sweep escreve os logs ao lado dele.
+#
+# Pré-condições:
+# - Notebook na TOMADA, tampa ABERTA, interface gráfica desligada / máquina
+#   ociosa (uso concorrente contamina os tempos — o lançamento de 03:17 foi
+#   descartado por isso).
+# - O run_all pede sudo para setar o governador performance (prompt funciona
+#   em terminal interativo); build + make test são fatais antes de iniciar.
+#
+# Duração estimada no i5 (12T): fase R ~35 min; fase H ~4–6 h (et_32 por
+# último). O comando desacopla sozinho (pode fazer logout). Ao final gera
+# sweep.csv + sweep.db + tarball e notifica via ntfy no tópico
+# i5_2026-07-02_750a6217d8 (acompanhe em https://ntfy.sh/i5_2026-07-02_750a6217d8).
+#
+# Retomável: abortou (kill no PID)? Rodar de novo com o MESMO RUN_DIR pula os
+# logs completos. Se abortar por uso da máquina, apague os subdirs de fase
+# (R_replicated/ H_skew/) e recomece limpo — réplicas com condições misturadas
+# não valem nada. Acompanhar: tail -f runs/i5_2026-07-02/MASTER.log
+#
+# Variações (NÃO são o comando final):
+#   só o skew:              PHASES="H"
+#   skew sem et_32 (curto): PHASES="H" AC_SKEW_PATS="patterns_snort"
+#   R com et_32 (2ª noite): PHASES="R" AC_REP_PATS="patterns_et_32"
+#
+# ============== O COMANDO (copie a linha abaixo e rode) ==============
+
+RUN_DIR=runs/i5_2026-07-02 PHASES="R H" AC_NOTIFY='curl -d "i5 R+H terminou (rc=$AC_RC)" ntfy.sh/i5_2026-07-02_750a6217d8' ./scripts/run_all.sh

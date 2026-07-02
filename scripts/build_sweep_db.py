@@ -37,10 +37,10 @@ ALL_COLS = (TEXT_COLS
 WORKER_COLS = [
     "phase", "patterns", "corpus", "searcher", "threads_label", "tag",
     "thr", "log_file", "worker_id", "seconds", "milliseconds",
-    "bytes_scanned", "matches_found", "mbps",
+    "bytes_scanned", "matches_found", "mbps", "cpu",
 ]
 
-WORKER_INT_COLS = {"thr", "worker_id", "bytes_scanned", "matches_found"}
+WORKER_INT_COLS = {"thr", "worker_id", "bytes_scanned", "matches_found", "cpu"}
 WORKER_REAL_COLS = {"seconds", "milliseconds", "mbps"}
 
 WORKER_LINE_RE = re.compile(
@@ -48,7 +48,8 @@ WORKER_LINE_RE = re.compile(
     r"(?P<milliseconds>[\d.]+)\s+ms\s+"
     r"(?P<bytes_scanned>\d+)\s+bytes\s+"
     r"(?P<matches_found>\d+)\s+matches\s+"
-    r"(?P<mbps>[\d.]+)\s+MB/s\s*$"
+    r"(?P<mbps>[\d.]+)\s+MB/s"
+    r"(?:\s+cpu=(?P<cpu>-?\d+))?\s*$"
 )
 
 
@@ -125,6 +126,7 @@ def parse_worker_metrics(csv_path, run_row):
                 "bytes_scanned": int(match.group("bytes_scanned")),
                 "matches_found": int(match.group("matches_found")),
                 "mbps": float(match.group("mbps")),
+                "cpu": int(match.group("cpu")) if match.group("cpu") else None,
             })
     return worker_rows
 

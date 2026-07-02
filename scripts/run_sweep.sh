@@ -55,12 +55,21 @@
 #       (snort) × {simplewiki, enron_corpus} × {seq, seq_flat, v3, flat, dynamic, dynamic_flat}
 #       T ∈ {1, MAX_T} para searchers paralelos
 #   D — per-thread em T=MAX_T (para tabela de balanceamento)
-#       1 run por searcher paralelo em (snort, enron_corpus, T=MAX_T, --per-thread)
+#       N réplicas (AC_PHASE_D_REPS, default 5) por searcher paralelo
+#       em (snort, enron_corpus, T=MAX_T, --per-thread)
 #   E — build-time paralelo vs. sequencial (idea 4)
 #       dicts ∈ {snort_100, snort_1k, snort, et_32}, build seq vs. par (dobrando até MAX_T)
 #   G — granularidade da fila dinâmica
 #       AC_DYN_TASKS_PER_THREAD ∈ {1,4,16,64,256} × {dynamic, dynamic_flat}
 #       (snort, enron_corpus, T=MAX_T); timing + --per-thread por k
+#   H — corpus skew isolado (Epic 04)
+#       {chunked_v2, chunked_v3, chunked_flat, dynamic, dynamic_flat} × {snort, et_32}
+#       × corpora skew; N réplicas (AC_SKEW_REPS, default 5), T=MAX_T, --per-thread
+#       (listas via AC_SKEW_SEARCHERS / AC_SKEW_PATS / AC_SKEW_CORPORA)
+#   R — curvas replicadas: N processos independentes por config (≠ iterações)
+#       {seq, v2, v3, chunked_flat, v3_flat, dynamic, dynamic_flat} × snort × enron
+#       T ∈ {1,2,4,8,...,MAX_T}, AC_REP_REPS (default 5) réplicas intercaladas
+#       (listas via AC_REP_SEARCHERS / AC_REP_THREADS / AC_REP_PATS / AC_REP_CORPORA)
 #
 # Uso:
 #   scripts/run_sweep.sh                       # default (A B C D E G), RUN_DIR auto
@@ -69,6 +78,7 @@
 #   PHASES="G" scripts/run_sweep.sh            # só o sweep de granularidade (P1)
 #   RUN_DIR=runs/teste scripts/run_sweep.sh    # dir custom (override)
 #   MAX_THREADS=32 scripts/run_sweep.sh        # teto de threads custom (default nproc)
+#   MAX_T=32 scripts/run_sweep.sh              # alias curto para MAX_THREADS
 #   THREAD_POINTS="1 2 4 8 16 24 32" scripts/run_sweep.sh  # pontos de curva custom
 #
 # Antes de iniciar (governador etc. ficam a cargo do wrapper "um comando";
@@ -89,7 +99,7 @@ cd "$(dirname "$0")/.."
 
 BIN=build/aclab
 DATA="${DATA:-data}"
-MAX_T="${MAX_THREADS:-$(nproc)}"
+MAX_T="${MAX_THREADS:-${MAX_T:-$(nproc)}}"
 THREAD_POINTS="${THREAD_POINTS:-}"
 
 # -------- auto-nomeação do ambiente (quando RUN_DIR não vier do chamador) ----
@@ -448,7 +458,8 @@ phase_C() {
 # Fase D — per-thread em T=MAX_T (diagnóstico de balanceamento)
 # =============================================================================
 phase_D() {
-  log "===== Fase D — per-thread (T=$MAX_T) ====="
+  local reps="${AC_PHASE_D_REPS:-5}"
+  log "===== Fase D — per-thread (T=$MAX_T, REPS=$reps) ====="
   local phase="D_per_thread"
   local parallel=(pthread_chunked pthread_chunked_v2 pthread_chunked_v3
                   pthread_dynamic
@@ -462,7 +473,9 @@ phase_D() {
   local cor="enron_corpus.txt"
 
   for s in "${parallel[@]}"; do
-    run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" "$MAX_T" 1 3 "perthread" --per-thread
+    for r in $(seq 1 "$reps"); do
+      run_aclab "$phase" "$DATA/$pat" "$DATA/$cor" "$s" "$MAX_T" 1 3 "rep$(printf '%02d' "$r")_perthread" --per-thread
+    done
   done
 }
 
@@ -541,6 +554,79 @@ phase_G() {
 }
 
 # =============================================================================
+# Fase R — curvas replicadas: N processos independentes por configuração
+# =============================================================================
+# Réplica ≠ iteração: --iters repete o scan DENTRO do mesmo processo e só
+# enxerga σ²_within (colocação de threads, turbo, páginas já sorteados e
+# fixos). Cada réplica é um PROCESSO novo → re-sorteia essas alavancas e
+# expõe σ²_between, que domina em CPUs híbridas (P/E) — ver docs/TODO.md
+# ("Métricas dos testes"). Réplicas intercaladas (laço de rep por fora) para
+# a deriva ambiental (térmica, background) se espalhar entre as configs em
+# vez de concentrar nas N réplicas consecutivas de uma só.
+phase_R() {
+  local reps="${AC_REP_REPS:-5}"
+  log "===== Fase R — curvas replicadas (REPS=$reps) ====="
+  local phase="R_replicated"
+  local searchers=(${AC_REP_SEARCHERS:-sequential pthread_chunked_v2 pthread_chunked_v3 pthread_chunked_flat pthread_chunked_v3_flat pthread_dynamic pthread_dynamic_flat})
+  local pats=(${AC_REP_PATS:-patterns_snort})
+  local cors=(${AC_REP_CORPORA:-enron_corpus})
+
+  # Pontos de thread: 1, dobrando até MAX_T (i5: 1 2 4 8 12; ws: 1 2 4 8 16 32)
+  local Ts=()
+  if [[ -n "${AC_REP_THREADS:-}" ]]; then
+    read -ra Ts <<< "$AC_REP_THREADS"
+  else
+    Ts=(1); local t=2
+    while (( t < MAX_T )); do Ts+=("$t"); t=$((t * 2)); done
+    Ts+=("$MAX_T")
+  fi
+
+  local r pat cor s
+  for r in $(seq 1 "$reps"); do
+    local rtag; rtag="rep$(printf '%02d' "$r")"
+    for pat in "${pats[@]}"; do
+      for cor in "${cors[@]}"; do
+        for s in "${searchers[@]}"; do
+          local pts=("${Ts[@]}")
+          [[ "$s" == sequential* ]] && pts=(1)   # baseline: só T=1, mas replicado
+          local t
+          for t in "${pts[@]}"; do
+            run_aclab "$phase" "$DATA/$pat.txt" "$DATA/$cor.txt" "$s" "$t" 1 3 "$rtag"
+          done
+        done
+      done
+    done
+  done
+}
+
+# =============================================================================
+# Fase H — corpus skew isolado (Epic 04)
+# =============================================================================
+phase_H() {
+  log "===== Fase H — corpus skew (T=$MAX_T, REPS=${AC_SKEW_REPS:-5}) ====="
+  local phase="H_skew"
+  local reps="${AC_SKEW_REPS:-5}"
+  # v3 incluído p/ contraste no i5 híbrido: corrige o desbalanceamento da
+  # MÁQUINA (pesos por cpufreq), mas é cego ao desbalanceamento do CONTEÚDO
+  # (skew espacial) — se o clustered derrubar v3 e não o dynamic, o mecanismo
+  # da fila dinâmica fica isolado. No Ryzen homogêneo v3 ≈ v2 (pesos iguais);
+  # use AC_SKEW_SEARCHERS p/ omiti-lo lá.
+  local searchers=(${AC_SKEW_SEARCHERS:-pthread_chunked_v2 pthread_chunked_v3 pthread_chunked_flat pthread_dynamic pthread_dynamic_flat})
+  local corpora=(${AC_SKEW_CORPORA:-enron_skew_uniform enron_skew_clustered})
+  local pats=(${AC_SKEW_PATS:-patterns_snort patterns_et_32})
+  for pat in "${pats[@]}"; do
+    for cor in "${corpora[@]}"; do
+      for s in "${searchers[@]}"; do
+        for r in $(seq 1 "$reps"); do
+          run_aclab "$phase" "$DATA/$pat.txt" "$DATA/$cor.txt" \
+                    "$s" "$MAX_T" 1 3 "rep$(printf '%02d' "$r")_perthread" --per-thread
+        done
+      done
+    done
+  done
+}
+
+# =============================================================================
 # Orquestração
 # =============================================================================
 PHASES="${PHASES:-${1:-A B C D E G}}"
@@ -559,6 +645,8 @@ for p in $PHASES; do
     D) phase_D ;;
     E) phase_E ;;
     G) phase_G ;;
+    H) phase_H ;;
+    R) phase_R ;;
     *) log "WARN  fase desconhecida ignorada: $p" ;;
   esac
 done

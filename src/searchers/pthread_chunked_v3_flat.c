@@ -73,6 +73,7 @@ typedef struct {
     ac_match_list_t           local;
     double                    seconds;
     int                       rc;
+    int                       cpu;
 } __attribute__((aligned(V3F_CACHE_LINE))) worker_t;
 
 static uint32_t v3f_read_max_freq_khz(int cpu_id)
@@ -182,6 +183,7 @@ static void *worker_main(void *arg)
     w->rc = AC_OK;
 done:
     w->seconds = (double)(bench_now_ns() - t0) / 1e9;
+    w->cpu = ac_current_cpu();
     return NULL;
 }
 
@@ -312,6 +314,7 @@ static int v3f_search(const ac_automaton_t *aut,
                 tm[i].seconds       = workers[i].seconds;
                 tm[i].bytes_scanned = workers[i].core_end - workers[i].scan_start;
                 tm[i].matches_found = workers[i].local.count;
+                tm[i].cpu           = workers[i].cpu;
             }
             *out_metrics     = tm;
             *out_num_metrics = (size_t)spawned;

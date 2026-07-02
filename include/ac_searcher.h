@@ -4,6 +4,10 @@
 #include "ac_automaton.h"
 #include "ac_match.h"
 
+#ifdef __linux__
+#include <sched.h>
+#endif
+
 /* ---- Pluggable searcher interface -------------------------------------
  * Each implementation (sequential, pthread-chunked, future SIMD/OpenMP/
  * lock-free variants...) supplies one ac_searcher_t and registers it
@@ -18,7 +22,18 @@ typedef struct {
     double seconds;
     size_t bytes_scanned;
     size_t matches_found;
+    int    cpu;
 } ac_thread_metric_t;
+
+static inline int ac_current_cpu(void)
+{
+#ifdef __linux__
+    int cpu = sched_getcpu();
+    return cpu >= 0 ? cpu : -1;
+#else
+    return -1;
+#endif
+}
 
 typedef struct {
     int    num_threads;        /* honoured by parallel searchers; 0 = auto */

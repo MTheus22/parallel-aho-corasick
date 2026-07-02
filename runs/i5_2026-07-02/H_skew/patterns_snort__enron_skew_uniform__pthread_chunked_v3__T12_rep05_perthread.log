@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_skew_uniform.txt --searcher pthread_chunked_v3 --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-07-02T04:37:24-03:00
+# phase:   H_skew
+# label:   patterns_snort__enron_skew_uniform__pthread_chunked_v3__T12_rep05_perthread
+
+# Aho-Corasick laboratory
+# git:        172ee0f
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      4294967296 bytes (4096.00 MiB) via mmap
+# build time: 44.083 ms
+# warmup=1 iters=3 threads=12 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_v3       12   4294967296       9199.657      11566.185      13283.402       354.14   94304128      12215.495    18.31     2.9707     12
+#   iter_ms: 9199.657 12215.495 13283.402
+#   workers=12  median_MB/s=335.31  ns/byte=2.6930  stdev_ms=2117.887
+    [t00] 8439.389 ms  429496768 bytes  9218110 matches  48.53 MB/s  cpu=0
+    [t01] 8848.612 ms  429497237 bytes  9435230 matches  46.29 MB/s  cpu=2
+    [t02] 8409.109 ms  322123029 bytes  7211655 matches  36.53 MB/s  cpu=4
+    [t03] 8432.100 ms  322123029 bytes  6929148 matches  36.43 MB/s  cpu=5
+    [t04] 8434.096 ms  322123029 bytes  7146989 matches  36.42 MB/s  cpu=6
+    [t05] 8541.950 ms  322123029 bytes  7210933 matches  35.96 MB/s  cpu=7
+    [t06] 8512.418 ms  322123029 bytes  6865324 matches  36.09 MB/s  cpu=8
+    [t07] 8667.231 ms  322123029 bytes  7211655 matches  35.44 MB/s  cpu=9
+    [t08] 8480.795 ms  322123029 bytes  6929150 matches  36.22 MB/s  cpu=10
+    [t09] 8670.124 ms  322123029 bytes  7146986 matches  35.43 MB/s  cpu=11
+    [t10] 8608.302 ms  429497237 bytes  9499896 matches  47.58 MB/s  cpu=1
+    [t11] 8852.375 ms  429496981 bytes  9499052 matches  46.27 MB/s  cpu=3
+
+# finished:        2026-07-02T04:38:17-03:00
+# elapsed_seconds: 53
+# exit_code:       0

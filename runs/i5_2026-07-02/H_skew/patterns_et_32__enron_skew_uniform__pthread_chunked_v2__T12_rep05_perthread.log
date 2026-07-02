@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_skew_uniform.txt --searcher pthread_chunked_v2 --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-07-02T05:21:10-03:00
+# phase:   H_skew
+# label:   patterns_et_32__enron_skew_uniform__pthread_chunked_v2__T12_rep05_perthread
+
+# Aho-Corasick laboratory
+# git:        172ee0f
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      4294967296 bytes (4096.00 MiB) via mmap
+# build time: 453.285 ms
+# warmup=1 iters=3 threads=12 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_v2       12   4294967296      13754.105      18922.455      21716.943       216.46  141136256      21296.316    23.68     1.8158     12
+#   iter_ms: 21716.943 13754.105 21296.316
+#   workers=12  median_MB/s=192.33  ns/byte=4.4057  stdev_ms=4480.860
+    [t00] 14103.582 ms  357913942 bytes  11581339 matches  24.20 MB/s  cpu=0
+    [t01] 14591.618 ms  357914069 bytes  11846304 matches  23.39 MB/s  cpu=2
+    [t02] 14582.764 ms  357914069 bytes  11856421 matches  23.41 MB/s  cpu=11
+    [t03] 14121.313 ms  357914069 bytes  11581339 matches  24.17 MB/s  cpu=2
+    [t04] 12513.945 ms  357914069 bytes  11846304 matches  27.28 MB/s  cpu=0
+    [t05] 14582.751 ms  357914069 bytes  11856421 matches  23.41 MB/s  cpu=4
+    [t06] 14128.056 ms  357914069 bytes  11581339 matches  24.16 MB/s  cpu=0
+    [t07] 12754.570 ms  357914069 bytes  11846304 matches  26.76 MB/s  cpu=3
+    [t08] 12425.789 ms  357914069 bytes  11856421 matches  27.47 MB/s  cpu=1
+    [t09] 14169.471 ms  357914069 bytes  11581339 matches  24.09 MB/s  cpu=9
+    [t10] 14591.561 ms  357914069 bytes  11846304 matches  23.39 MB/s  cpu=0
+    [t11] 13072.501 ms  357914061 bytes  11856421 matches  26.11 MB/s  cpu=3
+
+# finished:        2026-07-02T05:22:40-03:00
+# elapsed_seconds: 90
+# exit_code:       0

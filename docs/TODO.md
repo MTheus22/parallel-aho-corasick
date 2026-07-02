@@ -8,7 +8,9 @@ Prioridades: **P0** = necessário p/ rigor/justeza · **P1** = fortalece achados
 Fontes de verdade: `parallel-aho-corasick/runs/workstation_2026-06-30/sweep.db`
 (Ryzen, **canônica**) e `parallel-aho-corasick/runs/i5/sweep.db` (i5, P/E). Doc de
 resultados: `runs/workstation_2026-06-30/RESULTS.md`. Runs antigos foram
-removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
+removidos; ver `runs/MANIFEST.md` antes de citar qualquer base. Piloto
+exploratório novo: `runs/i5_2026-07-02/` (R+H, não canônico; análise em
+`runs/i5_2026-07-02/RESULTS.md`).
 
 ---
 
@@ -80,15 +82,16 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
   isso a fase G antiga do i5 saiu inconclusiva (cada `k` com n=1 confunde
   granularidade com regime). O run antigo foi removido; não cite seus números.
 - **Como (em ordem de prioridade):**
-  - **(A) Replicar invocações. ✅ MOTOR PRONTO (2026-07-02), falta coletar.**
+  - **(A) Replicar invocações. ✅ MOTOR PRONTO; piloto i5 coletado (2026-07-02).**
     Rodar cada config como **N≥5 processos independentes** (não N iterações no
     mesmo processo) e reportar **mediana + IQR / min–max** (ou IC
     não-paramétrico). É o único jeito de estimar `σ²_between`. Implementado no
     `run_sweep.sh`: fase **R** (curvas replicadas, réplicas *intercaladas* —
     rep no laço externo — envs `AC_REP_*`), fase **D** com `AC_PHASE_D_REPS`
-    (default 5) e fase **H** com `AC_SKEW_REPS`. Primeira coleta real: piloto
-    i5 (fases R+H) — comando pronto em `docs/i5-replicas-skew-command.txt`,
-    aguardando janela com a máquina ociosa.
+    (default 5) e fase **H** com `AC_SKEW_REPS`. Primeira coleta real:
+    `runs/i5_2026-07-02/` (R+H, 255 ok / 0 fail; análise em `RESULTS.md`).
+    Continua faltando a coleta canônica/limpa na workstation homogênea para
+    transformar o achado em evidência principal.
   - **(B) Instrumentar o `--per-thread`** (hoje só `thread_id, seconds, bytes,
     matches`) para **explicar** a variância:
     - ✅ **CPU físico por worker — FEITO (2026-07-02):** `sched_getcpu()` ao
@@ -120,7 +123,7 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
 > **Especificação completa:** `specs/epic-04/` (context + tasks 01–06). Esta
 > entrada é o resumo; o épico é a fonte de verdade da execução.
 
-> **Estado (2026-07-02):** tasks 01–02 **implementadas e validadas**.
+> **Estado (2026-07-02):** tasks 01–03 **implementadas/validadas no piloto i5**.
 > `scripts/make_skewed_corpus.py` gerou os 4 corpora (4 GiB cada:
 > `enron_skew_{uniform,s0.5,clustered,s0.1}`) com **paridade exata de bytes e
 > matches (94 304 128)** — só a distribuição espacial muda; re-rodar o script
@@ -130,11 +133,10 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
 > interpretação na metodologia. A `phase_H` do `run_sweep.sh` roda
 > {v2, **v3**, chunked_flat, dynamic, dynamic_flat} × {snort, et_32} ×
 > {uniform, clustered}, **≥5 réplicas** (processos independentes) com
-> `--per-thread` + campo `cpu=` (listas via `AC_SKEW_*`). Um **piloto no i5**
-> (confundido por P/E — v3 incluído justamente para esse contraste) está
-> **pronto para disparar**: comando e pré-condições em
-> `docs/i5-replicas-skew-command.txt` (fases R+H; rodar só com a máquina
-> ociosa/GUI desligada). A **coleta canônica continua exigindo a workstation
+> `--per-thread` + campo `cpu=` (listas via `AC_SKEW_*`). O **piloto no i5**
+> foi coletado em `runs/i5_2026-07-02/`: 255 ok / 0 fail; H confirma o mecanismo
+> no i5 (clustered derruba estáticos e favorece dinâmicos), mas permanece
+> confundido por P/E. A **coleta canônica continua exigindo a workstation
 > homogênea**.
 
 - **Objetivo:** um corpus onde o **custo por chunk** varie muito ao longo do
@@ -215,16 +217,17 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
   gera e re-valida os corpora (fator de skew tunável via env `SKEWS`;
   `HOT_FRAC`, `DENSITY`, `SIZE`); `PHASES="H" scripts/run_sweep.sh` roda a
   fase isolada — **sem re-rodar A–G** — com listas em
-  `AC_SKEW_SEARCHERS/AC_SKEW_PATS/AC_SKEW_CORPORA`. Falta: rodar na
-  workstation, documentar no `RESULTS.md` do run promovido e consolidar em
-  `../tcc_notes/sections/notes/{methodology,results}.md` (tasks 03–06 do
-  épico).
+  `AC_SKEW_SEARCHERS/AC_SKEW_PATS/AC_SKEW_CORPORA`. Piloto i5 documentado em
+  `runs/i5_2026-07-02/RESULTS.md`. Falta: rodar na workstation, documentar no
+  `RESULTS.md` do run promovido e consolidar em
+  `../tcc_notes/sections/notes/{methodology,results}.md` (tasks 04–06 do épico).
 - **Medição:** spread de tempo por worker / ociosidade de barreira (contribuição
   própria — a RSL não mede isso para AC), com a moldura "maior fatia limita o
   makespan" de Ródenas.
 - **Pronto quando:** Teste 3 (per-thread) nesse corpus com réplicas mostra spread
   estático ≫ dinâmico **e** um cenário onde `dynamic`/`dynamic_flat` batem o
-  estático em CPU homogênea (validando o mecanismo).
+  estático em CPU homogênea. O piloto i5 já confirma a direção do mecanismo, mas
+  ainda não substitui a coleta homogênea.
 
 ## P1 — Mais réplicas na decomposição por thread (Teste 3)
 
@@ -289,9 +292,9 @@ removidos; ver `runs/MANIFEST.md` antes de citar qualquer base.
 | 1 | Tamanho de tarefa em runtime ✅ | P0 (feito) | sweep de granularidade |
 | 2 | `dynamic_flat` nas curvas principais ✅ (coleta canônica 06-30) | P0 (feito) | — |
 | 3 | Sweep de granularidade ✅ rodou no Ryzen (single-run); réplicas só se virar claim forte | P1 | item 1 |
-| 4 | Métricas: réplicas ✅ motor (fases R/D/H) + `cpu=` ✅; falta coletar; freq/migrações pendentes | P1 | conclui itens 3 e 6 |
-| 5 | Corpus skew (**Épico 4**): corpora ✅ + fase H ✅; piloto i5 pronto p/ disparar (`docs/i5-replicas-skew-command.txt`); falta coleta canônica (workstation) | P1 | justifica família dinâmica |
-| 6 | Mais réplicas no Teste 3 — fase D com reps ✅ motor; falta coletar | P1 | — |
+| 4 | Métricas: réplicas ✅ motor (fases R/D/H) + `cpu=` ✅; piloto i5 R+H coletado; freq/migrações e workstation pendentes | P1 | conclui itens 3 e 6 |
+| 5 | Corpus skew (**Épico 4**): corpora ✅ + fase H ✅; piloto i5 coletado/analisado (`runs/i5_2026-07-02/RESULTS.md`); falta coleta canônica (workstation) | P1 | justifica família dinâmica |
+| 6 | Mais réplicas no Teste 3 — fase D com reps ✅ motor; falta coletar na workstation | P1 | — |
 | 7 | Mesmo binário/commit nas 2 máquinas | P1 | — |
 | 8 | Variante CCD-aware (Ryzen) | P2 | — |
 | 9 | Integrar ao TCC ✅ (LaTeX, epic-03); slides + notes/synthesis pendentes | P2 | itens 2–7 idealmente |

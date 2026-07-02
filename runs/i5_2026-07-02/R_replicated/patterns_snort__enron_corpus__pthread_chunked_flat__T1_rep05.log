@@ -1,0 +1,21 @@
+# command: build/aclab --patterns data/patterns_snort.txt --input data/enron_corpus.txt --searcher pthread_chunked_flat --threads 1 --warmup 1 --iters 3 
+# started: 2026-07-02T04:26:19-03:00
+# phase:   R_replicated
+# label:   patterns_snort__enron_corpus__pthread_chunked_flat__T1_rep05
+
+# Aho-Corasick laboratory
+# git:        172ee0f
+# patterns:   4188 (max len 470, min len 4)
+# automaton:  55479 states, 55.23 MiB
+# input:      1421183736 bytes (1355.35 MiB) via mmap
+# build time: 60.552 ms
+# warmup=1 iters=3 threads=1 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_flat      1   1421183736       5241.916       5245.816       5249.367       258.37   17853987       5246.164     0.07     2.1673      1
+#   iter_ms: 5249.367 5241.916 5246.164
+#   workers=1  median_MB/s=258.35  ns/byte=3.6912  stdev_ms=3.738
+
+# finished:        2026-07-02T04:26:40-03:00
+# elapsed_seconds: 21
+# exit_code:       0

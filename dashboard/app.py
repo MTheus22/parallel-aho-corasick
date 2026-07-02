@@ -19,7 +19,7 @@ def main():
     # 1. Discover Databases
     run_dbs = data.discover_databases(root)
     if not run_dbs:
-        st.error("Nenhum banco de dados `sweep.db` encontrado nas pastas `runs/workstation_2026-06-30` ou `runs/i5`.")
+        st.error("Nenhum banco de dados `sweep.db` encontrado em `runs/*/sweep.db`.")
         return
         
     # Carrega tabela 'runs' sem filtros para popular as opções da sidebar
@@ -44,6 +44,8 @@ def main():
         "Cross-Corpus",
         "Workers e Balanceamento",
         "Build Paralelo",
+        "Réplicas R",
+        "Skew H",
         "Granularidade Dinâmica",
         "Comparação Entre Runs"
     ]
@@ -70,6 +72,10 @@ def main():
         render_workers(selected_run_ids, run_dbs, filters)
     elif page == "Build Paralelo":
         render_build(selected_run_ids, run_dbs, filters)
+    elif page == "Réplicas R":
+        render_replicates(all_runs_df, filters)
+    elif page == "Skew H":
+        render_skew(selected_run_ids, run_dbs, filters)
     elif page == "Granularidade Dinâmica":
         render_granularity(filtered_runs, selected_run_ids, run_dbs, filters)
     elif page == "Comparação Entre Runs":
@@ -190,6 +196,170 @@ def render_build(selected_run_ids, run_dbs, filters):
         
     st.plotly_chart(charts.plot_build_curve(v_build), width="stretch")
     st.dataframe(v_build)
+
+def render_replicates(all_runs_df, filters):
+    df_r = ui.apply_filters(all_runs_df, filters)
+    df_r = df_r[df_r["phase"] == "R_replicated"] if "phase" in df_r.columns else df_r
+    df_r_baseline = ui.apply_filters(
+        all_runs_df,
+        filters,
+        exclude=["searcher", "thr", "show_sequential"],
+    )
+    df_r_baseline = df_r_baseline[df_r_baseline["phase"] == "R_replicated"] if "phase" in df_r_baseline.columns else df_r_baseline
+
+    if df_r.empty:
+        st.warning("Sem dados da fase `R_replicated` para os filtros aplicados.")
+        return
+
+    summary = ui.summarize_replicates(
+        df_r,
+        ["run_id", "patterns", "corpus", "searcher", "thr"],
+        value_col="mbps",
+        prefix="mbps",
+    )
+    baseline_summary = ui.summarize_replicates(
+        df_r_baseline,
+        ["run_id", "patterns", "corpus", "searcher", "thr"],
+        value_col="mbps",
+        prefix="mbps",
+    )
+    summary = ui.add_speedup_from_median_seq(summary, baseline_summary=baseline_summary)
+    summary = summary.sort_values(by=["run_id", "patterns", "corpus", "thr", "median_mbps"])
+
+    st.markdown(
+        "A fase R resume processos independentes por mediana e IQR. "
+        "O speedup usa a mediana do `sequential` do mesmo run/cenário como baseline."
+    )
+    st.plotly_chart(charts.plot_replicated_speedup(summary), width="stretch")
+    st.plotly_chart(charts.plot_replicated_throughput(summary), width="stretch")
+
+    st.subheader("Resumo das Réplicas")
+    cols = [
+        "run_id", "patterns", "corpus", "searcher", "thr", "reps",
+        "median_mbps", "q1_mbps", "q3_mbps", "min_mbps", "max_mbps",
+        "iqr_pct_mbps", "range_pct_mbps", "median_cv_pct",
+        "speedup_vs_seq_median",
+    ]
+    st.dataframe(summary[[c for c in cols if c in summary.columns]])
+
+def render_skew(selected_run_ids, run_dbs, filters):
+    df_h = data.load_runs(selected_run_ids, run_dbs)
+    df_h = ui.derived_metrics(df_h)
+    df_h = ui.apply_filters(df_h, filters)
+    df_h = df_h[df_h["phase"] == "H_skew"] if "phase" in df_h.columns else df_h
+
+    if df_h.empty:
+        st.warning("Sem dados da fase `H_skew` para os filtros aplicados.")
+        return
+
+    summary = ui.summarize_replicates(
+        df_h,
+        ["run_id", "patterns", "corpus", "searcher"],
+        value_col="mbps",
+        prefix="mbps",
+    )
+    st.markdown(
+        "A fase H compara corpora com os mesmos bytes e matches totais, mudando a distribuição espacial "
+        "do trabalho: `enron_skew_uniform` contra `enron_skew_clustered`."
+    )
+    st.plotly_chart(charts.plot_skew_throughput(summary), width="stretch")
+
+    delta = summary.pivot_table(
+        index=["run_id", "patterns", "searcher"],
+        columns="corpus",
+        values="median_mbps",
+    ).reset_index()
+    delta.columns.name = None
+    if {"enron_skew_uniform", "enron_skew_clustered"}.issubset(delta.columns):
+        delta = delta.rename(columns={
+            "enron_skew_uniform": "uniform_mbps",
+            "enron_skew_clustered": "clustered_mbps",
+        })
+        delta["clustered_vs_uniform_pct"] = (
+            (delta["clustered_mbps"] - delta["uniform_mbps"])
+            / delta["uniform_mbps"]
+            * 100.0
+        )
+        st.plotly_chart(charts.plot_skew_delta(delta), width="stretch")
+
+        st.subheader("Delta Clustered vs Uniform")
+        st.dataframe(delta.sort_values(by=["patterns", "clustered_vs_uniform_pct"], ascending=[True, False]))
+
+    v_balance = data.load_worker_balance(selected_run_ids, run_dbs)
+    v_balance = ui.apply_filters(v_balance, filters)
+    v_balance = v_balance[v_balance["phase"] == "H_skew"] if "phase" in v_balance.columns else v_balance
+    if not v_balance.empty:
+        balance_summary = ui.summarize_replicates(
+            v_balance,
+            ["run_id", "patterns", "corpus", "searcher"],
+            value_col="spread_pct",
+            prefix="spread_pct",
+        )
+        imbalance = v_balance.groupby(
+            ["run_id", "patterns", "corpus", "searcher"],
+            dropna=False,
+        )["imbalance_ratio"].median().reset_index(name="median_imbalance_ratio")
+        balance_summary = balance_summary.merge(
+            imbalance,
+            on=["run_id", "patterns", "corpus", "searcher"],
+            how="left",
+        )
+        st.plotly_chart(charts.plot_worker_spread_summary(balance_summary), width="stretch")
+
+        st.subheader("Resumo de Balanceamento por Worker")
+        st.dataframe(balance_summary.sort_values(by=["patterns", "corpus", "searcher"]))
+
+    worker_df = data.load_worker_metrics(selected_run_ids, run_dbs)
+    worker_df = ui.derived_metrics(worker_df)
+    worker_df = ui.apply_filters(worker_df, filters)
+    worker_df = worker_df[worker_df["phase"] == "H_skew"] if "phase" in worker_df.columns else worker_df
+    if not worker_df.empty and "i5_core_class" in worker_df.columns:
+        per_log = worker_df.groupby(
+            ["run_id", "patterns", "corpus", "searcher", "tag", "log_file"],
+            dropna=False,
+        )["milliseconds"].agg(
+            min_worker_ms="min",
+            mean_worker_ms="mean",
+            max_worker_ms="max",
+        ).reset_index()
+        per_log["barrier_idle_pct"] = (
+            (per_log["max_worker_ms"] - per_log["mean_worker_ms"])
+            / per_log["max_worker_ms"]
+            * 100.0
+        )
+        barrier_summary = ui.summarize_replicates(
+            per_log,
+            ["run_id", "patterns", "corpus", "searcher"],
+            value_col="barrier_idle_pct",
+            prefix="barrier_idle_pct",
+        )
+        st.plotly_chart(charts.plot_barrier_idle_summary(barrier_summary), width="stretch")
+        st.subheader("Resumo de Ociosidade de Barreira")
+        st.dataframe(barrier_summary.sort_values(by=["patterns", "corpus", "searcher"]))
+
+        st.subheader("CPU/P-E Amostrado no Fim do Worker")
+        cpu_summary = worker_df.groupby(
+            ["run_id", "patterns", "corpus", "searcher", "i5_core_class"],
+            dropna=False,
+        ).agg(
+            worker_rows=("worker_id", "count"),
+            median_ms=("milliseconds", "median"),
+            median_mbps=("mbps", "median"),
+            median_matches=("matches_found", "median"),
+        ).reset_index()
+        st.dataframe(cpu_summary.sort_values(by=["patterns", "corpus", "searcher", "i5_core_class"]))
+
+        idx = worker_df.groupby(["run_id", "log_file"])["milliseconds"].idxmax()
+        stragglers = worker_df.loc[idx]
+        straggler_summary = stragglers.groupby(
+            ["run_id", "patterns", "corpus", "searcher", "i5_core_class"],
+            dropna=False,
+        ).size().reset_index(name="straggler_logs")
+        st.subheader("Classe do Worker Mais Lento")
+        st.dataframe(straggler_summary.sort_values(by=["patterns", "corpus", "searcher", "i5_core_class"]))
+
+    st.subheader("Resumo de Throughput")
+    st.dataframe(summary.sort_values(by=["patterns", "corpus", "searcher"]))
 
 def render_granularity(df, selected_run_ids, run_dbs, filters):
     df_g = df[df["phase"] == "G_granularity"]

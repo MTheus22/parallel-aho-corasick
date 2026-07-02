@@ -10,17 +10,32 @@ class RunDb:
         self.label = label
 
 def discover_databases(root: Path) -> list[RunDb]:
-    """Discover known sweep.db files according to the plan."""
+    """Discover sweep.db files under runs/ with canonical runs first."""
+    runs_root = root / "runs"
+    known_labels = {
+        "workstation_2026-06-30": "Workstation 2026-06-30 (canonical)",
+        "i5": "i5 P/E historical",
+        "i5_2026-07-02": "i5 2026-07-02 R/H pilot",
+    }
+    priority = {
+        "workstation_2026-06-30": 0,
+        "i5": 1,
+        "i5_2026-07-02": 2,
+    }
+
     dbs = []
-    
-    ws_db = root / "runs" / "workstation_2026-06-30" / "sweep.db"
-    if ws_db.exists():
-        dbs.append(RunDb("workstation_2026-06-30", str(ws_db), "Workstation 2026-06-30"))
-        
-    i5_db = root / "runs" / "i5" / "sweep.db"
-    if i5_db.exists():
-        dbs.append(RunDb("i5", str(i5_db), "i5 P/E"))
-        
+    if not runs_root.exists():
+        return dbs
+
+    discovered = []
+    for db_path in runs_root.glob("*/sweep.db"):
+        run_id = db_path.parent.name
+        discovered.append((priority.get(run_id, 100), run_id, db_path))
+
+    for _, run_id, db_path in sorted(discovered):
+        label = known_labels.get(run_id, run_id.replace("_", " "))
+        dbs.append(RunDb(run_id, str(db_path), label))
+
     return dbs
 
 @st.cache_data

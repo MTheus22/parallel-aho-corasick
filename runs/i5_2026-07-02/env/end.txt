@@ -1,0 +1,60 @@
+=== end 2026-07-02T06:30:00-03:00 ===
+
+--- uname -a ---
+Linux matheusbarros 6.17.0-35-generic #35~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Tue May 26 19:30:42 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+
+--- governor ---
+performance
+
+--- cpufreq atual (cpu0..cpuN MHz) ---
+cpu MHz		: 3105.318
+cpu MHz		: 400.000
+cpu MHz		: 400.000
+cpu MHz		: 400.000
+cpu MHz		: 3299.927
+cpu MHz		: 3305.855
+cpu MHz		: 1985.860
+cpu MHz		: 3291.401
+cpu MHz		: 3296.280
+cpu MHz		: 3298.676
+cpu MHz		: 3299.827
+cpu MHz		: 3294.387
+
+--- lscpu (resumido) ---
+Architecture:                            x86_64
+CPU(s):                                  12
+On-line CPU(s) list:                     0-11
+Model name:                              12th Gen Intel(R) Core(TM) i5-1235U
+Thread(s) per core:                      2
+Core(s) per socket:                      10
+Socket(s):                               1
+CPU(s) scaling MHz:                      39%
+CPU max MHz:                             4400.0000
+CPU min MHz:                             400.0000
+L1d cache:                               352 KiB (10 instances)
+L1i cache:                               576 KiB (10 instances)
+L2 cache:                                6.5 MiB (4 instances)
+L3 cache:                                12 MiB (1 instance)
+NUMA node0 CPU(s):                       0-11
+
+--- thermal zones ---
+  /sys/class/thermal/thermal_zone0/temp: 75000 mC
+  /sys/class/thermal/thermal_zone1/temp: 75000 mC
+  /sys/class/thermal/thermal_zone2/temp: 20000 mC
+  /sys/class/thermal/thermal_zone3/temp: 57050 mC
+  /sys/class/thermal/thermal_zone4/temp: 53050 mC
+  /sys/class/thermal/thermal_zone5/temp: 68000 mC
+  /sys/class/thermal/thermal_zone6/temp: 67000 mC
+  /sys/class/thermal/thermal_zone7/temp: 52000 mC
+  /sys/class/thermal/thermal_zone8/temp: 65000 mC
+
+--- free -h ---
+               total        used        free      shared  buff/cache   available
+Mem:            31Gi       1.7Gi        19Gi        97Mi        10Gi        29Gi
+Swap:          8.0Gi          0B       8.0Gi
+
+--- loadavg ---
+11.35 10.74 9.63 1/626 29973
+
+--- aclab commit ---
+172ee0f runs skew

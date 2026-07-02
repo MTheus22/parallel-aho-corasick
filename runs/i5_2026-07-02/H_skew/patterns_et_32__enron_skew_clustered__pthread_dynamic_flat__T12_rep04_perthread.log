@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_skew_clustered.txt --searcher pthread_dynamic_flat --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-07-02T06:27:48-03:00
+# phase:   H_skew
+# label:   patterns_et_32__enron_skew_clustered__pthread_dynamic_flat__T12_rep04_perthread
+
+# Aho-Corasick laboratory
+# git:        172ee0f
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      4294967296 bytes (4096.00 MiB) via mmap
+# build time: 453.704 ms
+# warmup=1 iters=3 threads=12 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_dynamic_flat     12   4294967296      10578.866      12831.358      16311.755       319.22  141136256      11603.453    23.83     2.6778     12
+#   iter_ms: 16311.755 10578.866 11603.453
+#   workers=12  median_MB/s=353.00  ns/byte=2.9875  stdev_ms=3057.338
+    [t00] 16135.425 ms  357913944 bytes  11774132 matches  21.15 MB/s  cpu=2
+    [t01] 15351.907 ms  268435458 bytes  9549699 matches  16.68 MB/s  cpu=11
+    [t02] 16055.870 ms  357913944 bytes  11754461 matches  21.26 MB/s  cpu=0
+    [t03] 15321.413 ms  268435458 bytes  9541952 matches  16.71 MB/s  cpu=10
+    [t04] 15665.354 ms  447392430 bytes  13975067 matches  27.24 MB/s  cpu=1
+    [t05] 16147.202 ms  357913944 bytes  11748499 matches  21.14 MB/s  cpu=1
+    [t06] 15359.290 ms  268435458 bytes  9534301 matches  16.67 MB/s  cpu=9
+    [t07] 15759.213 ms  447392430 bytes  13990585 matches  27.07 MB/s  cpu=3
+    [t08] 15800.046 ms  447392430 bytes  13988331 matches  27.00 MB/s  cpu=10
+    [t09] 16091.082 ms  357913944 bytes  11763899 matches  21.21 MB/s  cpu=2
+    [t10] 15398.464 ms  268435458 bytes  9540263 matches  16.63 MB/s  cpu=8
+    [t11] 15887.553 ms  447392430 bytes  13975067 matches  26.86 MB/s  cpu=11
+
+# finished:        2026-07-02T06:28:56-03:00
+# elapsed_seconds: 68
+# exit_code:       0

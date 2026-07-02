@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_skew_clustered.txt --searcher pthread_chunked_v2 --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-07-02T06:00:01-03:00
+# phase:   H_skew
+# label:   patterns_et_32__enron_skew_clustered__pthread_chunked_v2__T12_rep05_perthread
+
+# Aho-Corasick laboratory
+# git:        172ee0f
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      4294967296 bytes (4096.00 MiB) via mmap
+# build time: 456.169 ms
+# warmup=1 iters=3 threads=12 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_v2       12   4294967296      20018.792      20900.588      22128.254       195.98  141136256      20554.717     5.25     1.6440     12
+#   iter_ms: 22128.254 20018.792 20554.717
+#   workers=12  median_MB/s=199.27  ns/byte=4.8663  stdev_ms=1096.438
+    [t00] 18846.109 ms  357913942 bytes  20415631 matches  18.11 MB/s  cpu=2
+    [t01] 19668.598 ms  357914069 bytes  20410795 matches  17.35 MB/s  cpu=1
+    [t02] 18818.830 ms  357914069 bytes  20412486 matches  18.14 MB/s  cpu=1
+    [t03] 10328.338 ms  357914069 bytes  8877709 matches  33.05 MB/s  cpu=10
+    [t04] 7646.297 ms  357914069 bytes  8872311 matches  44.64 MB/s  cpu=2
+    [t05] 7426.863 ms  357914069 bytes  8882428 matches  45.96 MB/s  cpu=0
+    [t06] 9981.023 ms  357914069 bytes  8877709 matches  34.20 MB/s  cpu=4
+    [t07] 7363.801 ms  357914069 bytes  8872311 matches  46.35 MB/s  cpu=1
+    [t08] 7596.241 ms  357914069 bytes  8882428 matches  44.93 MB/s  cpu=3
+    [t09] 10340.805 ms  357914069 bytes  8877709 matches  33.01 MB/s  cpu=7
+    [t10] 10322.965 ms  357914069 bytes  8872311 matches  33.07 MB/s  cpu=11
+    [t11] 10263.179 ms  357914061 bytes  8882428 matches  33.26 MB/s  cpu=6
+
+# finished:        2026-07-02T06:01:43-03:00
+# elapsed_seconds: 102
+# exit_code:       0

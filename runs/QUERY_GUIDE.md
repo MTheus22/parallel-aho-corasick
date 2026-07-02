@@ -10,6 +10,7 @@ i5 P/E e para novos runs.
 |-------|-------------|
 | `runs/workstation_2026-06-30/sweep.db` | Fonte canonica do TCC: Ryzen 9 9950X, fases A B C D E G, commit `c19da78`. |
 | `runs/i5/sweep.db` | Evidencia historica para secao P/E no i5-1235U, principalmente `pthread_chunked_v3` e `pthread_chunked_v3_flat`. |
+| `runs/i5_2026-07-02/sweep.db` | Piloto exploratorio R+H no i5: replicas independentes, corpus skew e `cpu=` por worker. Nao usar como headline canonico. |
 
 ```bash
 DB=runs/workstation_2026-06-30/sweep.db
@@ -48,7 +49,8 @@ Build paralelo: `build_ms, build_threads`.
 Uma linha por worker, preenchida apenas para logs emitidos com `--per-thread`.
 
 Colunas principais: `phase, patterns, corpus, searcher, thr, tag, worker_id,
-milliseconds, seconds, bytes_scanned, matches_found, mbps, log_file`.
+milliseconds, seconds, bytes_scanned, matches_found, mbps, log_file`. Bancos
+novos tambem incluem `cpu` (CPU amostrado no fim do scan do worker).
 
 Use para diagnosticar stragglers, balanceamento e efeitos P/E. A tabela existe
 para todos os bancos reconstruidos pelo pipeline novo; pode estar vazia em runs

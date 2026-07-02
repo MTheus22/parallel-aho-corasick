@@ -181,18 +181,19 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
   (sharding por dicionário × chunking de texto), idea 6.
 - `runs/QUERY_GUIDE.md` — schema + views + queries dos `sweep.db` preservados
   (forma token-efficient de consultar resultados via `sqlite3`).
-- `runs/MANIFEST.md` — **política dos runs preservados**: só `workstation_2026-06-30/`
-  (canônico) e `i5/` (P/E) existem; lacunas conhecidas (single-run por config;
-  corpus ~uniforme). Leia antes de citar ou criar runs.
+- `runs/MANIFEST.md` — **política dos runs preservados**: `workstation_2026-06-30/`
+  (canônico), `i5/` (P/E histórico) e `i5_2026-07-02/` (piloto R+H não-canônico);
+  lacunas conhecidas (single-run por config canônica; corpus canônico ~uniforme).
+  Leia antes de citar ou criar runs.
 - `runs/workstation_2026-06-30/RESULTS.md` — **análise da coleta canônica**
   (Ryzen 9 9950X, 2026-06-30): run único ponta-a-ponta (commit `c19da78`, 522 ok /
   0 fail), fases A B C D E + G, campeão `pthread_dynamic_flat`; também contém o
   mapa de leitura humana das fases.
 - `docs/TODO.md` — melhorias pendentes; vários itens já resolvidos no run 06-30
   (fase G, `dynamic_flat`). Motor de réplicas (fases R/D/H), corpora skew e
-  `cpu=` por worker **prontos** (2026-07-02); piloto i5 pronto para disparar
-  (`docs/i5-replicas-skew-command.txt`, máquina ociosa obrigatória); lacuna
-  viva: **coletar** réplicas + skew (i5 piloto e workstation canônica).
+  `cpu=` por worker **prontos** (2026-07-02); piloto i5 R+H coletado em
+  `runs/i5_2026-07-02/`; lacuna viva: repetir skew/réplicas na workstation
+  homogênea se o achado virar evidência principal.
 - `../tcc_notes/sections/notes/` — consolidação orientada a seção do TCC
   (`methodology`, `results`, `conclusion`).
 
@@ -209,10 +210,11 @@ Detalhes em `data/README.md` e em `docs/architecture/datasets.md`.
 > aos números que o LaTeX já cita (até a migração) e à **seção de P/E** (única
 > máquina híbrida P+E).
 >
-> **Limpeza 2026-07-01:** os runs interinos/mistos/reduzidos e relatos históricos
-> foram **removidos**. Só existem `workstation_2026-06-30/` e `i5/`. Não cite
-> runs removidos; runs novos vão em `runs/<slug-data>/` (não sobrescreva um run
-> promovido).
+> **Runs preservados (atualização 2026-07-02):** os runs
+> interinos/mistos/reduzidos e relatos históricos foram **removidos**. Existem
+> `workstation_2026-06-30/` (canônico), `i5/` (P/E histórico) e
+> `i5_2026-07-02/` (piloto R+H não-canônico). Não cite runs removidos; runs
+> novos vão em `runs/<slug-data>/` (não sobrescreva um run promovido).
 
 ## Coisas que provavelmente NÃO devem mudar sem discussão
 

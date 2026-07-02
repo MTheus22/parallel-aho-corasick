@@ -1,0 +1,33 @@
+# command: build/aclab --patterns data/patterns_et_32.txt --input data/enron_skew_uniform.txt --searcher pthread_chunked_flat --threads 12 --warmup 1 --iters 3 --per-thread
+# started: 2026-07-02T05:33:56-03:00
+# phase:   H_skew
+# label:   patterns_et_32__enron_skew_uniform__pthread_chunked_flat__T12_rep03_perthread
+
+# Aho-Corasick laboratory
+# git:        172ee0f
+# patterns:   44678 (max len 128, min len 5)
+# automaton:  508896 states, 506.78 MiB
+# input:      4294967296 bytes (4096.00 MiB) via mmap
+# build time: 453.809 ms
+# warmup=1 iters=3 threads=12 tasks_per_thread=4
+
+searcher                thr        bytes        min(ms)       mean(ms)        max(ms)         MB/s    matches     median(ms)      cv%       Gbps    wrk
+pthread_chunked_flat     12   4294967296      11114.505      13880.010      16340.205       295.10  141136256      14185.320    18.92     2.4755     12
+#   iter_ms: 14185.320 11114.505 16340.205
+#   workers=12  median_MB/s=288.75  ns/byte=3.2317  stdev_ms=2626.194
+    [t00] 15845.954 ms  357913942 bytes  11581339 matches  21.54 MB/s  cpu=2
+    [t01] 15290.257 ms  357914069 bytes  11846304 matches  22.32 MB/s  cpu=2
+    [t02] 14655.689 ms  357914069 bytes  11856421 matches  23.29 MB/s  cpu=0
+    [t03] 14938.252 ms  357914069 bytes  11581339 matches  22.85 MB/s  cpu=0
+    [t04] 15438.650 ms  357914069 bytes  11846304 matches  22.11 MB/s  cpu=0
+    [t05] 13561.087 ms  357914069 bytes  11856421 matches  25.17 MB/s  cpu=2
+    [t06] 15042.657 ms  357914069 bytes  11581339 matches  22.69 MB/s  cpu=3
+    [t07] 13575.213 ms  357914069 bytes  11846304 matches  25.14 MB/s  cpu=1
+    [t08] 13390.800 ms  357914069 bytes  11856421 matches  25.49 MB/s  cpu=3
+    [t09] 15795.982 ms  357914069 bytes  11581339 matches  21.61 MB/s  cpu=11
+    [t10] 15016.353 ms  357914069 bytes  11846304 matches  22.73 MB/s  cpu=3
+    [t11] 15906.582 ms  357914061 bytes  11856421 matches  21.46 MB/s  cpu=0
+
+# finished:        2026-07-02T05:35:12-03:00
+# elapsed_seconds: 76
+# exit_code:       0

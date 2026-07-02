@@ -204,8 +204,157 @@ def plot_granularity_curve(df: pd.DataFrame):
         y="mbps",
         color="searcher",
         markers=True,
-        title="Impacto da Granularidade Dinâmica (Tokens Per Task)",
+        title="Impacto da Granularidade Dinâmica",
         color_discrete_map=SEARCHER_COLORS
     )
-    fig.update_layout(xaxis_title="Tokens Per Task", yaxis_title="Throughput (MB/s)")
+    fig.update_layout(xaxis_title="Tasks per Thread", yaxis_title="Throughput (MB/s)")
+    return fig
+
+def plot_replicated_speedup(summary: pd.DataFrame):
+    if summary.empty:
+        return go.Figure()
+    required = {"speedup_vs_seq_median", "q1_speedup_vs_seq", "q3_speedup_vs_seq"}
+    if not required.issubset(summary.columns):
+        fig = go.Figure()
+        fig.update_layout(title="Fase R: baseline sequential indisponível para speedup")
+        return fig
+
+    df = summary.copy()
+    df["err_plus"] = df["q3_speedup_vs_seq"] - df["speedup_vs_seq_median"]
+    df["err_minus"] = df["speedup_vs_seq_median"] - df["q1_speedup_vs_seq"]
+    hover_data = _safe_hover(df, [
+        "run_id", "patterns", "corpus", "reps", "median_mbps",
+        "iqr_pct_mbps", "range_pct_mbps", "median_cv_pct",
+    ])
+
+    fig = px.line(
+        df,
+        x="thr",
+        y="speedup_vs_seq_median",
+        color="searcher",
+        markers=True,
+        error_y="err_plus",
+        error_y_minus="err_minus",
+        title="Fase R: Speedup por Mediana das Réplicas",
+        color_discrete_map=SEARCHER_COLORS,
+        hover_data=hover_data,
+    )
+    fig.update_layout(
+        xaxis_title="Threads",
+        yaxis_title="Speedup vs sequential mediano",
+    )
+    return fig
+
+def plot_replicated_throughput(summary: pd.DataFrame):
+    if summary.empty:
+        return go.Figure()
+
+    df = summary.copy()
+    df["err_plus"] = df["q3_mbps"] - df["median_mbps"]
+    df["err_minus"] = df["median_mbps"] - df["q1_mbps"]
+    hover_data = _safe_hover(df, [
+        "run_id", "patterns", "corpus", "reps", "speedup_vs_seq_median",
+        "iqr_pct_mbps", "range_pct_mbps", "median_cv_pct",
+    ])
+
+    fig = px.line(
+        df,
+        x="thr",
+        y="median_mbps",
+        color="searcher",
+        markers=True,
+        error_y="err_plus",
+        error_y_minus="err_minus",
+        title="Fase R: Throughput Mediano com IQR",
+        color_discrete_map=SEARCHER_COLORS,
+        hover_data=hover_data,
+    )
+    fig.update_layout(xaxis_title="Threads", yaxis_title="Mediana MB/s")
+    return fig
+
+def plot_skew_throughput(summary: pd.DataFrame):
+    if summary.empty:
+        return go.Figure()
+
+    df = summary.copy()
+    df["err_plus"] = df["q3_mbps"] - df["median_mbps"]
+    df["err_minus"] = df["median_mbps"] - df["q1_mbps"]
+    fig = px.bar(
+        df,
+        x="searcher",
+        y="median_mbps",
+        color="corpus",
+        facet_col="patterns" if "patterns" in df.columns and df["patterns"].nunique() > 1 else None,
+        barmode="group",
+        error_y="err_plus",
+        error_y_minus="err_minus",
+        title="Fase H: Uniforme vs Clustered (Mediana MB/s)",
+        color_discrete_sequence=px.colors.qualitative.Set2,
+        hover_data=_safe_hover(df, ["run_id", "reps", "iqr_pct_mbps", "median_cv_pct"]),
+    )
+    fig.update_layout(xaxis_title="Searcher", yaxis_title="Mediana MB/s")
+    return fig
+
+def plot_skew_delta(delta_df: pd.DataFrame):
+    if delta_df.empty:
+        return go.Figure()
+
+    fig = px.bar(
+        delta_df,
+        x="searcher",
+        y="clustered_vs_uniform_pct",
+        color="searcher",
+        facet_col="patterns" if "patterns" in delta_df.columns and delta_df["patterns"].nunique() > 1 else None,
+        title="Fase H: Delta Clustered vs Uniform",
+        color_discrete_map=SEARCHER_COLORS,
+        hover_data=_safe_hover(delta_df, ["run_id", "uniform_mbps", "clustered_mbps"]),
+    )
+    fig.add_hline(y=0.0, line_dash="dash", line_color="gray")
+    fig.update_layout(xaxis_title="Searcher", yaxis_title="Delta de throughput (%)")
+    return fig
+
+def plot_worker_spread_summary(summary: pd.DataFrame):
+    if summary.empty:
+        return go.Figure()
+
+    df = summary.copy()
+    df["err_plus"] = df["q3_spread_pct"] - df["median_spread_pct"]
+    df["err_minus"] = df["median_spread_pct"] - df["q1_spread_pct"]
+    fig = px.bar(
+        df,
+        x="searcher",
+        y="median_spread_pct",
+        color="corpus",
+        facet_col="patterns" if "patterns" in df.columns and df["patterns"].nunique() > 1 else None,
+        barmode="group",
+        error_y="err_plus",
+        error_y_minus="err_minus",
+        title="Fase H: Spread de Tempo por Worker",
+        color_discrete_sequence=px.colors.qualitative.Set2,
+        hover_data=_safe_hover(df, ["run_id", "reps", "median_imbalance_ratio"]),
+    )
+    fig.update_layout(xaxis_title="Searcher", yaxis_title="Spread mediano (%)")
+    return fig
+
+def plot_barrier_idle_summary(summary: pd.DataFrame):
+    if summary.empty:
+        return go.Figure()
+
+    df = summary.copy()
+    df["err_plus"] = df["q3_barrier_idle_pct"] - df["median_barrier_idle_pct"]
+    df["err_minus"] = df["median_barrier_idle_pct"] - df["q1_barrier_idle_pct"]
+    fig = px.bar(
+        df,
+        x="searcher",
+        y="median_barrier_idle_pct",
+        color="corpus",
+        facet_col="patterns" if "patterns" in df.columns and df["patterns"].nunique() > 1 else None,
+        barmode="group",
+        error_y="err_plus",
+        error_y_minus="err_minus",
+        title="Fase H: Ociosidade de Barreira",
+        color_discrete_sequence=px.colors.qualitative.Set2,
+        hover_data=_safe_hover(df, ["run_id", "reps", "iqr_pct_barrier_idle_pct"]),
+    )
+    fig.update_layout(xaxis_title="Searcher", yaxis_title="Ociosidade mediana (%)")
     return fig
